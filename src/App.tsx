@@ -86,9 +86,7 @@ export default function App() {
         {/* Premium Brand Header */}
         <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
-            <div className="bg-red p-2 rounded-xl text-white">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
+            <img src="/logo.png" alt="Same Day Assist Logo" className="w-10 h-10 object-contain shrink-0" />
             <div>
               <div className="flex items-baseline gap-1">
                 <h1 className="text-lg font-black italic tracking-wide leading-none text-white uppercase font-brand-header">SAME DAY ASSIST</h1>

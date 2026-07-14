@@ -12,9 +12,7 @@ export default function ContractorApp() {
       {/* BRANDING HEADER */}
       <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="bg-red p-2 rounded-xl text-white">
-            <Wrench className="w-6 h-6 text-white" />
-          </div>
+          <img src="/logo.png" alt="Same Day Assist Logo" className="w-10 h-10 object-contain shrink-0" />
           <div>
             <h1 className="text-lg font-black italic text-white leading-none uppercase">Same Day Assist</h1>
             <p className="text-[10px] font-mono tracking-wider text-red font-bold uppercase font-brand-sub">Contractor Responder Terminal</p>
