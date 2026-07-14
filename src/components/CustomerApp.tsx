@@ -22,7 +22,12 @@ export default function CustomerApp() {
       {/* BRANDING HEADER */}
       <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Same Day Assist Logo" className="w-10 h-10 object-contain shrink-0" />
+          <img 
+            src="/logo.png" 
+            alt="Same Day Assist Logo" 
+            onClick={() => setActiveDeviceTab('home')}
+            className="w-10 h-10 object-contain shrink-0 cursor-pointer" 
+          />
           <div>
             <h1 className="text-lg font-black italic text-navy leading-none uppercase">Same Day Assist</h1>
             <p className="text-[10px] font-bold text-red tracking-wider uppercase">Consumer Portal • Johannesburg Dispatch</p>
