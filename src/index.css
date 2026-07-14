@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Great+Vibes&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -8,10 +9,17 @@
   --color-brand-red: #CC322C;
   --color-brand-navy: #091C3E;
   
-  --font-euro: "Eurostile", "Microgramma", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-brand: "Outfit", sans-serif;
+  --font-euro: "Eurostile", "Microgramma", "Outfit", "Helvetica Neue", Arial, sans-serif;
+  --font-cursive: "Great Vibes", cursive;
 }
 
 /* Custom premium styles matching Same Day Assist brand guidelines */
+.font-cursive {
+  font-family: "Great Vibes", cursive;
+}
+
 .font-brand-header {
   font-family: "Eurostile", "Microgramma", "Helvetica Neue", Arial, sans-serif;
   font-weight: 800;
@@ -29,6 +37,7 @@
 
 /* Base style resets */
 body {
+  font-family: var(--font-sans);
   background-color: #f8fafc;
   color: #0f172a;
 }
@@ -47,5 +56,42 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Accessibility Focus States */
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid #CC322C;
+  outline-offset: 1px;
+}
+
+button:focus-visible, a:focus-visible {
+  outline: 2px solid #CC322C;
+  outline-offset: 2px;
+}
+
+/* Printing Optimization Styles */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .no-print, header, nav, footer, button, select, input {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .bg-slate-50, .bg-slate-100, .bg-zinc-900, .bg-navy {
+    background-color: transparent !important;
+    color: black !important;
+  }
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 8px !important;
+  }
 }
 

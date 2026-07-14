@@ -46,7 +46,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
     <div className="flex flex-col gap-4 animate-fadeIn">
       <div className="border-b border-slate-100 pb-1.5">
         <h3 className="text-xs font-bold text-navy uppercase tracking-wider">My Account Profile</h3>
-        <p className="text-[9px] text-slate-400">Manage your contact details, physical address, and communication channels</p>
+        <p className="text-[9px] text-slate-600">Manage your contact details, physical address, and communication channels</p>
       </div>
 
       <form onSubmit={handleSaveProfile} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-4">
@@ -58,7 +58,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-bold text-slate-400 uppercase">Full Name</label>
+            <label className="text-[9px] font-bold text-slate-600 uppercase">Full Name</label>
             <input 
               type="text" 
               required
@@ -70,7 +70,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">Email Address</label>
+              <label className="text-[9px] font-bold text-slate-600 uppercase">Email Address</label>
               <input 
                 type="email" 
                 required
@@ -80,7 +80,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-400 uppercase">Mobile Phone</label>
+              <label className="text-[9px] font-bold text-slate-600 uppercase">Mobile Phone</label>
               <input 
                 type="tel" 
                 required
@@ -92,7 +92,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] font-bold text-slate-400 uppercase">Physical Dispatch Address</label>
+            <label className="text-[9px] font-bold text-slate-600 uppercase">Physical Dispatch Address</label>
             <input 
               type="text" 
               required

@@ -53,13 +53,13 @@ export default function CustomerInvoices({ activeCustomer }: CustomerInvoicesPro
     <div className="flex flex-col gap-5 animate-fadeIn">
       <div className="border-b border-slate-100 pb-1.5">
         <h3 className="text-xs font-bold text-navy uppercase tracking-wider">Billing Statements & Quotations</h3>
-        <p className="text-[9px] text-slate-400">Review pending pre-compliance quotations and download tax invoices</p>
+        <p className="text-[9px] text-slate-600">Review pending pre-compliance quotations and download tax invoices</p>
       </div>
 
       {/* SUMMARY CARD */}
       <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Fees Contributed</span>
+          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Total Fees Contributed</span>
           <span className="text-xl font-brand-header text-navy font-bold">R{totalPaid}</span>
         </div>
         <div className="bg-navy/5 px-3 py-1.5 rounded-xl border border-navy/10 text-[9.5px] text-navy font-medium font-mono leading-none">
@@ -69,14 +69,14 @@ export default function CustomerInvoices({ activeCustomer }: CustomerInvoicesPro
 
       {/* PENDING QUOTATIONS */}
       <div className="space-y-2">
-        <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Awaiting Verification Approval</h4>
+        <h4 className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Awaiting Verification Approval</h4>
         <div className="flex flex-col gap-3">
           {pendingQuotations.map(quote => (
             <div key={quote.id} className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col gap-3">
               <div className="flex justify-between items-center text-xs">
                 <div>
                   <span className="font-bold text-slate-700 block">Pre-Compliance Repair Quote</span>
-                  <span className="text-[9.5px] text-slate-400 font-mono">ID: {quote.id}</span>
+                  <span className="text-[9.5px] text-slate-600 font-mono">ID: {quote.id}</span>
                 </div>
                 <span className="font-brand-header text-red text-sm font-bold">R{quote.amount}</span>
               </div>
@@ -118,17 +118,17 @@ export default function CustomerInvoices({ activeCustomer }: CustomerInvoicesPro
 
       {/* BILLING HISTORY */}
       <div className="space-y-2">
-        <h4 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Statement History</h4>
+        <h4 className="text-[10px] font-extrabold text-slate-600 uppercase tracking-wider">Statement History</h4>
         <div className="flex flex-col gap-2">
           {payments.map(pay => (
             <div key={pay.id} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all flex justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-slate-100 rounded-xl text-slate-400">
+                <div className="p-2.5 bg-slate-100 rounded-xl text-slate-500">
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-800">{pay.type}</p>
-                  <p className="text-[9px] text-slate-400 font-mono">Invoice: {pay.id} • Date: {pay.date}</p>
+                  <p className="text-[9px] text-slate-600 font-mono">Invoice: {pay.id} • Date: {pay.date}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
