@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #091C3E;
+  --color-red: #CC322C;
+  --color-navy-dark: #050E20;
+  --color-navy-light: #183366;
+  --color-brand-red: #CC322C;
+  --color-brand-navy: #091C3E;
+  
+  --font-euro: "Eurostile", "Microgramma", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Custom premium styles matching Same Day Assist brand guidelines */
+.font-brand-header {
+  font-family: "Eurostile", "Microgramma", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.font-brand-sub {
+  font-family: "Eurostile", "Microgramma", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+/* Base style resets */
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+

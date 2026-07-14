@@ -1,0 +1,12 @@
+{
+  "name": "Same Day Assist",
+  "description": "Premium customer mobile app, contractor mobile app, and admin web portal for Same Day Assist (Pty) Ltd, providing security, plumbing, electrical, and construction response management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,167 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         String   // Customer, Contractor, Administrator, Super Administrator
+  name         String
+  phone        String
+  address      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Customer specific details
+  status       String?  // Prospect, Awaiting Assessment, Awaiting Quotation, Awaiting Approval, Awaiting Repairs, Awaiting Membership, Active Member, Suspended, Expired
+  package      String?  // Gold, Platinum, Diamond
+  memberSince  String?
+  repairsCount Int      @default(0)
+  totalPaid    Float    @default(0.0)
+
+  // Contractor specific details
+  rating       Float?   @default(5.0)
+  specialty    String?  // Security, Electrical, Plumbing, Construction
+  isAvailable  Boolean? @default(true)
+  lat          Float?   @default(-26.2041) // Default JHB latitudes
+  lng          Float?   @default(28.0473)  // Default JHB longitudes
+  certifications String? // JSON string array of skills and certs
+  workload     Int      @default(0) // Count of active jobs assigned
+
+  // Relations
+  jobsAsCustomer       Job[]                  @relation("CustomerJobs")
+  jobsAsContractor     Job[]                  @relation("ContractorJobs")
+  assessments          Assessment[]
+  payments             Payment[]
+  auditLogs            AuditLog[]
+  fileRecords          FileRecord[]
+  notificationSettings NotificationPreference?
+}
+
+model Enquiry {
+  id              String       @id @default(uuid())
+  customerName    String
+  email           String
+  phone           String
+  address         String
+  serviceCategory String       // Security, Electrical, Plumbing, Construction
+  notes           String
+  status          String       @default("Pending") // Pending, Scheduled, Assessed, Quoted, Approved, Completed
+  createdAt       DateTime     @default(now())
+  assessments     Assessment[]
+  quotations      Quotation[]
+}
+
+model Assessment {
+  id              String    @id @default(uuid())
+  enquiryId       String
+  enquiry         Enquiry   @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  contractorId    String
+  contractor      User      @relation(fields: [contractorId], references: [id])
+  scheduledAt     DateTime
+  completedAt     DateTime?
+  issuesFound     String    // Stored as JSON string list
+  photoUrl        String?
+  videoUrl        String?
+  estimatedCost   Float
+  status          String    @default("Scheduled") // Scheduled, Assessing, Uploaded
+  contractorNotes String?
+  fileRecords     FileRecord[]
+}
+
+model Quotation {
+  id          String       @id @default(uuid())
+  enquiryId   String
+  enquiry     Enquiry      @relation(fields: [enquiryId], references: [id])
+  amount      Float
+  lineItems   String       // Stored as JSON line items list
+  status      String       @default("Pending") // Pending, Approved, Declined
+  createdAt   DateTime     @default(now())
+  approvedAt  DateTime?
+  fileRecords FileRecord[]
+}
+
+model Job {
+  id                   String       @id @default(uuid())
+  customerId           String
+  customer             User         @relation("CustomerJobs", fields: [customerId], references: [id])
+  serviceType          String       // Security, Electrical, Plumbing, Construction
+  description          String
+  photoUrl             String?
+  videoUrl             String?
+  assignedContractorId String?
+  assignedContractor   User?        @relation("ContractorJobs", fields: [assignedContractorId], references: [id])
+  status               String       @default("Submitted") // Submitted, Assigned, Accepted, En Route, Arrived, Assessment, Awaiting Quote Approval, Repair In Progress, Quality Inspection, Completed, Closed, Archived
+  trackerProgress      Int          @default(0)
+  rating               Int?
+  ratingComment        String?
+  createdAt            DateTime     @default(now())
+  assignedAt           DateTime?
+  completedAt          DateTime?
+  closedAt             DateTime?
+  contractorNotes      String?
+  contractorSignature  String?      // Base64 signature
+  completionPhoto      String?
+  fileRecords          FileRecord[]
+}
+
+model Payment {
+  id           String   @id @default(uuid())
+  customerId   String
+  customer     User     @relation(fields: [customerId], references: [id])
+  customerName String
+  type         String   // Onboarding Fee, Monthly Premium, Assistance Co-pay
+  amount       Float
+  status       String   @default("Pending") // Paid, Pending
+  date         String   // yyyy-mm-dd
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  timestamp     DateTime @default(now())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  userType      String   // Customer, Contractor, Administrator, Super Administrator
+  action        String
+  details       String
+  ipAddress     String?
+  userAgent     String?
+  previousValue String?  // JSON snapshot before
+  newValue      String?  // JSON snapshot after
+}
+
+model FileRecord {
+  id           String      @id @default(uuid())
+  filename     String
+  originalName String
+  fileType     String
+  size         Int
+  url          String
+  uploadedById String
+  uploadedBy   User        @relation(fields: [uploadedById], references: [id])
+  customerId   String?
+  jobId        String?
+  job          Job?        @relation(fields: [jobId], references: [id])
+  assessmentId String?
+  assessment   Assessment? @relation(fields: [assessmentId], references: [id])
+  quotationId  String?
+  quotation    Quotation?  @relation(fields: [quotationId], references: [id])
+  version      Int         @default(1)
+  createdAt    DateTime    @default(now())
+}
+
+model NotificationPreference {
+  id        String  @id @default(uuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     Boolean @default(true)
+  sms       Boolean @default(true)
+  push      Boolean @default(true)
+  inApp     Boolean @default(true)
+}
