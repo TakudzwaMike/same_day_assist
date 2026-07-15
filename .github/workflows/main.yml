@@ -26,6 +26,8 @@ jobs:
 
     - name: Generate Prisma Client
       run: npx prisma generate
+      env:
+        DATABASE_URL: "file:./dev.db"
 
     - name: Verify Types & Lint Compilation
       run: npm run lint
