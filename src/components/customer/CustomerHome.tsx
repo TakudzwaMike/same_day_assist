@@ -6,7 +6,7 @@ import {
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ServiceCategory } from '../../types';
-import { SERVICE_PACKAGES } from '../../data/mockData';
+import { SERVICE_PACKAGES } from '../../data/staticData';
 import EmptyState from '../shared/EmptyState';
 import ConfirmDialog from '../shared/ConfirmDialog';
 

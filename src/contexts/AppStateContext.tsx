@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { getSocket, onNewJob, onJobUpdated } from '../services/socket';
 import { useAuth } from './AuthContext';
 import { AppState, Enquiry, Assessment, Quotation, Customer, Contractor, Job, Payment, AuditLog, JourneyStep } from '../types';
-import { INITIAL_CONTRACTORS, INITIAL_ENQUIRIES, INITIAL_CUSTOMERS } from '../data/mockData';
+import { INITIAL_CONTRACTORS, INITIAL_ENQUIRIES, INITIAL_CUSTOMERS } from '../data/staticData';
 
 interface AppStateContextType {
   state: AppState;
