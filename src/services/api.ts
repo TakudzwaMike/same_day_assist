@@ -1,4 +1,17 @@
-const BASE_URL = '/api';
+import { Capacitor } from '@capacitor/core';
+
+const getBaseUrl = () => {
+  if (Capacitor.isNativePlatform()) {
+    const metaEnv = (import.meta as any).env;
+    if (metaEnv && metaEnv.VITE_API_URL) {
+      return metaEnv.VITE_API_URL;
+    }
+    return 'http://10.0.2.2:5000/api';
+  }
+  return '/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 export interface ApiResponse<T> {
   data?: T;
@@ -272,7 +285,7 @@ class ApiClient {
 
   // PDF downloads
   getPDFUrl(type: 'quotation' | 'invoice' | 'completion', id: string): string {
-    return `/api/pdf/${type}/${id}`;
+    return `${BASE_URL}/pdf/${type}/${id}`;
   }
 
   // Get cached user
