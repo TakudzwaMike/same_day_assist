@@ -4,6 +4,19 @@ import cors from 'cors';
 import path from 'path';
 import { Server as SocketServer } from 'socket.io';
 import { prisma } from './config/db';
+import dotenv from 'dotenv';
+
+// Initialize env configurations
+dotenv.config();
+
+// Startup validations
+const REQUIRED_ENV = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+for (const envVar of REQUIRED_ENV) {
+  if (!process.env[envVar]) {
+    console.error(`[FATAL ERROR] Startup failed: Missing environment variable "${envVar}"`);
+    process.exit(1);
+  }
+}
 
 // Routes
 import authRouter from './routes/auth';
@@ -32,6 +45,42 @@ const io = new SocketServer(server, {
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Custom Secure HTTP Headers (Helmet alternate configuration)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Content-Security-Policy', "default-src 'self' http: https: ws: wss: data: blob: 'unsafe-inline' 'unsafe-eval';");
+  next();
+});
+
+// Request Tracing and Structured Logging
+import { randomUUID } from 'crypto';
+app.use((req: any, res, next) => {
+  req.requestId = req.headers['x-request-id'] || randomUUID();
+  res.setHeader('X-Request-ID', req.requestId);
+  next();
+});
+
+app.use((req: any, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logData = {
+      timestamp: new Date().toISOString(),
+      requestId: req.requestId,
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      durationMs: duration,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+    console.log(JSON.stringify(logData));
+  });
+  next();
+});
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

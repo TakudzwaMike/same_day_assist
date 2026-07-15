@@ -35,6 +35,22 @@ export default function App() {
   const [regPhone, setRegPhone] = useState('');
   const [regAddress, setRegAddress] = useState('');
 
+  // Resilience: network offline tracking
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // Auto-fill remembered email
   useEffect(() => {
     if (rememberMe) {
@@ -133,6 +149,12 @@ export default function App() {
       <div className={`min-h-screen transition-colors duration-300 font-sans flex flex-col justify-between relative overflow-x-hidden ${
         isCustomerTheme ? 'bg-slate-50 text-slate-800' : 'bg-slate-950 text-slate-100'
       }`}>
+        {!isOnline && (
+          <div className="bg-red text-white text-[11px] font-bold py-2 px-4 text-center animate-fadeIn select-none flex items-center justify-center gap-2 z-[999] shadow-md border-b border-red/20 font-mono tracking-wider">
+            <AlertCircle className="w-3.5 h-3.5 animate-pulse" />
+            <span>TERMINAL CONNECTION LOST • OPERATING OFFLINE</span>
+          </div>
+        )}
         {/* Glow Effects (Only visible on dark Operations theme) */}
         {!isCustomerTheme && (
           <>
@@ -428,9 +450,15 @@ export default function App() {
 
   // 2. RENDER THE CORRESPONDING ACTIVE PORTAL IF AUTHENTICATED
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 md:p-8 font-sans gap-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans gap-8">
+      {!isOnline && (
+        <div className="bg-red text-white text-[11px] font-bold py-2 px-4 text-center animate-fadeIn select-none flex items-center justify-center gap-2 z-[999] shadow-md border-b border-red/20 font-mono tracking-wider">
+          <AlertCircle className="w-3.5 h-3.5 animate-pulse" />
+          <span>TERMINAL CONNECTION LOST • OPERATING OFFLINE</span>
+        </div>
+      )}
       {/* Dynamic Active Portal */}
-      <div className="flex-1 flex flex-col justify-center">
+      <div className="flex-1 flex flex-col justify-center p-4 md:p-8">
         {user?.role === 'Customer' && <CustomerApp />}
         {user?.role === 'Contractor' && <ContractorApp />}
         {(user?.role === 'Administrator' || user?.role === 'Super Administrator') && <AdminPortal />}

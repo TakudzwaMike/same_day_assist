@@ -114,6 +114,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Inactivity auto-logout hook (15 mins idle time)
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId: any;
+    const inactivityTimeout = 15 * 60 * 1000;
+
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        logout();
+        alert('You have been logged out due to inactivity.');
+      }, inactivityTimeout);
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeoutId);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user, logout]);
+
   return (
     <AuthContext.Provider value={{
       user,

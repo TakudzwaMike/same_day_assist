@@ -54,10 +54,37 @@ class ApiClient {
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    let res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+    const maxRetries = 3;
+    let delay = 1000;
+    let res: Response | null = null;
+    let fetchError: any = null;
 
-    // Token expired — try to refresh once
-    if (res.status === 401) {
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+        fetchError = null;
+        if (res.ok || res.status < 500) {
+          break;
+        }
+      } catch (err: any) {
+        fetchError = err;
+      }
+
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2;
+      }
+    }
+
+    if (fetchError) {
+      throw new Error('Connection failed. Please check your network connection.');
+    }
+
+    if (!res) {
+      throw new Error('No response received from the server.');
+    }
+
+    if (res.status === 401 && endpoint !== '/auth/refresh') {
       const refreshed = await this.refreshToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${this.getToken()}`;
@@ -65,12 +92,33 @@ class ApiClient {
       } else {
         this.clearTokens();
         window.location.href = '/';
-        throw new Error('Session expired — please log in again');
+        throw new Error('Your session has expired. Please log in again.');
       }
     }
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const serverMsg = data.error;
+      switch (res.status) {
+        case 401:
+          throw new Error(serverMsg || 'Authentication required. Please log in.');
+        case 403:
+          throw new Error(serverMsg || 'Access denied. You do not have permissions for this action.');
+        case 404:
+          throw new Error(serverMsg || 'The requested resource could not be found.');
+        case 409:
+          throw new Error(serverMsg || 'A conflict occurred. This record may already exist.');
+        case 422:
+          throw new Error(serverMsg || 'Validation failed. Please verify your input data.');
+        case 429:
+          throw new Error(serverMsg || 'Too many requests. Please try again in a few minutes.');
+        case 500:
+        default:
+          throw new Error(serverMsg || 'The operations center server experienced an internal issue.');
+      }
+    }
+
     return data;
   }
 
