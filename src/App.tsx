@@ -80,6 +80,21 @@ export default function App() {
     clearError();
   };
 
+  const handleQuickAccessLogin = async (email: string) => {
+    setLoginEmail(email);
+    setLoginPassword('demo-passcode');
+    clearError();
+    setLoginLoading(true);
+    try {
+      await login(email, 'demo-passcode');
+      setFailedAttempts(0);
+    } catch (err) {
+      // Handled by AuthContext
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -428,6 +443,53 @@ export default function App() {
                 )}
               </form>
             )}
+
+            {/* DEMO QUICK ACCESS CARDS */}
+            <div className={`border-t pt-4 ${isCustomerTheme ? 'border-slate-200' : 'border-slate-800/80'}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-widest block text-center mb-3 ${
+                isCustomerTheme ? 'text-slate-500' : 'text-slate-400'
+              }`}>
+                Sandbox Instant Quick-Login
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickAccessLogin('lerato@molefefamily.co.za')}
+                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border ${
+                    isCustomerTheme 
+                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Client Member</span>
+                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>Lerato Molefe</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAccessLogin('sipho.ndlovu@samedayassist.co.za')}
+                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border ${
+                    isCustomerTheme 
+                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Patrol Cruiser</span>
+                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>Sipho Ndlovu</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickAccessLogin('controlroom@samedayassist.co.za')}
+                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border col-span-2 ${
+                    isCustomerTheme 
+                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
+                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Dispatcher Operator Command</span>
+                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>controlroom@samedayassist.co.za</span>
+                </button>
+              </div>
+            </div>
 
           </div>
         </main>
