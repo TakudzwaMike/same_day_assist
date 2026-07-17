@@ -88,49 +88,91 @@ router.post('/login', validate(loginSchema), async (req: any, res: Response) => 
   }
 });
 
-// POST /api/auth/register — New customer onboarding
+// POST /api/auth/register — Dynamic, business-oriented onboarding
 router.post('/register', validate(registerSchema), async (req: any, res: Response) => {
-  const { name, email, phone, address, serviceCategory, notes, password } = req.body;
+  const { name, email, phone, address, serviceCategory, notes, password, role, adminSecret } = req.body;
   const ipAddress = req.ip || 'Unknown';
   const userAgent = req.headers['user-agent'] || 'Unknown';
 
   try {
+    // 1. Enforce admin secret verification
+    if (role === 'Administrator') {
+      const systemSecret = process.env.ADMIN_REGISTRATION_SECRET;
+      if (!systemSecret || adminSecret !== systemSecret) {
+        await writeAuditLog({
+          userType: 'Administrator',
+          action: 'Failed Registration',
+          result: 'Failed',
+          details: `Attempted Administrator signup for ${email} with invalid security token.`,
+          ipAddress,
+          userAgent,
+        });
+        return res.status(403).json({ error: 'Invalid admin authorization key. Registration restricted.' });
+      }
+    } else if (role === 'Super Administrator') {
+      const systemSecret = process.env.SUPER_ADMIN_SECRET;
+      if (!systemSecret || adminSecret !== systemSecret) {
+        await writeAuditLog({
+          userType: 'Super Administrator',
+          action: 'Failed Registration',
+          result: 'Failed',
+          details: `Attempted Super Administrator signup for ${email} with invalid security token.`,
+          ipAddress,
+          userAgent,
+        });
+        return res.status(403).json({ error: 'Invalid super admin security key. Registration restricted.' });
+      }
+    }
+
     const existing = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (existing) {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
 
     const passwordHash = await hashPassword(password);
-    const packageName = serviceCategory === 'Security' || serviceCategory === 'Construction' ? 'Diamond' : 'Platinum';
+    
+    // 2. Build role-specific user details
+    const userData: any = {
+      email: email.trim().toLowerCase(),
+      passwordHash,
+      role,
+      name,
+      phone,
+      address,
+      notificationSettings: {
+        create: { email: true, sms: true, push: true, inApp: true },
+      },
+    };
 
-    const user = await prisma.user.create({
-      data: {
-        email: email.trim().toLowerCase(),
-        passwordHash,
-        role: 'Customer',
-        name,
-        phone,
-        address,
-        status: 'Prospect',
-        package: packageName,
-        notificationSettings: {
-          create: { email: true, sms: true, push: true, inApp: true },
+    if (role === 'Customer') {
+      const packageName = serviceCategory === 'Security' || serviceCategory === 'Construction' ? 'Diamond' : 'Platinum';
+      userData.status = 'Prospect';
+      userData.package = packageName;
+    } else if (role === 'Contractor') {
+      userData.specialty = serviceCategory || 'Security';
+      userData.isAvailable = true;
+      userData.rating = 5.0;
+      userData.lat = -26.2041;
+      userData.lng = 28.0473;
+      userData.certifications = notes ? JSON.stringify([notes]) : JSON.stringify([]);
+    }
+
+    const user = await prisma.user.create({ data: userData });
+
+    // 3. Create linked Enquiry for Customer role
+    if (role === 'Customer') {
+      await prisma.enquiry.create({
+        data: {
+          customerName: name,
+          email: email.trim().toLowerCase(),
+          phone,
+          address,
+          serviceCategory: serviceCategory || 'Security',
+          notes: notes || 'Registered new Client / Property Owner profile.',
+          status: 'Pending',
         },
-      },
-    });
-
-    // Create linked Enquiry
-    await prisma.enquiry.create({
-      data: {
-        customerName: name,
-        email: email.trim().toLowerCase(),
-        phone,
-        address,
-        serviceCategory,
-        notes: notes || 'Interested in emergency assist plan',
-        status: 'Pending',
-      },
-    });
+      });
+    }
 
     const payload = { id: user.id, email: user.email, role: user.role };
     const accessToken = generateAccessToken(payload);
@@ -138,9 +180,10 @@ router.post('/register', validate(registerSchema), async (req: any, res: Respons
 
     await writeAuditLog({
       userId: user.id,
-      userType: 'Customer',
+      userType: user.role,
       action: 'User Registration',
-      details: `New customer ${name} registered online and submitted onboarding enquiry`,
+      result: 'Success',
+      details: `Account of type ${user.role} registered successfully for ${name}`,
       ipAddress,
       userAgent,
     });
@@ -157,6 +200,9 @@ router.post('/register', validate(registerSchema), async (req: any, res: Respons
         address: user.address,
         status: user.status,
         package: user.package,
+        specialty: user.specialty,
+        isAvailable: user.isAvailable,
+        rating: user.rating,
       },
     });
   } catch (error) {
@@ -250,6 +296,84 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) 
     });
   } catch (error) {
     return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/auth/system/reseed — Full system database reset (Super Admin only, password confirmed)
+router.post('/system/reseed', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const user = req.user!;
+  const { password } = req.body;
+  const ipAddress = req.ip || 'Unknown';
+  const userAgent = req.headers['user-agent'] || 'Unknown';
+
+  if (user.role !== 'Super Administrator') {
+    await writeAuditLog({
+      userId: user.id,
+      userType: user.role,
+      action: 'Database Reset',
+      result: 'Failed',
+      details: 'Unauthorized attempt to reset database by non-Super Administrator',
+      ipAddress,
+      userAgent,
+    });
+    return res.status(403).json({ error: 'Access forbidden: Super Administrator credentials required.' });
+  }
+
+  if (!password) {
+    return res.status(400).json({ error: 'Password confirmation is required.' });
+  }
+
+  try {
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) return res.status(404).json({ error: 'User record not found.' });
+
+    const isValid = await comparePassword(password, dbUser.passwordHash);
+    if (!isValid) {
+      await writeAuditLog({
+        userId: user.id,
+        userType: user.role,
+        action: 'Database Reset',
+        result: 'Failed',
+        details: 'Failed database reset attempt: incorrect confirmation password',
+        ipAddress,
+        userAgent,
+      });
+      return res.status(401).json({ error: 'Invalid confirmation password.' });
+    }
+
+    // Execute database seed
+    const { exec } = await import('child_process');
+    exec('npm run db:setup', async (error, stdout, stderr) => {
+      if (error) {
+        console.error('[System Reseed Failed]', error, stderr);
+        await writeAuditLog({
+          userId: user.id,
+          userType: user.role,
+          action: 'Database Reset',
+          result: 'Failed',
+          details: `Database reseed failed: ${error.message}`,
+          ipAddress,
+          userAgent,
+        });
+        return;
+      }
+
+      console.log('[System Reseed Success]', stdout);
+      await writeAuditLog({
+        userId: user.id,
+        userType: user.role,
+        action: 'Database Reset',
+        result: 'Success',
+        details: 'Database reseeded successfully by Super Administrator',
+        ipAddress,
+        userAgent,
+      });
+    });
+
+    return res.json({ message: 'System re-seed triggered successfully. The database will reset shortly.' });
+  } catch (err: any) {
+    console.error('[Reseed API Error]', err);
+    return res.status(500).json({ error: 'Internal server error during system reseed.' });
   }
 });
 

@@ -4,8 +4,8 @@ import { requireAuth, requireRoles, AuthenticatedRequest } from '../middleware/a
 
 const router = Router();
 
-// GET /api/audit-logs — Admin only
-router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+// GET /api/audit-logs — Super Admin only
+router.get('/', requireAuth, requireRoles('Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { limit = '50', offset = '0', action, userId } = req.query;
     

@@ -6,8 +6,8 @@ import { writeAuditLog } from '../middleware/auditLog';
 
 const router = Router();
 
-// GET /api/quotations — Admin: all quotations
-router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+// GET /api/quotations — Admin/Dispatcher: all quotations
+router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const quotations = await prisma.quotation.findMany({
       include: { enquiry: true },

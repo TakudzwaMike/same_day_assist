@@ -294,6 +294,13 @@ class ApiClient {
     return u ? JSON.parse(u) : null;
   }
 
+  async systemReseed(password: string) {
+    return this.request<any>('/auth/system/reseed', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
   }

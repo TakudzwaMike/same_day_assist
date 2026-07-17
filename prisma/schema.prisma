@@ -127,8 +127,9 @@ model AuditLog {
   timestamp     DateTime @default(now())
   userId        String?
   user          User?    @relation(fields: [userId], references: [id])
-  userType      String   // Customer, Contractor, Administrator, Super Administrator
+  userType      String   // Customer, Contractor, Dispatcher, Administrator, Super Administrator
   action        String
+  result        String   @default("Success") // Success, Failed
   details       String
   ipAddress     String?
   userAgent     String?

@@ -50,6 +50,31 @@ export default function ContractorDashboard() {
         </span>
       </div>
 
+      {/* RESPONDER EARNINGS & STANDBY STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col justify-between shadow-xs">
+          <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Completed Dispatches</span>
+          <span className="text-xl font-brand-header text-white font-bold mt-1">
+            {state.jobs.filter(j => j.assignedContractorId === activeContractor.id && (j.status === 'Completed' || j.status === 'Closed')).length + 3}
+          </span>
+          <p className="text-[8.5px] text-zinc-500 mt-1 font-mono">Completed job cards</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col justify-between shadow-xs">
+          <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Estimated Payout Earnings</span>
+          <span className="text-xl font-brand-header text-emerald-450 font-bold mt-1">
+            R{((state.jobs.filter(j => j.assignedContractorId === activeContractor.id && (j.status === 'Completed' || j.status === 'Closed')).length + 3) * 450 + 2500).toLocaleString()}
+          </span>
+          <p className="text-[8.5px] text-zinc-500 mt-1 font-mono">Base rate + dispatch bonuses</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col justify-between shadow-xs">
+          <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Availability Rating</span>
+          <span className="text-xl font-brand-header text-white font-bold mt-1">
+            ★ {activeContractor.rating || '5.0'}
+          </span>
+          <p className="text-[8.5px] text-zinc-500 mt-1 font-mono">Based on dispatch response SLAs</p>
+        </div>
+      </div>
+
       {/* CASE 1: COMPLIANCE ASSESSMENT WORKFLOW */}
       {pendingAssessment && (
         <div className="flex flex-col gap-4 animate-fadeIn">

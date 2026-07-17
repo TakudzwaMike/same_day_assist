@@ -4,6 +4,7 @@ import { prisma } from '../config/db';
 interface AuditOptions {
   action: string;
   details: string;
+  result?: string;
   previousValue?: any;
   newValue?: any;
   userType?: string;
@@ -22,6 +23,7 @@ export function auditLog(options: AuditOptions) {
           userId: userId || null,
           userType,
           action: options.action,
+          result: options.result || 'Success',
           details: options.details,
           ipAddress,
           userAgent,
@@ -42,6 +44,7 @@ export async function writeAuditLog(params: {
   userId?: string;
   userType: string;
   action: string;
+  result?: string;
   details: string;
   ipAddress?: string;
   userAgent?: string;
@@ -54,6 +57,7 @@ export async function writeAuditLog(params: {
         userId: params.userId || null,
         userType: params.userType,
         action: params.action,
+        result: params.result || 'Success',
         details: params.details,
         ipAddress: params.ipAddress || 'System',
         userAgent: params.userAgent || 'System',

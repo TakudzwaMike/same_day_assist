@@ -104,6 +104,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       let isClient = user?.role === 'Customer';
       let isAdmin = user?.role === 'Administrator' || user?.role === 'Super Administrator';
       let isContractor = user?.role === 'Contractor';
+      let isDispatcher = user?.role === 'Dispatcher';
 
       if (isClient) {
         promises.push(api.getMyJobs().catch(() => []));
@@ -115,7 +116,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         promises.push(api.getEnquiries().catch(() => []));
         promises.push(api.getAllQuotations().catch(() => []));
         promises.push(api.getAllPayments().catch(() => []));
-        promises.push(api.getAuditLogs({ limit: 100 }).catch(() => ({ logs: [] })));
+        if (user?.role === 'Super Administrator') {
+          promises.push(api.getAuditLogs({ limit: 100 }).catch(() => ({ logs: [] })));
+        } else {
+          promises.push(Promise.resolve({ logs: [] }));
+        }
+      } else if (isDispatcher) {
+        promises.push(api.getAllJobs().catch(() => []));
+        promises.push(api.getEnquiries().catch(() => []));
+        promises.push(api.getAllQuotations().catch(() => []));
       } else if (isContractor) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getMyAssessments().catch(() => []));
@@ -138,6 +147,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.quotations = results[idx++] || [];
           updated.payments = results[idx++] || [];
           updated.auditLogs = results[idx++]?.logs || [];
+        } else if (isDispatcher) {
+          updated.jobs = results[idx++] || [];
+          updated.enquiries = results[idx++] || [];
+          updated.quotations = results[idx++] || [];
         } else if (isContractor) {
           updated.jobs = results[idx++] || [];
           updated.assessments = results[idx++] || [];

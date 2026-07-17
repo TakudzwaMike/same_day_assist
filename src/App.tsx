@@ -34,6 +34,12 @@ export default function App() {
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regAddress, setRegAddress] = useState('');
+  const [regPassword, setRegPassword] = useState('demo-passcode');
+  const [regRole, setRegRole] = useState<'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator' | 'Super Administrator'>('Customer');
+  const [regAdminSecret, setRegAdminSecret] = useState('');
+  const [regServiceCategory, setRegServiceCategory] = useState<'Security' | 'Electrical' | 'Plumbing' | 'Construction'>('Security');
+  const [regNotes, setRegNotes] = useState('');
+  const [regStep, setRegStep] = useState<1 | 2>(1);
 
   // Resilience: network offline tracking
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -80,21 +86,6 @@ export default function App() {
     clearError();
   };
 
-  const handleQuickAccessLogin = async (email: string) => {
-    setLoginEmail(email);
-    setLoginPassword('demo-passcode');
-    clearError();
-    setLoginLoading(true);
-    try {
-      await login(email, 'demo-passcode');
-      setFailedAttempts(0);
-    } catch (err) {
-      // Handled by AuthContext
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -133,7 +124,7 @@ export default function App() {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    if (!regName || !regEmail || !regPhone || !regAddress) return;
+    if (!regName || !regEmail || !regPhone || !regAddress || !regPassword) return;
 
     setLoginLoading(true);
     try {
@@ -142,9 +133,14 @@ export default function App() {
         email: regEmail,
         phone: regPhone,
         address: regAddress,
-        password: 'security-passcode', // Production credentials seed format
+        serviceCategory: regServiceCategory,
+        notes: regNotes,
+        password: regPassword,
+        role: regRole,
+        adminSecret: regAdminSecret,
       });
       setIsRegistering(false);
+      setRegStep(1);
     } catch (err) {
       // Handled by AuthContext
     } finally {
@@ -177,15 +173,17 @@ export default function App() {
         {/* Dynamic Header */}
         <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Same Day Assist Logo" className="w-10 h-10 object-contain shrink-0" />
+            <div className="mx-auto w-8 h-8 rounded-full flex items-center justify-center bg-red/10 border border-red/20 shrink-0">
+              <Shield className="w-4 h-4 text-red" />
+            </div>
             <div>
               <div className="flex items-baseline gap-1">
-                <h1 className="text-lg font-black italic tracking-wide leading-none uppercase font-brand-header text-white">
+                <h1 className="text-sm font-black italic tracking-wide leading-none uppercase font-brand-header text-white">
                   SAME DAY ASSIST
                 </h1>
-                <span className="text-[10px] font-bold text-red uppercase tracking-widest font-mono">SA</span>
+                <span className="text-[9px] font-bold text-red uppercase tracking-widest font-mono">SA</span>
               </div>
-              <p className="text-[9px] font-mono tracking-wider text-slate-400">
+              <p className="text-[8px] font-mono tracking-wider text-slate-400">
                 EMERGENCY ASSIST NETWORK
               </p>
             </div>
@@ -195,7 +193,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => handlePortalSwitch('customer')}
-              className={`px-3 py-1.5 text-[8.5px] font-extrabold rounded transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
                 isCustomerTheme 
                   ? 'bg-red text-white shadow-2xs' 
                   : 'text-slate-400 hover:text-white'
@@ -206,7 +204,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => handlePortalSwitch('operations')}
-              className={`px-3 py-1.5 text-[8.5px] font-extrabold rounded transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
                 !isCustomerTheme 
                   ? 'bg-red text-white shadow-2xs' 
                   : 'text-slate-400 hover:text-white'
@@ -219,18 +217,20 @@ export default function App() {
 
         {/* Login/Register Card Container */}
         <main className="flex-1 flex flex-col items-center justify-center p-6 z-10 my-4">
-          <div className="w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100">
+          <div className={`w-full ${isRegistering && regStep === 1 ? 'max-w-2xl' : 'max-w-md'} border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100`}>
             
             <div className="text-center space-y-1.5">
-              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-1.5 bg-red/10">
+              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-1.5 bg-red/10 border border-red/20">
                 <Lock className="w-5 h-5 text-red animate-pulse" />
               </div>
               <h2 className="text-lg font-brand-header tracking-wide uppercase text-white">
-                {isRegistering ? 'Apply For Coverage' : isCustomerTheme ? 'Sign In To Account' : 'Secure Operator Entrance'}
-              </h2>
-              <p className="text-xs max-w-xs mx-auto leading-relaxed text-slate-400">
                 {isRegistering 
-                  ? 'Initiate property audit configuration and security coverage logs.' 
+                  ? (regStep === 1 ? 'Account Classification' : `Register Profile`)
+                  : isCustomerTheme ? 'Sign In To Account' : 'Secure Operator Entrance'}
+              </h2>
+              <p className="text-xs max-w-sm mx-auto leading-relaxed text-slate-400">
+                {isRegistering 
+                  ? (regStep === 1 ? 'Please select the account category that best describes your profile purpose.' : `Complete the required credentials for your registration.`) 
                   : isCustomerTheme 
                     ? 'Access your active membership profile, dispatches, and billing details.'
                     : 'Submit operator/cruiser credentials to access terminal systems.'}
@@ -253,69 +253,209 @@ export default function App() {
             )}
 
             {isRegistering ? (
-              /* CLIENT REGISTRATION FORM */
-              <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3.5 animate-fadeIn">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Full Name</label>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="Lerato Molefe"
-                    value={regName}
-                    onChange={e => setRegName(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
-                  />
+              regStep === 1 ? (
+                /* STEP 1: BUSINESS-ORIENTED ROLE SELECTION */
+                <div className="flex flex-col gap-5 animate-fadeIn">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block text-center">What best describes you?</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      {
+                        role: 'Customer',
+                        title: 'Client / Property Owner',
+                        desc: 'Request rapid emergency response, track cruisers, view compliance certificates, and approve quotes.',
+                      },
+                      {
+                        role: 'Contractor',
+                        title: 'Service Provider / Company',
+                        desc: 'Register an independent security, plumbing, electrical, or construction enterprise to receive dispatch calls.',
+                      },
+                      {
+                        role: 'Contractor',
+                        title: 'Contractor / Technician',
+                        desc: 'Access task boards in the field, simulate coordinates, upload reports, and collect signatures.',
+                      },
+                      {
+                        role: 'Dispatcher',
+                        title: 'Dispatcher / Operations',
+                        desc: 'Coordinate dispatch queues, schedule property inspections, and audit active responder transit.',
+                      },
+                      {
+                        role: 'Administrator',
+                        title: 'Administrator (Restricted)',
+                        desc: 'Manage memberships, coordinate dispatch nodes, and review analytics. Authorized signup only.',
+                      },
+                      {
+                        role: 'Super Administrator',
+                        title: 'Super Administrator (Restricted)',
+                        desc: 'Platform configuration, database reseeding/maintenance, secure audit trails, and security settings.',
+                      },
+                    ].map((card, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setRegRole(card.role as any);
+                          setRegStep(2);
+                        }}
+                        className="p-4 rounded-2xl border border-slate-800 bg-slate-950 text-left hover:border-red hover:bg-slate-900 transition-all group flex flex-col gap-1.5 cursor-pointer"
+                      >
+                        <span className="text-xs font-bold text-white group-hover:text-red transition-colors">{card.title}</span>
+                        <span className="text-[9.5px] leading-relaxed text-slate-400">{card.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRegistering(false)}
+                    className="text-xs transition-colors text-center cursor-pointer mt-1 text-slate-400 hover:text-white"
+                  >
+                    ← Cancel and return to login
+                  </button>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
-                  <input 
-                    type="email" 
-                    required
-                    placeholder="name@domain.co.za"
-                    value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Mobile Number</label>
-                  <input 
-                    type="tel" 
-                    required
-                    placeholder="+27 82 555 0192"
-                    value={regPhone}
-                    onChange={e => setRegPhone(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Physical Address</label>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="12 West Street, Sandton"
-                    value={regAddress}
-                    onChange={e => setRegAddress(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
-                  />
-                </div>
+              ) : (
+                /* STEP 2: DYNAMIC REGISTRATION FORM */
+                <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3.5 animate-fadeIn">
+                  
+                  {/* Dynamic field 1: Name / Company Name */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                      {regRole === 'Contractor' ? 'Full Name or Company Name' : 'Full Name'}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder={regRole === 'Customer' ? 'Lerato Molefe' : 'Operations Responder Co.'}
+                      value={regName}
+                      onChange={e => setRegName(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                    />
+                  </div>
 
-                <button
-                  type="submit"
-                  disabled={loginLoading}
-                  className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2 bg-red text-white hover:bg-red/90"
-                >
-                  {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SUBMIT MEMBERSHIP APPLICATION'}
-                </button>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="name@domain.co.za"
+                      value={regEmail}
+                      onChange={e => setRegEmail(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                    />
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsRegistering(false)}
-                  className="text-xs transition-colors text-center cursor-pointer mt-1 text-slate-400 hover:text-white"
-                >
-                  ← Back to secure login
-                </button>
-              </form>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Mobile Number</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="+27 82 555 0192"
+                      value={regPhone}
+                      onChange={e => setRegPhone(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                      {regRole === 'Customer' ? 'Physical Address' : regRole === 'Contractor' ? 'Operating Base Address' : 'Address'}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="12 West Street, Sandton"
+                      value={regAddress}
+                      onChange={e => setRegAddress(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                    />
+                  </div>
+
+                  {/* Specialty Dropdown (Only for Customers or Contractors) */}
+                  {(regRole === 'Customer' || regRole === 'Contractor') && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Primary Service Focus</label>
+                      <select
+                        value={regServiceCategory}
+                        onChange={e => setRegServiceCategory(e.target.value as any)}
+                        className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                      >
+                        <option value="Security">Emergency Dispatch & Security</option>
+                        <option value="Electrical">Electrical Compliance</option>
+                        <option value="Plumbing">Plumbing Maintenance</option>
+                        <option value="Construction">Construction Auditing</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Certifications or Notes (Only Customer / Contractor) */}
+                  {(regRole === 'Customer' || regRole === 'Contractor') && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                        {regRole === 'Contractor' ? 'Certifications & Accreditations (e.g. PSIRA, SABS)' : 'Additional Auditing Notes'}
+                      </label>
+                      <textarea
+                        placeholder={regRole === 'Contractor' ? 'PSIRA Grade A, Red Seal, Wiremans License' : 'Details about your property, security setup, etc.'}
+                        value={regNotes}
+                        onChange={e => setRegNotes(e.target.value)}
+                        rows={2}
+                        className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60 font-sans"
+                      />
+                    </div>
+                  )}
+
+                  {/* Admin authorization secret (Only for Admin / Super Admin) */}
+                  {(regRole === 'Administrator' || regRole === 'Super Administrator') && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-red font-bold animate-pulse">System Authorization Secret</label>
+                      <input 
+                        type="password" 
+                        required
+                        placeholder="••••••••••••"
+                        value={regAdminSecret}
+                        onChange={e => setRegAdminSecret(e.target.value)}
+                        className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                      />
+                    </div>
+                  )}
+
+                  {/* Security Passcode */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Define Security Passcode</label>
+                    <input 
+                      type="password" 
+                      required
+                      placeholder="••••••••"
+                      value={regPassword}
+                      onChange={e => setRegPassword(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2 bg-red text-white hover:bg-red/90"
+                  >
+                    {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'REGISTER PRODUCTION PROFILE'}
+                  </button>
+
+                  <div className="flex justify-between items-center mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setRegStep(1)}
+                      className="text-xs transition-colors cursor-pointer text-slate-400 hover:text-white"
+                    >
+                      ← Back to Classifications
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRegistering(false)}
+                      className="text-xs transition-colors cursor-pointer text-slate-400 hover:text-white"
+                    >
+                      Cancel Signup
+                    </button>
+                  </div>
+                </form>
+              )
             ) : (
               /* SECURE LOGIN FORM */
               <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
@@ -383,53 +523,21 @@ export default function App() {
                   {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SECURE LOGIN'}
                 </button>
 
-                {isCustomerTheme && (
-                  <div className="text-center text-[10.5px] text-slate-400 mt-2">
-                    Don't have an account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => setIsRegistering(true)}
-                      className="text-red font-bold hover:underline cursor-pointer"
-                    >
-                      Apply For Membership
-                    </button>
-                  </div>
-                )}
+                <div className="text-center text-[10.5px] text-slate-400 mt-2">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegistering(true);
+                      setRegStep(1);
+                    }}
+                    className="text-red font-bold hover:underline cursor-pointer"
+                  >
+                    Register New Account
+                  </button>
+                </div>
               </form>
             )}
-
-            {/* DEMO QUICK ACCESS CARDS */}
-            <div className="border-t pt-4 border-slate-800/80">
-              <span className="text-[9px] font-bold uppercase tracking-widest block text-center mb-3 text-slate-400">
-                Sandbox Instant Quick-Login
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickAccessLogin('lerato@molefefamily.co.za')}
-                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
-                >
-                  <span className="text-[10px] font-bold leading-none text-red">Client Member</span>
-                  <span className="text-[8px] mt-1 truncate text-slate-400">Lerato Molefe</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAccessLogin('sipho.ndlovu@samedayassist.co.za')}
-                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
-                >
-                  <span className="text-[10px] font-bold leading-none text-red">Patrol Cruiser</span>
-                  <span className="text-[8px] mt-1 truncate text-slate-400">Sipho Ndlovu</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickAccessLogin('controlroom@samedayassist.co.za')}
-                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border col-span-2 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
-                >
-                  <span className="text-[10px] font-bold leading-none text-red">Dispatcher Operator Command</span>
-                  <span className="text-[8px] mt-1 truncate text-slate-400">controlroom@samedayassist.co.za</span>
-                </button>
-              </div>
-            </div>
 
           </div>
         </main>
@@ -461,7 +569,7 @@ export default function App() {
       <div className="flex-1 flex flex-col justify-center p-4 md:p-8">
         {user?.role === 'Customer' && <CustomerApp />}
         {user?.role === 'Contractor' && <ContractorApp />}
-        {(user?.role === 'Administrator' || user?.role === 'Super Administrator') && <AdminPortal />}
+        {(user?.role === 'Dispatcher' || user?.role === 'Administrator' || user?.role === 'Super Administrator') && <AdminPortal />}
       </div>
     </div>
   );

@@ -29,9 +29,11 @@ export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 characters').max(20),
   address: z.string().min(5, 'Address is required').max(500),
-  serviceCategory: z.enum(['Security', 'Electrical', 'Plumbing', 'Construction']),
+  serviceCategory: z.enum(['Security', 'Electrical', 'Plumbing', 'Construction']).optional(),
   notes: z.string().max(1000).optional(),
   password: z.string().min(4, 'Password must be at least 4 characters'),
+  role: z.enum(['Customer', 'Contractor', 'Dispatcher', 'Administrator', 'Super Administrator']),
+  adminSecret: z.string().optional(),
 });
 
 export const enquirySchema = z.object({

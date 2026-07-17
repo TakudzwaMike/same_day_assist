@@ -6,8 +6,8 @@ import { writeAuditLog } from '../middleware/auditLog';
 
 const router = Router();
 
-// GET /api/enquiries — Admin: get all enquiries
-router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+// GET /api/enquiries — Admin/Dispatcher: get all enquiries
+router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const enquiries = await prisma.enquiry.findMany({
       include: { assessments: true, quotations: true },
@@ -20,7 +20,7 @@ router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator'
 });
 
 // GET /api/enquiries/:id
-router.get('/:id', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const enquiry = await prisma.enquiry.findUnique({
       where: { id: req.params.id },
@@ -52,8 +52,8 @@ router.post('/', validate(enquirySchema), async (req: any, res: Response) => {
   }
 });
 
-// PATCH /api/enquiries/:id/schedule — Admin: schedule assessment for enquiry
-router.patch('/:id/schedule', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+// PATCH /api/enquiries/:id/schedule — Admin/Dispatcher: schedule assessment for enquiry
+router.patch('/:id/schedule', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
   const { contractorId } = req.body;
   if (!contractorId) return res.status(400).json({ error: 'contractorId is required' });
 

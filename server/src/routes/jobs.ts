@@ -10,8 +10,8 @@ const router = Router();
 // Inject io via middleware factory
 export function createJobsRouter(io: SocketServer) {
 
-  // GET /api/jobs — Admin/Contractor: get all jobs
-  router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Contractor'), async (req: AuthenticatedRequest, res: Response) => {
+  // GET /api/jobs — Admin/Contractor/Dispatcher: get all jobs
+  router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Contractor', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
     try {
       let jobs;
       if (req.user!.role === 'Contractor') {
@@ -98,8 +98,8 @@ export function createJobsRouter(io: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/assign — Admin: assign contractor
-  router.patch('/:id/assign', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+  // PATCH /api/jobs/:id/assign — Admin/Dispatcher: assign contractor
+  router.patch('/:id/assign', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
     const { contractorId } = req.body;
     if (!contractorId) return res.status(400).json({ error: 'contractorId is required' });
 
@@ -337,8 +337,8 @@ export function createJobsRouter(io: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/close — Admin: close completed job
-  router.patch('/:id/close', requireAuth, requireRoles('Administrator', 'Super Administrator'), async (req: AuthenticatedRequest, res: Response) => {
+  // PATCH /api/jobs/:id/close — Admin/Dispatcher: close completed job
+  router.patch('/:id/close', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: 'Job not found' });

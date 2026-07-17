@@ -199,7 +199,19 @@ async function main() {
     },
   });
 
-  // 5. Super Administrator (Developer)
+  // 5. Dispatcher / Operations
+  await prisma.user.create({
+    data: {
+      email: 'dispatcher@samedayassist.co.za',
+      passwordHash: standardHash,
+      role: 'Dispatcher',
+      name: 'Operations Dispatcher Hub',
+      phone: '+27 82 555 1212',
+      address: 'Operations Center, Sandton',
+    },
+  });
+
+  // 6. Super Administrator (Developer)
   await prisma.user.create({
     data: {
       email: 'developer@samedayassist.co.za',

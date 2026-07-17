@@ -36,7 +36,7 @@ export default function ContractorApp() {
             onClick={() => setIsOnline(!isOnline)} 
             className="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-xl text-zinc-300 font-mono transition-all border border-zinc-700 cursor-pointer"
           >
-            Toggle Duty
+            Toggle Availability
           </button>
           <button
             type="button"

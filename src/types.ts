@@ -5,7 +5,7 @@
 
 export type ServiceCategory = 'Security' | 'Electrical' | 'Plumbing' | 'Construction';
 
-export type UserRole = 'Customer' | 'Contractor' | 'Administrator' | 'Super Administrator';
+export type UserRole = 'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator' | 'Super Administrator';
 
 export type JourneyStep =
   | 'PROSPECT'                // 1. Prospective customer
