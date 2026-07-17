@@ -161,61 +161,55 @@ export default function App() {
     const isCustomerTheme = portalType === 'customer';
 
     return (
-      <div className={`min-h-screen transition-colors duration-300 font-sans flex flex-col justify-between relative overflow-x-hidden ${
-        isCustomerTheme ? 'bg-slate-50 text-slate-800' : 'bg-slate-950 text-slate-100'
-      }`}>
+      <div className="min-h-screen bg-slate-950 text-slate-100 transition-colors duration-300 font-sans flex flex-col justify-between relative overflow-x-hidden">
         {!isOnline && (
           <div className="bg-red text-white text-[11px] font-bold py-2 px-4 text-center animate-fadeIn select-none flex items-center justify-center gap-2 z-[999] shadow-md border-b border-red/20 font-mono tracking-wider">
             <AlertCircle className="w-3.5 h-3.5 animate-pulse" />
             <span>TERMINAL CONNECTION LOST • OPERATING OFFLINE</span>
           </div>
         )}
-        {/* Glow Effects (Only visible on dark Operations theme) */}
-        {!isCustomerTheme && (
-          <>
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-red/5 rounded-full blur-[120px] pointer-events-none"></div>
-            <div className="absolute bottom-12 right-1/4 w-[400px] h-[400px] bg-navy/25 rounded-full blur-[100px] pointer-events-none"></div>
-          </>
-        )}
+        {/* Glow Effects */}
+        <>
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-red/5 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="absolute bottom-12 right-1/4 w-[400px] h-[400px] bg-navy/25 rounded-full blur-[100px] pointer-events-none"></div>
+        </>
 
         {/* Dynamic Header */}
-        <header className={`border-b backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10 ${
-          isCustomerTheme ? 'border-slate-200 bg-white/80' : 'border-slate-800 bg-slate-950/80'
-        }`}>
+        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Same Day Assist Logo" className="w-10 h-10 object-contain shrink-0" />
             <div>
               <div className="flex items-baseline gap-1">
-                <h1 className={`text-lg font-black italic tracking-wide leading-none uppercase font-brand-header ${
-                  isCustomerTheme ? 'text-navy' : 'text-white'
-                }`}>
+                <h1 className="text-lg font-black italic tracking-wide leading-none uppercase font-brand-header text-white">
                   SAME DAY ASSIST
                 </h1>
                 <span className="text-[10px] font-bold text-red uppercase tracking-widest font-mono">SA</span>
               </div>
-              <p className={`text-[9px] font-mono tracking-wider ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>
+              <p className="text-[9px] font-mono tracking-wider text-slate-400">
                 EMERGENCY ASSIST NETWORK
               </p>
             </div>
           </div>
           
-          <div className="flex bg-slate-200/60 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-300/40">
+          <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
             <button
+              type="button"
               onClick={() => handlePortalSwitch('customer')}
               className={`px-3 py-1.5 text-[8.5px] font-extrabold rounded transition-all cursor-pointer ${
                 isCustomerTheme 
-                  ? 'bg-white text-navy shadow-2xs' 
+                  ? 'bg-red text-white shadow-2xs' 
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               CLIENT PORTAL
             </button>
             <button
+              type="button"
               onClick={() => handlePortalSwitch('operations')}
               className={`px-3 py-1.5 text-[8.5px] font-extrabold rounded transition-all cursor-pointer ${
                 !isCustomerTheme 
-                  ? 'bg-slate-700 text-white shadow-2xs' 
-                  : 'text-slate-500 hover:text-navy font-bold'
+                  ? 'bg-red text-white shadow-2xs' 
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               STAFF GATEWAY
@@ -225,22 +219,16 @@ export default function App() {
 
         {/* Login/Register Card Container */}
         <main className="flex-1 flex flex-col items-center justify-center p-6 z-10 my-4">
-          <div className={`w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 ${
-            isCustomerTheme 
-              ? 'bg-white border-slate-200/80 shadow-lg text-slate-800' 
-              : 'bg-slate-900 border-slate-800 shadow-2xl text-slate-100'
-          }`}>
+          <div className="w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100">
             
             <div className="text-center space-y-1.5">
-              <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-1.5 ${
-                isCustomerTheme ? 'bg-navy/5' : 'bg-red/10'
-              }`}>
-                <Lock className={`w-5 h-5 ${isCustomerTheme ? 'text-navy' : 'text-red animate-pulse'}`} />
+              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-1.5 bg-red/10">
+                <Lock className="w-5 h-5 text-red animate-pulse" />
               </div>
-              <h2 className={`text-lg font-brand-header tracking-wide uppercase ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>
+              <h2 className="text-lg font-brand-header tracking-wide uppercase text-white">
                 {isRegistering ? 'Apply For Coverage' : isCustomerTheme ? 'Sign In To Account' : 'Secure Operator Entrance'}
               </h2>
-              <p className={`text-xs max-w-xs mx-auto leading-relaxed ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>
+              <p className="text-xs max-w-xs mx-auto leading-relaxed text-slate-400">
                 {isRegistering 
                   ? 'Initiate property audit configuration and security coverage logs.' 
                   : isCustomerTheme 
@@ -268,72 +256,54 @@ export default function App() {
               /* CLIENT REGISTRATION FORM */
               <form onSubmit={handleRegisterSubmit} className="flex flex-col gap-3.5 animate-fadeIn">
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Full Name</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Full Name</label>
                   <input 
                     type="text" 
                     required
                     placeholder="Lerato Molefe"
                     value={regName}
                     onChange={e => setRegName(e.target.value)}
-                    className={`text-xs p-2.5 rounded-xl transition-all ${
-                      isCustomerTheme 
-                        ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                        : 'w-full bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                    }`}
+                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Email Address</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
                   <input 
                     type="email" 
                     required
                     placeholder="name@domain.co.za"
                     value={regEmail}
                     onChange={e => setRegEmail(e.target.value)}
-                    className={`text-xs p-2.5 rounded-xl transition-all ${
-                      isCustomerTheme 
-                        ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                        : 'w-full bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                    }`}
+                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Mobile Number</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Mobile Number</label>
                   <input 
                     type="tel" 
                     required
                     placeholder="+27 82 555 0192"
                     value={regPhone}
                     onChange={e => setRegPhone(e.target.value)}
-                    className={`text-xs p-2.5 rounded-xl transition-all ${
-                      isCustomerTheme 
-                        ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                        : 'w-full bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                    }`}
+                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Physical Address</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Physical Address</label>
                   <input 
                     type="text" 
                     required
                     placeholder="12 West Street, Sandton"
                     value={regAddress}
                     onChange={e => setRegAddress(e.target.value)}
-                    className={`text-xs p-2.5 rounded-xl transition-all ${
-                      isCustomerTheme 
-                        ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                        : 'w-full bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                    }`}
+                    className="w-full text-xs p-2.5 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loginLoading}
-                  className={`w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2 ${
-                    isCustomerTheme ? 'bg-navy text-white hover:bg-navy-light' : 'bg-red text-white hover:bg-red/90'
-                  }`}
+                  className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-2 bg-red text-white hover:bg-red/90"
                 >
                   {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SUBMIT MEMBERSHIP APPLICATION'}
                 </button>
@@ -341,9 +311,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsRegistering(false)}
-                  className={`text-xs transition-colors text-center cursor-pointer mt-1 ${
-                    isCustomerTheme ? 'text-slate-500 hover:text-navy font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
+                  className="text-xs transition-colors text-center cursor-pointer mt-1 text-slate-400 hover:text-white"
                 >
                   ← Back to secure login
                 </button>
@@ -352,7 +320,7 @@ export default function App() {
               /* SECURE LOGIN FORM */
               <form onSubmit={handleLoginSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Email Address</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                     <input 
@@ -361,17 +329,13 @@ export default function App() {
                       placeholder="e.g. name@domain.co.za"
                       value={loginEmail}
                       onChange={e => setLoginEmail(e.target.value)}
-                      className={`w-full text-xs p-2.5 pl-10 rounded-xl transition-all ${
-                        isCustomerTheme 
-                          ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                          : 'bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                      }`}
+                      className="w-full text-xs p-2.5 pl-10 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className={`text-[9px] font-bold uppercase tracking-wider ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Security Passcode</label>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Security Passcode</label>
                   <div className="relative">
                     <Key className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                     <input 
@@ -380,16 +344,12 @@ export default function App() {
                       placeholder="••••••••"
                       value={loginPassword}
                       onChange={e => setLoginPassword(e.target.value)}
-                      className={`w-full text-xs p-2.5 pl-10 pr-10 rounded-xl transition-all ${
-                        isCustomerTheme 
-                          ? 'bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-navy' 
-                          : 'bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-red'
-                      }`}
+                      className="w-full text-xs p-2.5 pl-10 pr-10 rounded-xl transition-all bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red/60"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 cursor-pointer"
+                      className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-350 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -402,18 +362,14 @@ export default function App() {
                       type="checkbox" 
                       checked={rememberMe} 
                       onChange={e => setRememberMe(e.target.checked)} 
-                      className={`rounded focus:ring-red ${
-                        isCustomerTheme ? 'border-slate-350 text-navy' : 'border-slate-800 bg-slate-950 text-red'
-                      }`} 
+                      className="rounded border-slate-800 bg-slate-950 text-red focus:ring-red" 
                     />
-                    <span className={`text-[10px] font-medium ${isCustomerTheme ? 'text-slate-600' : 'text-slate-400'}`}>Remember Me</span>
+                    <span className="text-[10px] font-medium text-slate-400">Remember Me</span>
                   </label>
                   <button
                     type="button"
                     onClick={handlePasswordHelp}
-                    className={`text-[10px] font-bold transition-colors cursor-pointer ${
-                      isCustomerTheme ? 'text-slate-500 hover:text-navy' : 'text-slate-400 hover:text-white'
-                    }`}
+                    className="text-[10px] font-bold transition-colors cursor-pointer text-slate-400 hover:text-white"
                   >
                     Forgot passcode?
                   </button>
@@ -422,20 +378,18 @@ export default function App() {
                 <button
                   type="submit"
                   disabled={loginLoading || isLocked}
-                  className={`w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-1.5 ${
-                    isCustomerTheme ? 'bg-navy text-white hover:bg-navy-light' : 'bg-red text-white hover:bg-red/90'
-                  } disabled:opacity-50`}
+                  className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-xs cursor-pointer flex items-center justify-center gap-2 mt-1.5 bg-red text-white hover:bg-red/90 disabled:opacity-50"
                 >
                   {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SECURE LOGIN'}
                 </button>
 
                 {isCustomerTheme && (
-                  <div className="text-center text-[10.5px] text-slate-500 mt-2">
+                  <div className="text-center text-[10.5px] text-slate-400 mt-2">
                     Don't have an account?{' '}
                     <button
                       type="button"
                       onClick={() => setIsRegistering(true)}
-                      className="text-navy font-bold hover:underline cursor-pointer"
+                      className="text-red font-bold hover:underline cursor-pointer"
                     >
                       Apply For Membership
                     </button>
@@ -445,48 +399,34 @@ export default function App() {
             )}
 
             {/* DEMO QUICK ACCESS CARDS */}
-            <div className={`border-t pt-4 ${isCustomerTheme ? 'border-slate-200' : 'border-slate-800/80'}`}>
-              <span className={`text-[9px] font-bold uppercase tracking-widest block text-center mb-3 ${
-                isCustomerTheme ? 'text-slate-500' : 'text-slate-400'
-              }`}>
+            <div className="border-t pt-4 border-slate-800/80">
+              <span className="text-[9px] font-bold uppercase tracking-widest block text-center mb-3 text-slate-400">
                 Sandbox Instant Quick-Login
               </span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => handleQuickAccessLogin('lerato@molefefamily.co.za')}
-                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border ${
-                    isCustomerTheme 
-                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
-                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
-                  }`}
+                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
                 >
-                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Client Member</span>
-                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>Lerato Molefe</span>
+                  <span className="text-[10px] font-bold leading-none text-red">Client Member</span>
+                  <span className="text-[8px] mt-1 truncate text-slate-400">Lerato Molefe</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAccessLogin('sipho.ndlovu@samedayassist.co.za')}
-                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border ${
-                    isCustomerTheme 
-                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
-                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
-                  }`}
+                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
                 >
-                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Patrol Cruiser</span>
-                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>Sipho Ndlovu</span>
+                  <span className="text-[10px] font-bold leading-none text-red">Patrol Cruiser</span>
+                  <span className="text-[8px] mt-1 truncate text-slate-400">Sipho Ndlovu</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickAccessLogin('controlroom@samedayassist.co.za')}
-                  className={`flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border col-span-2 ${
-                    isCustomerTheme 
-                      ? 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-100 text-slate-900' 
-                      : 'bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white'
-                  }`}
+                  className="flex flex-col p-2.5 rounded-xl text-left cursor-pointer transition-all border col-span-2 bg-slate-950 border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-white"
                 >
-                  <span className={`text-[10px] font-bold leading-none ${isCustomerTheme ? 'text-navy' : 'text-white'}`}>Dispatcher Operator Command</span>
-                  <span className={`text-[8px] mt-1 truncate ${isCustomerTheme ? 'text-slate-500' : 'text-slate-400'}`}>controlroom@samedayassist.co.za</span>
+                  <span className="text-[10px] font-bold leading-none text-red">Dispatcher Operator Command</span>
+                  <span className="text-[8px] mt-1 truncate text-slate-400">controlroom@samedayassist.co.za</span>
                 </button>
               </div>
             </div>
@@ -494,9 +434,7 @@ export default function App() {
           </div>
         </main>
 
-        <footer className={`border-t py-4 text-center text-[9px] font-mono select-none flex flex-col gap-1 ${
-          isCustomerTheme ? 'border-slate-200/80 bg-white text-slate-500' : 'border-slate-900 bg-slate-950 text-slate-500'
-        }`}>
+        <footer className="border-t py-4 text-center text-[9px] font-mono select-none flex flex-col gap-1 border-slate-900 bg-slate-950 text-slate-500">
           <div>
             VERSION 1.4.0-PROD • © 2026 SAME DAY ASSIST (PTY) LTD. ALL RIGHTS RESERVED.
           </div>
