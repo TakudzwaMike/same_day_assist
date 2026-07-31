@@ -20,7 +20,9 @@ interface AuthUser {
   lat?: number;
   lng?: number;
   certifications?: string[];
+  verificationStatus?: string;
 }
+
 
 interface AuthContextType {
   user: AuthUser | null;

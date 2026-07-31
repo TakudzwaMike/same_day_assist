@@ -70,6 +70,76 @@ export interface ProfileUpdateRequest {
   rejectionReason?: string;
 }
 
+export interface JobRating {
+  id: string;
+  jobId: string;
+  customerId: string;
+  contractorId: string;
+  professionalism: number;
+  punctuality: number;
+  responseTime: number;
+  communication: number;
+  qualityOfWork: number;
+  friendliness: number;
+  problemResolution: number;
+  overallSatisfaction: number;
+  writtenFeedback?: string;
+  photoBeforeUrl?: string;
+  photoAfterUrl?: string;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  jobId: string;
+  senderId: string;
+  senderName?: string;
+  recipientId: string;
+  senderRole: 'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator';
+  text: string;
+  attachmentUrl?: string;
+  createdAt: string;
+}
+
+export interface Wallet {
+  id: string;
+  userId: string;
+  balance: number;
+  currency: string;
+  updatedAt: string;
+  transactions?: WalletTransaction[];
+}
+
+export interface WalletTransaction {
+  id: string;
+  walletId: string;
+  amount: number;
+  type: 'TopUp' | 'Payment' | 'Refund' | 'Bonus Reward';
+  description: string;
+  referenceId?: string;
+  createdAt: string;
+}
+
+export interface ProviderAward {
+  id: string;
+  contractorId: string;
+  title: string;
+  category: string;
+  iconName: string;
+  awardedAt: string;
+}
+
+export interface ContractorVerificationPayload {
+  yearsOfExperience: number;
+  businessLicenseUrl?: string;
+  taxClearanceUrl?: string;
+  insuranceProofUrl?: string;
+  policeClearanceUrl?: string;
+  tradeQualificationsUrl?: string;
+  coverageAreas: string[];
+}
+
+
 export interface OnboardingPayload {
   name: string;
   email: string;
@@ -134,11 +204,24 @@ export interface Contractor {
   rating: number;
   specialty: ServiceCategory | string;
   isAvailable: boolean;
+  verificationStatus?: 'Pending Review' | 'Approved' | 'Information Requested' | 'Rejected';
+  verificationNotes?: string;
+  verifiedAt?: string;
+  yearsOfExperience?: number;
+  businessLicenseUrl?: string;
+  taxClearanceUrl?: string;
+  insuranceProofUrl?: string;
+  policeClearanceUrl?: string;
+  tradeQualificationsUrl?: string;
+  coverageAreaJson?: string;
+  badgeTitles?: string[];
+  isFeatured?: boolean;
   location: {
     lat: number;
     lng: number;
     address: string;
   };
+  providerAwards?: ProviderAward[];
 }
 
 export interface VehicleInfo {
@@ -173,6 +256,12 @@ export interface Job {
   currentLng?: number;
   estimatedArrivalMinutes?: number;
   distanceRemainingKm?: number;
+
+  // Live Milestone Photos
+  photoBeforeUrl?: string;
+  photoDuringUrl?: string;
+  photoAfterUrl?: string;
+
   rating?: number;
   ratingComment?: string;
   createdAt: string;
@@ -182,7 +271,10 @@ export interface Job {
   contractorNotes?: string;
   contractorSignature?: string;
   completionPhoto?: string;
+  jobRatings?: JobRating[];
+  chatMessages?: ChatMessage[];
 }
+
 
 export interface AuditLog {
   id: string;

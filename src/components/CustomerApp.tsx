@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import CustomerHome from './customer/CustomerHome';
@@ -9,12 +9,12 @@ import CustomerActiveJob from './customer/CustomerActiveJob';
 import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
+import { CustomerWalletView } from './customer/CustomerWalletView';
 
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'locations' | 'contacts'>('home');
-
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'locations' | 'contacts' | 'wallet'>('home');
 
   // Find active customer record
   const activeCustomer = state.customers.find(c => c.id === user?.id) || state.customers[0];
@@ -51,6 +51,18 @@ export default function CustomerApp() {
           >
             <Shield className="w-4 h-4 text-red" />
             <span>Emergency Dispatch</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveDeviceTab('wallet')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'wallet'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <Wallet className="w-4 h-4 text-red" />
+            <span>Digital Wallet</span>
           </button>
           <button
             type="button"
@@ -136,6 +148,9 @@ export default function CustomerApp() {
               />
             )
           )}
+          {activeDeviceTab === 'wallet' && (
+            <CustomerWalletView />
+          )}
           {activeDeviceTab === 'locations' && (
             <SavedLocationsManager />
           )}
@@ -154,3 +169,4 @@ export default function CustomerApp() {
     </div>
   );
 }
+

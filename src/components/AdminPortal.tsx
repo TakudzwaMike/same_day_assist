@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck } from 'lucide-react';
+import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import AdminDashboard from './admin/AdminDashboard';
@@ -8,13 +8,14 @@ import ContractorsMonitor from './admin/ContractorsMonitor';
 import ReportsViewer from './admin/ReportsViewer';
 import AuditLogViewer from './admin/AuditLogViewer';
 import { AdminProfileRequests } from './admin/AdminProfileRequests';
+import { AdminVettingQueue } from './admin/AdminVettingQueue';
 
 export default function AdminPortal() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
   const role = user?.role || 'Dispatcher';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
     return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
 
@@ -26,15 +27,18 @@ export default function AdminPortal() {
   const tabs = [];
   if (role === 'Dispatcher') {
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
   } else if (role === 'Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
+    tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
   } else if (role === 'Super Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
+    tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
@@ -132,6 +136,7 @@ export default function AdminPortal() {
       {/* RENDER VIEWS */}
       <div className="flex-1 p-8 overflow-y-auto bg-slate-50/55">
         {activeTab === 'overview' && <AdminDashboard />}
+        {activeTab === 'vetting' && <AdminVettingQueue />}
         {activeTab === 'enquiries' && <EnquiriesManager />}
         {activeTab === 'jobs' && <ContractorsMonitor />}
         {activeTab === 'profileRequests' && <AdminProfileRequests />}
@@ -141,4 +146,5 @@ export default function AdminPortal() {
     </div>
   );
 }
+
 

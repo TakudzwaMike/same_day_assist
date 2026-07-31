@@ -347,6 +347,56 @@ class ApiClient {
     return u ? JSON.parse(u) : null;
   }
 
+  // Contractor Verification & Compliance
+  async applyVerification(payload: any) {
+    return this.request<any>('/verification/apply', { method: 'POST', body: JSON.stringify(payload) });
+  }
+  async getVerificationApplications() {
+    return this.request<any[]>('/verification/applications');
+  }
+  async approveVerification(contractorId: string) {
+    return this.request<any>(`/verification/${contractorId}/approve`, { method: 'POST' });
+  }
+  async requestVerificationInfo(contractorId: string, notes: string) {
+    return this.request<any>(`/verification/${contractorId}/request-info`, { method: 'POST', body: JSON.stringify({ notes }) });
+  }
+  async rejectVerification(contractorId: string, reason: string) {
+    return this.request<any>(`/verification/${contractorId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+  }
+  async awardProviderBadge(contractorId: string, payload: { title: string; category?: string; iconName?: string }) {
+    return this.request<any>(`/verification/${contractorId}/award-badge`, { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  // 8D Ratings & CSAT
+  async submitJobRating(jobId: string, ratingData: any) {
+    return this.request<any>(`/ratings/job/${jobId}`, { method: 'POST', body: JSON.stringify(ratingData) });
+  }
+  async getContractorRatings(contractorId: string) {
+    return this.request<any>(`/ratings/contractor/${contractorId}`);
+  }
+
+  // In-App Messaging
+  async getJobMessages(jobId: string) {
+    return this.request<any[]>(`/messages/job/${jobId}`);
+  }
+  async sendJobMessage(jobId: string, text: string, attachmentUrl?: string, recipientId?: string) {
+    return this.request<any>(`/messages/job/${jobId}`, {
+      method: 'POST',
+      body: JSON.stringify({ text, attachmentUrl, recipientId }),
+    });
+  }
+
+  // Digital Wallet
+  async getWalletBalance() {
+    return this.request<any>('/wallet/balance');
+  }
+  async topUpWallet(amount: number, description?: string) {
+    return this.request<any>('/wallet/top-up', {
+      method: 'POST',
+      body: JSON.stringify({ amount, description }),
+    });
+  }
+
   async systemReseed(password: string) {
     return this.request<any>('/auth/system/reseed', {
       method: 'POST',
@@ -359,4 +409,6 @@ class ApiClient {
   }
 }
 
+
 export const api = new ApiClient();
+

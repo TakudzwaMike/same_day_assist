@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Wrench, LogOut } from 'lucide-react';
+import { Wrench, LogOut, Shield, FileCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
+import { ContractorVettingModal } from './contractor/ContractorVettingModal';
 
 export default function ContractorApp() {
-  const { logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
+  const [showVettingModal, setShowVettingModal] = useState(false);
+
+  const verificationStatus = user?.verificationStatus || 'Pending Review';
 
   return (
     <div className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn text-zinc-100">
@@ -25,6 +29,19 @@ export default function ContractorApp() {
         </div>
 
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setShowVettingModal(true)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+              verificationStatus === 'Approved'
+                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                : 'bg-amber-950 text-amber-400 border border-amber-800 animate-pulse'
+            }`}
+          >
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Vetting: {verificationStatus}</span>
+          </button>
+
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono text-zinc-400 uppercase">Status:</span>
             <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${isOnline ? 'bg-green-950 text-green-400 border border-green-800 animate-pulse' : 'bg-red-950 text-red-400'}`}>
@@ -49,6 +66,18 @@ export default function ContractorApp() {
         </div>
       </div>
 
+      {/* VETTING MODAL */}
+      {showVettingModal && (
+        <ContractorVettingModal
+          user={user}
+          onSuccess={() => {
+            setShowVettingModal(false);
+            refreshUser();
+          }}
+          onClose={() => setShowVettingModal(false)}
+        />
+      )}
+
       {/* PORTAL VIEW CONTAINER */}
       <div className="p-6 md:p-8 flex-1 bg-zinc-900/45">
         <div className="max-w-4xl mx-auto flex flex-col gap-6">
@@ -58,3 +87,4 @@ export default function ContractorApp() {
     </div>
   );
 }
+

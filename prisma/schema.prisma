@@ -33,6 +33,20 @@ model User {
   // Profile Security & 60-Day Edit Lock
   lastProfileUpdateAt     DateTime?
 
+  // Contractor Vetting & Compliance Verification
+  verificationStatus      String?  @default("Pending Review") // Pending Review, Approved, Information Requested, Rejected
+  verificationNotes       String?
+  verifiedAt              DateTime?
+  yearsOfExperience       Int?     @default(1)
+  businessLicenseUrl      String?
+  taxClearanceUrl         String?
+  insuranceProofUrl       String?
+  policeClearanceUrl      String?
+  tradeQualificationsUrl  String?
+  coverageAreaJson        String?  // JSON list of suburbs / cities covered
+  badgeTitles             String?  // JSON list of achievement badges
+  isFeatured              Boolean  @default(false)
+
   // Customer specific details
   status       String?  // Prospect, Onboarding, Active, Suspended, Expired
   package      String?  // Gold, Platinum, Diamond
@@ -60,7 +74,14 @@ model User {
   savedLocations       SavedLocation[]
   authorisedContacts   AuthorisedContact[]
   profileUpdateRequests ProfileUpdateRequest[]
+  ratingsGiven         JobRating[]            @relation("CustomerRatings")
+  ratingsReceived      JobRating[]            @relation("ContractorRatings")
+  chatMessagesSent     ChatMessage[]          @relation("SentMessages")
+  chatMessagesReceived ChatMessage[]          @relation("ReceivedMessages")
+  wallet               Wallet?
+  providerAwards       ProviderAward[]
 }
+
 
 model SavedLocation {
   id          String   @id @default(uuid())
@@ -161,6 +182,11 @@ model Job {
   estimatedArrivalMinutes Int?         @default(15)
   distanceRemainingKm     Float?       @default(4.2)
 
+  // Live Photo Milestones (Before, During, After)
+  photoBeforeUrl          String?
+  photoDuringUrl          String?
+  photoAfterUrl           String?
+
   rating                  Int?
   ratingComment           String?
   createdAt               DateTime     @default(now())
@@ -171,6 +197,78 @@ model Job {
   contractorSignature     String?      // Base64 signature
   completionPhoto         String?
   fileRecords             FileRecord[]
+  jobRatings              JobRating[]
+  chatMessages            ChatMessage[]
+}
+
+model JobRating {
+  id                  String   @id @default(uuid())
+  jobId               String
+  job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  customerId          String
+  customer            User     @relation("CustomerRatings", fields: [customerId], references: [id])
+  contractorId        String
+  contractor          User     @relation("ContractorRatings", fields: [contractorId], references: [id])
+  
+  // 8-Dimensional Performance Metrics (1 to 5)
+  professionalism     Int      @default(5)
+  punctuality         Int      @default(5)
+  responseTime        Int      @default(5)
+  communication       Int      @default(5)
+  qualityOfWork       Int      @default(5)
+  friendliness        Int      @default(5)
+  problemResolution   Int      @default(5)
+  overallSatisfaction Int      @default(5)
+
+  writtenFeedback     String?
+  photoBeforeUrl      String?
+  photoAfterUrl       String?
+  createdAt           DateTime @default(now())
+}
+
+model ChatMessage {
+  id            String   @id @default(uuid())
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  senderId      String
+  sender        User     @relation("SentMessages", fields: [senderId], references: [id])
+  recipientId   String
+  recipient     User     @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  senderRole    String   // Customer, Contractor, Dispatcher, Administrator
+  text          String
+  attachmentUrl String?
+  createdAt     DateTime @default(now())
+}
+
+model Wallet {
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Float               @default(0.0)
+  currency     String              @default("ZAR")
+  updatedAt    DateTime            @updatedAt
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        String   // TopUp, Payment, Refund, Bonus Reward
+  description String
+  referenceId String?
+  createdAt   DateTime @default(now())
+}
+
+model ProviderAward {
+  id           String   @id @default(uuid())
+  contractorId String
+  contractor   User     @relation(fields: [contractorId], references: [id], onDelete: Cascade)
+  title        String   // Top Performer of the Month, Fastest Responder, 5-Star Customer Favourite, 100+ Jobs Milestone, Most Reliable
+  category     String
+  iconName     String   @default("Award")
+  awardedAt    DateTime @default(now())
 }
 
 model Payment {
@@ -229,4 +327,5 @@ model NotificationPreference {
   push      Boolean @default(true)
   inApp     Boolean @default(true)
 }
+
 

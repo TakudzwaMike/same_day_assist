@@ -103,6 +103,11 @@ app.get('/health', async (req, res) => {
   }
 });
 
+import verificationRouter from './routes/verification';
+import ratingsRouter from './routes/ratings';
+import messagesRouter from './routes/messages';
+import walletRouter from './routes/wallet';
+
 // API Routes
 app.use('/api/auth', authRouter);
 app.use('/api/enquiries', enquiriesRouter);
@@ -116,6 +121,11 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/contacts', contactsRouter);
 app.use('/api/profile-requests', profileRequestsRouter);
+app.use('/api/verification', verificationRouter);
+app.use('/api/ratings', ratingsRouter);
+app.use('/api/messages', messagesRouter);
+app.use('/api/wallet', walletRouter);
+
 
 
 // PDF download routes

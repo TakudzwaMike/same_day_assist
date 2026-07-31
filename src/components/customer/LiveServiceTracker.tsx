@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Clock, MapPin, Phone, Car, CheckCircle, Navigation, Radio } from 'lucide-react';
+import { Shield, Clock, MapPin, Phone, Car, CheckCircle, Navigation, Radio, MessageSquare, Star } from 'lucide-react';
 import { Job, JobStatus } from '../../types';
 import { getSocket } from '../../services/socket';
 import { api } from '../../services/api';
+import { JobChatDrawer } from '../shared/JobChatDrawer';
+import { DetailedRatingModal } from './DetailedRatingModal';
 
 interface LiveServiceTrackerProps {
   job: Job;
@@ -25,6 +27,8 @@ export function LiveServiceTracker({ job, onClose }: LiveServiceTrackerProps) {
   const [currentJob, setCurrentJob] = useState<Job>(job);
   const [eta, setEta] = useState<number>(job.estimatedArrivalMinutes || 15);
   const [distance, setDistance] = useState<number>(job.distanceRemainingKm || 4.2);
+  const [showChat, setShowChat] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Parse vehicle info if present
   const vehicle = currentJob.vehicleInfo
