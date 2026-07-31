@@ -10,15 +10,31 @@ model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
-  role         String   // Customer, Contractor, Administrator, Super Administrator
+  role         String   // Customer, Contractor, Dispatcher, Administrator, Super Administrator
   name         String
   phone        String
   address      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Comprehensive Onboarding & Enterprise Data
+  idNumber                String?  // ID / Passport Number
+  accountType             String?  // Individual, Business
+  companyName             String?
+  companyRegNumber        String?
+  vatNumber               String?
+  secondaryPhone          String?
+  preferredContactMethod  String?  // Email, SMS, WhatsApp, Push
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  industry                String?
+  communicationPreferences String? // JSON preferences
+
+  // Profile Security & 60-Day Edit Lock
+  lastProfileUpdateAt     DateTime?
+
   // Customer specific details
-  status       String?  // Prospect, Awaiting Assessment, Awaiting Quotation, Awaiting Approval, Awaiting Repairs, Awaiting Membership, Active Member, Suspended, Expired
+  status       String?  // Prospect, Onboarding, Active, Suspended, Expired
   package      String?  // Gold, Platinum, Diamond
   memberSince  String?
   repairsCount Int      @default(0)
@@ -26,7 +42,7 @@ model User {
 
   // Contractor specific details
   rating       Float?   @default(5.0)
-  specialty    String?  // Security, Electrical, Plumbing, Construction
+  specialty    String?  // Security Services, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
   isAvailable  Boolean? @default(true)
   lat          Float?   @default(-26.2041) // Default JHB latitudes
   lng          Float?   @default(28.0473)  // Default JHB longitudes
@@ -41,6 +57,45 @@ model User {
   auditLogs            AuditLog[]
   fileRecords          FileRecord[]
   notificationSettings NotificationPreference?
+  savedLocations       SavedLocation[]
+  authorisedContacts   AuthorisedContact[]
+  profileUpdateRequests ProfileUpdateRequest[]
+}
+
+model SavedLocation {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label       String   // Home, Office, Warehouse, Factory, Branch, Construction Site
+  address     String
+  lat         Float
+  lng         Float
+  accessNotes String?
+  createdAt   DateTime @default(now())
+}
+
+model AuthorisedContact {
+  id          String   @id @default(uuid())
+  userId      String   // Corporate account user ID
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  email       String
+  phone       String
+  position    String
+  permissions String   @default("Full") // Full, Dispatch Only, Billing Only
+  createdAt   DateTime @default(now())
+}
+
+model ProfileUpdateRequest {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proposedChanges  String    // JSON snapshot of requested profile changes
+  status           String    @default("Pending") // Pending, Approved, Rejected
+  requestedAt      DateTime  @default(now())
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  rejectionReason  String?
 }
 
 model Enquiry {
@@ -49,7 +104,7 @@ model Enquiry {
   email           String
   phone           String
   address         String
-  serviceCategory String       // Security, Electrical, Plumbing, Construction
+  serviceCategory String       // Security, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
   notes           String
   status          String       @default("Pending") // Pending, Scheduled, Assessed, Quoted, Approved, Completed
   createdAt       DateTime     @default(now())
@@ -87,27 +142,35 @@ model Quotation {
 }
 
 model Job {
-  id                   String       @id @default(uuid())
-  customerId           String
-  customer             User         @relation("CustomerJobs", fields: [customerId], references: [id])
-  serviceType          String       // Security, Electrical, Plumbing, Construction
-  description          String
-  photoUrl             String?
-  videoUrl             String?
-  assignedContractorId String?
-  assignedContractor   User?        @relation("ContractorJobs", fields: [assignedContractorId], references: [id])
-  status               String       @default("Submitted") // Submitted, Assigned, Accepted, En Route, Arrived, Assessment, Awaiting Quote Approval, Repair In Progress, Quality Inspection, Completed, Closed, Archived
-  trackerProgress      Int          @default(0)
-  rating               Int?
-  ratingComment        String?
-  createdAt            DateTime     @default(now())
-  assignedAt           DateTime?
-  completedAt          DateTime?
-  closedAt             DateTime?
-  contractorNotes      String?
-  contractorSignature  String?      // Base64 signature
-  completionPhoto      String?
-  fileRecords          FileRecord[]
+  id                      String       @id @default(uuid())
+  customerId              String
+  customer                User         @relation("CustomerJobs", fields: [customerId], references: [id])
+  serviceType             String       // Security, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
+  description             String
+  photoUrl                String?
+  videoUrl                String?
+  assignedContractorId    String?
+  assignedContractor      User?        @relation("ContractorJobs", fields: [assignedContractorId], references: [id])
+  status                  String       @default("Request Received") // Request Received, Request Under Review, Service Provider Assigned, Preparing for Dispatch, Dispatched, En Route, Arrived, Service In Progress, Service Completed
+  trackerProgress         Int          @default(0)
+  
+  // Real-time tracking & vehicle details
+  vehicleInfo             String?      // JSON: { make, model, licensePlate, color }
+  currentLat              Float?
+  currentLng              Float?
+  estimatedArrivalMinutes Int?         @default(15)
+  distanceRemainingKm     Float?       @default(4.2)
+
+  rating                  Int?
+  ratingComment           String?
+  createdAt               DateTime     @default(now())
+  assignedAt              DateTime?
+  completedAt             DateTime?
+  closedAt                DateTime?
+  contractorNotes         String?
+  contractorSignature     String?      // Base64 signature
+  completionPhoto         String?
+  fileRecords             FileRecord[]
 }
 
 model Payment {
@@ -166,3 +229,4 @@ model NotificationPreference {
   push      Boolean @default(true)
   inApp     Boolean @default(true)
 }
+

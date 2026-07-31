@@ -28,6 +28,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: any) => Promise<void>;
+  onboarding: (payload: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   error: string | null;
@@ -95,9 +96,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const onboarding = useCallback(async (payload: any) => {
+    setError(null);
+    try {
+      const userData = await api.onboarding(payload);
+      setUser(userData);
+      initSocket(userData.id, userData.role);
+    } catch (err: any) {
+      setError(err.message || 'Onboarding failed. Please review your input details.');
+      throw err;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.logout();
+
     } finally {
       setUser(null);
       disconnectSocket();
@@ -147,11 +161,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       login,
       register,
+      onboarding,
       logout,
       refreshUser,
       error,
       clearError,
     }}>
+
       {children}
     </AuthContext.Provider>
   );

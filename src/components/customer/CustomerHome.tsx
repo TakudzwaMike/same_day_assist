@@ -30,12 +30,13 @@ export default function CustomerHome({
   const [enquiryEmail, setEnquiryEmail] = useState(activeCustomer?.email || '');
   const [enquiryPhone, setEnquiryPhone] = useState(activeCustomer?.phone || '');
   const [enquiryAddress, setEnquiryAddress] = useState(activeCustomer?.address || '');
-  const [enquiryCategory, setEnquiryCategory] = useState<ServiceCategory>('Security');
+  const [enquiryCategory, setEnquiryCategory] = useState<ServiceCategory>('Security Services');
   const [enquiryNotes, setEnquiryNotes] = useState('');
   const [selectedPkgId, setSelectedPkgId] = useState('pkg-platinum');
   
   // Assistance Form
-  const [assistCategory, setAssistCategory] = useState<ServiceCategory>('Security');
+  const [assistCategory, setAssistCategory] = useState<ServiceCategory>('Security Services');
+
   const [assistDesc, setAssistDesc] = useState('');
   const [assistPhoto, setAssistPhoto] = useState<string | null>(null);
   

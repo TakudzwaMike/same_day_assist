@@ -70,8 +70,8 @@ export function createJobsRouter(io: SocketServer) {
           serviceType: req.body.serviceType,
           description: req.body.description,
           photoUrl: req.body.photoUrl,
-          status: 'Submitted',
-          trackerProgress: 0,
+          status: 'Request Received',
+          trackerProgress: 10,
         },
         include: {
           customer: { select: { id: true, name: true, phone: true, address: true } },
@@ -84,8 +84,8 @@ export function createJobsRouter(io: SocketServer) {
       await writeAuditLog({
         userId: req.user!.id,
         userType: 'Customer',
-        action: 'Emergency Assistance Requested',
-        details: `Customer ${customer.name} requested emergency assistance: ${req.body.serviceType} — "${req.body.description}"`,
+        action: 'On-Demand Service Requested',
+        details: `Customer ${customer.name} requested service: ${req.body.serviceType} — "${req.body.description}"`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         newValue: { jobId: job.id, serviceType: job.serviceType },
@@ -112,37 +112,48 @@ export function createJobsRouter(io: SocketServer) {
       if (!contractor || contractor.role !== 'Contractor') return res.status(400).json({ error: 'Invalid contractor' });
 
       const prevStatus = job.status;
+      const vehicleInfo = JSON.stringify({
+        make: 'Toyota',
+        model: 'Hilux 4x4 Response Unit',
+        licensePlate: 'SDA-01-GP',
+        color: 'White',
+      });
+
       const updated = await prisma.job.update({
         where: { id: req.params.id },
         data: {
           assignedContractorId: contractorId,
-          status: 'Assigned',
-          trackerProgress: 20,
+          status: 'Service Provider Assigned',
+          trackerProgress: 35,
           assignedAt: new Date(),
+          vehicleInfo,
+          currentLat: contractor.lat || -26.2041,
+          currentLng: contractor.lng || 28.0473,
+          estimatedArrivalMinutes: 15,
+          distanceRemainingKm: 4.5,
         },
         include: {
           customer: { select: { id: true, name: true, phone: true, address: true } },
-          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true } },
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true } },
         },
       });
 
       // Increment contractor workload
       await prisma.user.update({ where: { id: contractorId }, data: { workload: { increment: 1 } } });
 
-      // Notify contractor via WebSocket
+      // Notify contractor & customer
       io.to(`contractor-${contractorId}`).emit('job-assigned', updated);
-      // Notify customer
       io.to(`customer-${job.customerId}`).emit('job-updated', updated);
 
       await writeAuditLog({
         userId: req.user!.id,
         userType: req.user!.role,
-        action: 'Contractor Assigned to Job',
-        details: `Administrator dispatched ${contractor.name} to Job ${req.params.id} for customer ${job.customer.name}`,
+        action: 'Service Provider Assigned',
+        details: `Dispatched ${contractor.name} to Job ${req.params.id} for ${job.customer.name}`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         previousValue: { status: prevStatus },
-        newValue: { status: 'Assigned', contractorId, contractorName: contractor.name },
+        newValue: { status: 'Service Provider Assigned', contractorId, contractorName: contractor.name },
       });
 
       return res.json(updated);
@@ -152,38 +163,37 @@ export function createJobsRouter(io: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/status — Contractor: update job status (Accepted, En Route, Arrived, etc.)
-  router.patch('/:id/status', requireAuth, requireRoles('Contractor'), validate(jobStatusSchema), async (req: AuthenticatedRequest, res: Response) => {
+  // PATCH /api/jobs/:id/status — Update 9-stage job workflow status
+  router.patch('/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const { status } = req.body;
-    const allowedTransitions: Record<string, string[]> = {
-      Assigned: ['Accepted', 'En Route'],
-      Accepted: ['En Route'],
-      'En Route': ['Arrived'],
-      Arrived: ['Repair In Progress', 'Quality Inspection'],
-      'Repair In Progress': ['Quality Inspection'],
-      'Quality Inspection': ['Completed'],
+    
+    const progressMap: Record<string, number> = {
+      'Request Received': 10,
+      'Request Under Review': 20,
+      'Service Provider Assigned': 35,
+      'Preparing for Dispatch': 45,
+      'Dispatched': 60,
+      'En Route': 75,
+      'Arrived': 85,
+      'Service In Progress': 95,
+      'Service Completed': 100,
     };
+
+    if (progressMap[status] === undefined) {
+      return res.status(400).json({ error: `Invalid status: ${status}` });
+    }
 
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: 'Job not found' });
-      if (job.assignedContractorId !== req.user!.id) {
-        return res.status(403).json({ error: 'Not authorized to update this job' });
-      }
-
-      const allowed = allowedTransitions[job.status] || [];
-      if (!allowed.includes(status)) {
-        return res.status(400).json({ error: `Invalid status transition from ${job.status} to ${status}` });
-      }
-
-      const progressMap: Record<string, number> = {
-        Accepted: 30, 'En Route': 50, Arrived: 70,
-        'Repair In Progress': 80, 'Quality Inspection': 90, Completed: 100,
-      };
 
       const updated = await prisma.job.update({
         where: { id: req.params.id },
-        data: { status, trackerProgress: progressMap[status] ?? job.trackerProgress },
+        data: {
+          status,
+          trackerProgress: progressMap[status],
+          completedAt: status === 'Service Completed' ? new Date() : job.completedAt,
+        },
         include: {
           customer: { select: { id: true, name: true, phone: true, address: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, lat: true, lng: true } },
@@ -198,7 +208,7 @@ export function createJobsRouter(io: SocketServer) {
         userId: req.user!.id,
         userType: req.user!.role,
         action: 'Job Status Updated',
-        details: `Contractor updated job ${req.params.id} from ${job.status} to ${status}`,
+        details: `Updated job ${req.params.id} status to "${status}"`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         previousValue: { status: job.status },
@@ -211,28 +221,37 @@ export function createJobsRouter(io: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/location — Contractor: update live GPS location
-  router.patch('/:id/location', requireAuth, requireRoles('Contractor'), async (req: AuthenticatedRequest, res: Response) => {
-    const { lat, lng } = req.body;
+  // PATCH /api/jobs/:id/location — Real-Time 3-Second GPS Stream & ETA Update
+  router.patch('/:id/location', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    const { lat, lng, estimatedArrivalMinutes, distanceRemainingKm } = req.body;
     if (lat === undefined || lng === undefined) return res.status(400).json({ error: 'lat and lng are required' });
 
     try {
-      // Update contractor's location
-      await prisma.user.update({
-        where: { id: req.user!.id },
-        data: { lat, lng },
+      const job = await prisma.job.update({
+        where: { id: req.params.id },
+        data: {
+          currentLat: parseFloat(lat),
+          currentLng: parseFloat(lng),
+          estimatedArrivalMinutes: estimatedArrivalMinutes !== undefined ? parseInt(estimatedArrivalMinutes) : undefined,
+          distanceRemainingKm: distanceRemainingKm !== undefined ? parseFloat(distanceRemainingKm) : undefined,
+        },
       });
 
-      // Broadcast location to customer and admin
-      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
-      if (job) {
-        io.to(`customer-${job.customerId}`).emit('contractor-location', { jobId: req.params.id, lat, lng, contractorId: req.user!.id });
-        io.to('admin-room').emit('contractor-location', { jobId: req.params.id, lat, lng, contractorId: req.user!.id });
-      }
+      const locationPayload = {
+        jobId: req.params.id,
+        currentLat: parseFloat(lat),
+        currentLng: parseFloat(lng),
+        estimatedArrivalMinutes: job.estimatedArrivalMinutes,
+        distanceRemainingKm: job.distanceRemainingKm,
+      };
 
-      return res.json({ success: true });
+      // Broadcast live position via Socket.IO
+      io.to(`customer-${job.customerId}`).emit('contractor-location', locationPayload);
+      io.to('admin-room').emit('contractor-location', locationPayload);
+
+      return res.json({ success: true, location: locationPayload });
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to update location' });
+      return res.status(500).json({ error: 'Failed to update live GPS location' });
     }
   });
 

@@ -1,31 +1,206 @@
 /**
- * Same Day Assist - Production Type Definitions
- * Represents the normalized database schema, user roles, and customer journey.
+ * Same Day Assist - Enterprise Type Definitions
+ * Service-agnostic platform supporting Security, Emergency & Mobility, Home & Facility, and Maintenance.
  */
 
-export type ServiceCategory = 'Security' | 'Electrical' | 'Plumbing' | 'Construction';
+export type ServiceCategory =
+  | 'Security Services'
+  | 'Armed Response'
+  | 'VIP Protection'
+  | 'Event Security'
+  | 'Alarm Response'
+  | 'CCTV Monitoring'
+  | 'Guarding Services'
+  | 'Patrol Services'
+  | 'Cleaning Services'
+  | 'Plumbing'
+  | 'Electrical Services'
+  | 'Locksmith Services'
+  | 'Towing Services'
+  | 'Roadside Assistance'
+  | 'Medical Assistance'
+  | 'Emergency Home Assistance'
+  | 'Maintenance Services';
 
 export type UserRole = 'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator' | 'Super Administrator';
 
-export type JourneyStep =
-  | 'PROSPECT'                // 1. Prospective customer
-  | 'INTERESTED'              // 2. "I'm Interested" (Enquiry submitted)
-  | 'ENQUIRY_RECEIVED'        // 3. Administrator receives enquiry
-  | 'ASSESSMENT_SCHEDULED'    // 4. Property Assessment scheduled
-  | 'CONTRACTOR_ASSESSING'    // 5. Contractor Assessment active
-  | 'ASSESSMENT_UPLOADED'     // 6. Assessment uploaded
-  | 'QUOTE_GENERATED'         // 7. Quotation generated
-  | 'CUSTOMER_APPROVED'       // 8. Customer approval of quote
-  | 'REPAIRS_COMPLETED'       // 9. Onboarding repairs completed
-  | 'MEMBERSHIP_ACTIVATED'    // 10. Membership activated (Active member!)
-  | 'CUSTOMER_LOGIN'          // 11. Customer logged in to member portal
-  | 'REQUEST_ASSISTANCE'      // 12. Request Assistance created
-  | 'JOB_CARD_CREATED'        // 13. Job Card Created
-  | 'CONTRACTOR_ASSIGNED'     // 14. Contractor Assigned
-  | 'LIVE_JOB_UPDATES'        // 15. Live Job Updates (In Route / Arrived / Working)
-  | 'COMPLETION_REPORT'       // 16. Completion Report submitted with signature
-  | 'CUSTOMER_RATING'         // 17. Customer Rating submitted
-  | 'JOB_CLOSED';             // 18. Job Closed
+export type JobStatus =
+  | 'Request Received'
+  | 'Request Under Review'
+  | 'Service Provider Assigned'
+  | 'Preparing for Dispatch'
+  | 'Dispatched'
+  | 'En Route'
+  | 'Arrived'
+  | 'Service In Progress'
+  | 'Service Completed';
+
+export interface SavedLocation {
+  id: string;
+  userId: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+  accessNotes?: string;
+  createdAt: string;
+}
+
+export interface AuthorisedContact {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phone: string;
+  position: string;
+  permissions: 'Full' | 'Dispatch Only' | 'Billing Only';
+  createdAt: string;
+}
+
+export interface ProfileUpdateRequest {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  proposedChanges: Record<string, any>;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  requestedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  rejectionReason?: string;
+}
+
+export interface OnboardingPayload {
+  name: string;
+  email: string;
+  phone: string;
+  secondaryPhone?: string;
+  idNumber?: string;
+  accountType: 'Individual' | 'Business';
+  companyName?: string;
+  companyRegNumber?: string;
+  vatNumber?: string;
+  industry?: string;
+  address: string;
+  preferredContactMethod: 'Email' | 'SMS' | 'WhatsApp' | 'Push';
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  preferredServices: ServiceCategory[];
+  communicationPreferences?: {
+    marketing: boolean;
+    smsAlerts: boolean;
+    emailInvoices: boolean;
+  };
+  password: string;
+  savedLocations?: Array<{
+    label: string;
+    address: string;
+    lat: number;
+    lng: number;
+    accessNotes?: string;
+  }>;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  idNumber?: string;
+  accountType?: 'Individual' | 'Business';
+  companyName?: string;
+  companyRegNumber?: string;
+  vatNumber?: string;
+  secondaryPhone?: string;
+  preferredContactMethod?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  lastProfileUpdateAt?: string;
+  status: 'Onboarding' | 'Active' | 'Suspended' | 'Expired';
+  package: 'Gold' | 'Platinum' | 'Diamond';
+  memberSince?: string;
+  repairsCount: number;
+  totalPaid: number;
+  savedLocations?: SavedLocation[];
+  authorisedContacts?: AuthorisedContact[];
+}
+
+export interface Contractor {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  rating: number;
+  specialty: ServiceCategory | string;
+  isAvailable: boolean;
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+}
+
+export interface VehicleInfo {
+  make: string;
+  model: string;
+  licensePlate: string;
+  color: string;
+}
+
+export interface Job {
+  id: string;
+  customerId: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  serviceType: ServiceCategory | string;
+  description: string;
+  photoUrl?: string;
+  videoUrl?: string;
+  assignedContractorId?: string;
+  assignedContractor?: {
+    id: string;
+    name: string;
+    phone: string;
+    specialty?: string;
+    rating?: number;
+  };
+  status: JobStatus | string;
+  trackerProgress: number; // 0 to 100
+  vehicleInfo?: VehicleInfo;
+  currentLat?: number;
+  currentLng?: number;
+  estimatedArrivalMinutes?: number;
+  distanceRemainingKm?: number;
+  rating?: number;
+  ratingComment?: string;
+  createdAt: string;
+  assignedAt?: string;
+  completedAt?: string;
+  closedAt?: string;
+  contractorNotes?: string;
+  contractorSignature?: string;
+  completionPhoto?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  userType: UserRole;
+  action: string;
+  details: string;
+}
+
+export interface Payment {
+  id: string;
+  customerId: string;
+  customerName: string;
+  type: 'Onboarding Fee' | 'Monthly Premium' | 'Assistance Co-pay';
+  amount: number;
+  status: 'Paid' | 'Pending';
+  date: string;
+}
 
 export interface Enquiry {
   id: string;
@@ -33,7 +208,7 @@ export interface Enquiry {
   email: string;
   phone: string;
   address: string;
-  serviceCategory: ServiceCategory;
+  serviceCategory: ServiceCategory | string;
   notes: string;
   status: 'Pending' | 'Scheduled' | 'Assessed' | 'Quoted' | 'Approved' | 'Completed';
   createdAt: string;
@@ -69,75 +244,25 @@ export interface Quotation {
   approvedAt?: string;
 }
 
-export interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  status: 'Onboarding' | 'Active' | 'Inactive';
-  package: 'Gold' | 'Platinum' | 'Diamond';
-  memberSince?: string;
-  repairsCount: number;
-  totalPaid: number;
-}
-
-export interface Contractor {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  rating: number;
-  specialty: ServiceCategory;
-  isAvailable: boolean;
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
-}
-
-export interface Job {
-  id: string;
-  customerId: string;
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  serviceType: ServiceCategory;
-  description: string;
-  photoUrl?: string;
-  videoUrl?: string;
-  assignedContractorId?: string;
-  status: 'Requested' | 'Assigned' | 'InRoute' | 'Arrived' | 'Completed' | 'Rated' | 'Closed';
-  trackerProgress: number; // 0 to 100 for live animation
-  rating?: number;
-  ratingComment?: string;
-  createdAt: string;
-  assignedAt?: string;
-  completedAt?: string;
-  closedAt?: string;
-  contractorNotes?: string;
-  contractorSignature?: string; // Base64 digital signature
-  completionPhoto?: string;
-}
-
-export interface AuditLog {
-  id: string;
-  timestamp: string;
-  userType: UserRole;
-  action: string;
-  details: string;
-}
-
-export interface Payment {
-  id: string;
-  customerId: string;
-  customerName: string;
-  type: 'Onboarding Fee' | 'Monthly Premium' | 'Assistance Co-pay';
-  amount: number;
-  status: 'Paid' | 'Pending';
-  date: string;
-}
+export type JourneyStep =
+  | 'PROSPECT'
+  | 'INTERESTED'
+  | 'ENQUIRY_RECEIVED'
+  | 'ASSESSMENT_SCHEDULED'
+  | 'CONTRACTOR_ASSESSING'
+  | 'ASSESSMENT_UPLOADED'
+  | 'QUOTE_GENERATED'
+  | 'CUSTOMER_APPROVED'
+  | 'REPAIRS_COMPLETED'
+  | 'MEMBERSHIP_ACTIVATED'
+  | 'CUSTOMER_LOGIN'
+  | 'REQUEST_ASSISTANCE'
+  | 'JOB_CARD_CREATED'
+  | 'CONTRACTOR_ASSIGNED'
+  | 'LIVE_JOB_UPDATES'
+  | 'COMPLETION_REPORT'
+  | 'CUSTOMER_RATING'
+  | 'JOB_CLOSED';
 
 export interface ServicePackage {
   id: string;
@@ -157,6 +282,8 @@ export interface AppState {
   payments: Payment[];
   auditLogs: AuditLog[];
   selectedRole: UserRole;
-  currentUserId: string; // Active logged-in context
+  currentUserId: string;
   isLoggedIn?: boolean;
 }
+
+

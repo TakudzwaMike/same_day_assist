@@ -75,6 +75,56 @@ async function main() {
     },
   });
 
+  // 2b. Customer: Bright (User Side)
+  const brightHash = await bcrypt.hash('12345', saltRounds);
+  const bright = await prisma.user.create({
+    data: {
+      email: 'bright@samedayassist.co.za',
+      passwordHash: brightHash,
+      role: 'Customer',
+      name: 'Bright',
+      phone: '+27 82 555 7777',
+      address: '77 Sunset Boulevard, Sandton',
+      status: 'Active',
+      package: 'Diamond',
+      memberSince: '2026-01-01',
+      repairsCount: 1,
+      totalPaid: 2500.0,
+      notificationSettings: {
+        create: {
+          email: true,
+          sms: true,
+          push: true,
+          inApp: true,
+        },
+      },
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'bright@samedayassist',
+      passwordHash: brightHash,
+      role: 'Customer',
+      name: 'Bright',
+      phone: '+27 82 555 7777',
+      address: '77 Sunset Boulevard, Sandton',
+      status: 'Active',
+      package: 'Diamond',
+      memberSince: '2026-01-01',
+      repairsCount: 1,
+      totalPaid: 2500.0,
+      notificationSettings: {
+        create: {
+          email: true,
+          sms: true,
+          push: true,
+          inApp: true,
+        },
+      },
+    },
+  });
+
   // 3. Contractors / Field Responders
   const sipho = await prisma.user.create({
     data: {
@@ -220,6 +270,31 @@ async function main() {
       name: 'Lead Architect',
       phone: '+27 82 555 9999',
       address: 'Soweto Tech Hub, Orlando East',
+    },
+  });
+
+  // 7. Super Administrator (Mike)
+  const mikeHash = await bcrypt.hash('12345', saltRounds);
+
+  await prisma.user.create({
+    data: {
+      email: 'mike@samedayassist.co.za',
+      passwordHash: mikeHash,
+      role: 'Super Administrator',
+      name: 'Mike',
+      phone: '+27 82 555 1000',
+      address: 'Sandton Office Park, Sandton',
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'mike@samedayassist',
+      passwordHash: mikeHash,
+      role: 'Super Administrator',
+      name: 'Mike',
+      phone: '+27 82 555 1000',
+      address: 'Sandton Office Park, Sandton',
     },
   });
 

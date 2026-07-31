@@ -159,6 +159,23 @@ class ApiClient {
     return data.user;
   }
 
+  async onboarding(payload: any) {
+    const data = await this.request<{ accessToken: string; refreshToken: string; user: any }>('/auth/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    this.setTokens(data.accessToken, data.refreshToken);
+    localStorage.setItem('sda_user', JSON.stringify(data.user));
+    return data.user;
+  }
+
+  async updateProfile(updates: any) {
+    return this.request<{ pendingApproval: boolean; user?: any; message?: string }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
   async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
@@ -177,6 +194,42 @@ class ApiClient {
       body: JSON.stringify({ email }),
     });
   }
+
+  // Saved Locations
+  async getSavedLocations() { return this.request<any[]>('/locations'); }
+  async addSavedLocation(data: { label: string; address: string; lat: number; lng: number; accessNotes?: string }) {
+    return this.request<any>('/locations', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async deleteSavedLocation(id: string) {
+    return this.request<{ success: boolean }>(`/locations/${id}`, { method: 'DELETE' });
+  }
+
+  // Authorised Contacts
+  async getAuthorisedContacts() { return this.request<any[]>('/contacts'); }
+  async addAuthorisedContact(data: { name: string; email: string; phone: string; position: string; permissions?: string }) {
+    return this.request<any>('/contacts', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async deleteAuthorisedContact(id: string) {
+    return this.request<{ success: boolean }>(`/contacts/${id}`, { method: 'DELETE' });
+  }
+
+  // Profile Requests (Admin)
+  async getProfileRequests() { return this.request<any[]>('/profile-requests'); }
+  async approveProfileRequest(id: string) {
+    return this.request<{ success: boolean }>(`/profile-requests/${id}/approve`, { method: 'POST' });
+  }
+  async rejectProfileRequest(id: string, rejectionReason?: string) {
+    return this.request<{ success: boolean }>(`/profile-requests/${id}/reject`, { method: 'POST', body: JSON.stringify({ rejectionReason }) });
+  }
+  async overrideProfileLock(userId: string) {
+    return this.request<{ success: boolean; message: string }>(`/profile-requests/override-lock/${userId}`, { method: 'POST' });
+  }
+
+  // Live GPS stream update
+  async updateJobLocation(jobId: string, payload: { lat: number; lng: number; estimatedArrivalMinutes?: number; distanceRemainingKm?: number }) {
+    return this.request<{ success: boolean }>(`/jobs/${jobId}/location`, { method: 'PATCH', body: JSON.stringify(payload) });
+  }
+
 
   // Enquiries
   async getEnquiries() { return this.request<any[]>('/enquiries'); }

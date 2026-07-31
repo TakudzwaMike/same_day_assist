@@ -27,6 +27,9 @@ import paymentsRouter from './routes/payments';
 import auditLogsRouter from './routes/auditLogs';
 import filesRouter from './routes/files';
 import reportsRouter from './routes/reports';
+import locationsRouter from './routes/locations';
+import contactsRouter from './routes/contacts';
+import profileRequestsRouter from './routes/profileRequests';
 import { createJobsRouter } from './routes/jobs';
 
 const app = express();
@@ -110,6 +113,10 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/locations', locationsRouter);
+app.use('/api/contacts', contactsRouter);
+app.use('/api/profile-requests', profileRequestsRouter);
+
 
 // PDF download routes
 app.get('/api/pdf/quotation/:id', async (req, res) => {

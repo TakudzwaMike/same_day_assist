@@ -232,6 +232,223 @@ router.post('/refresh', async (req: any, res: Response) => {
   }
 });
 
+// POST /api/auth/onboarding — 7-Step Comprehensive Customer Onboarding
+router.post('/onboarding', async (req: any, res: Response) => {
+  const {
+    name, email, phone, secondaryPhone, idNumber, accountType,
+    companyName, companyRegNumber, vatNumber, industry, address,
+    preferredContactMethod, emergencyContactName, emergencyContactPhone,
+    preferredServices, communicationPreferences, password, savedLocations,
+  } = req.body;
+
+  if (!email || !password || !name || !phone || !address) {
+    return res.status(400).json({ error: 'Name, email, phone number, physical address, and password are required.' });
+  }
+
+  const ipAddress = req.ip || 'Unknown';
+  const userAgent = req.headers['user-agent'] || 'Unknown';
+
+  try {
+    const existing = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (existing) {
+      return res.status(409).json({ error: 'An account with this email address already exists.' });
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    const userData: any = {
+      email: email.trim().toLowerCase(),
+      passwordHash,
+      role: 'Customer',
+      name,
+      phone,
+      address,
+      idNumber: idNumber || null,
+      accountType: accountType || 'Individual',
+      companyName: companyName || null,
+      companyRegNumber: companyRegNumber || null,
+      vatNumber: vatNumber || null,
+      secondaryPhone: secondaryPhone || null,
+      preferredContactMethod: preferredContactMethod || 'Email',
+      emergencyContactName: emergencyContactName || null,
+      emergencyContactPhone: emergencyContactPhone || null,
+      industry: industry || null,
+      communicationPreferences: communicationPreferences ? JSON.stringify(communicationPreferences) : null,
+      status: 'Active',
+      package: 'Diamond',
+      memberSince: new Date().toISOString().split('T')[0],
+      repairsCount: 0,
+      totalPaid: 0.0,
+      lastProfileUpdateAt: new Date(),
+      notificationSettings: {
+        create: {
+          email: true,
+          sms: true,
+          push: true,
+          inApp: true,
+        },
+      },
+    };
+
+    if (savedLocations && Array.isArray(savedLocations) && savedLocations.length > 0) {
+      userData.savedLocations = {
+        create: savedLocations.map((loc: any) => ({
+          label: loc.label || 'Primary Location',
+          address: loc.address,
+          lat: parseFloat(loc.lat || -26.2041),
+          lng: parseFloat(loc.lng || 28.0473),
+          accessNotes: loc.accessNotes || null,
+        })),
+      };
+    }
+
+    const user = await prisma.user.create({
+      data: userData,
+      include: { savedLocations: true, notificationSettings: true },
+    });
+
+    // Create linked Enquiry for initial onboarding record
+    await prisma.enquiry.create({
+      data: {
+        customerName: name,
+        email: email.trim().toLowerCase(),
+        phone,
+        address,
+        serviceCategory: preferredServices && preferredServices.length > 0 ? preferredServices[0] : 'Security Services',
+        notes: `Completed comprehensive 7-step onboarding. Preferred services: ${preferredServices ? preferredServices.join(', ') : 'All On-Demand Services'}`,
+        status: 'Approved',
+      },
+    });
+
+    const payload = { id: user.id, email: user.email, role: user.role };
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    await writeAuditLog({
+      userId: user.id,
+      userType: user.role,
+      action: 'Complete Onboarding',
+      result: 'Success',
+      details: `User ${name} completed 7-step onboarding successfully as ${accountType || 'Individual'}`,
+      ipAddress,
+      userAgent,
+    });
+
+    return res.status(201).json({
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        phone: user.phone,
+        address: user.address,
+        idNumber: user.idNumber,
+        accountType: user.accountType,
+        companyName: user.companyName,
+        companyRegNumber: user.companyRegNumber,
+        vatNumber: user.vatNumber,
+        secondaryPhone: user.secondaryPhone,
+        preferredContactMethod: user.preferredContactMethod,
+        emergencyContactName: user.emergencyContactName,
+        emergencyContactPhone: user.emergencyContactPhone,
+        status: user.status,
+        package: user.package,
+        memberSince: user.memberSince,
+        lastProfileUpdateAt: user.lastProfileUpdateAt,
+        savedLocations: user.savedLocations,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth/Onboarding]', error);
+    return res.status(500).json({ error: 'Server error during customer onboarding.' });
+  }
+});
+
+// PUT /api/auth/profile — Update Profile with 60-Day Lock and Admin Approval Routing
+router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const updates = req.body;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const lastUpdate = user.lastProfileUpdateAt ? new Date(user.lastProfileUpdateAt) : null;
+    const isLocked = lastUpdate && (now.getTime() - lastUpdate.getTime() < SIXTY_DAYS_MS);
+
+    // Check sensitive fields
+    const sensitiveFields = ['idNumber', 'companyRegNumber', 'name', 'email'];
+    const isSensitiveAttempt = sensitiveFields.some(field => updates[field] !== undefined && updates[field] !== (user as any)[field]);
+
+    if (isLocked || isSensitiveAttempt) {
+      // Create pending ProfileUpdateRequest
+      const pendingReq = await prisma.profileUpdateRequest.create({
+        data: {
+          userId,
+          proposedChanges: JSON.stringify(updates),
+          status: 'Pending',
+        },
+      });
+
+      await writeAuditLog({
+        userId,
+        userType: user.role,
+        action: 'Profile Update Requested',
+        details: `Profile update submitted for Admin Approval (60-day lock active: ${isLocked}, Sensitive edit: ${isSensitiveAttempt})`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+
+      return res.status(202).json({
+        pendingApproval: true,
+        requestId: pendingReq.id,
+        message: 'Your profile update has been submitted for Administrator Approval due to 60-day security policy or sensitive data modification.',
+      });
+    }
+
+    // Direct update allowed
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...updates,
+        lastProfileUpdateAt: now,
+      },
+    });
+
+    await writeAuditLog({
+      userId,
+      userType: user.role,
+      action: 'Profile Updated',
+      details: `Profile updated directly for ${user.email}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({
+      pendingApproval: false,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        name: updatedUser.name,
+        phone: updatedUser.phone,
+        address: updatedUser.address,
+        idNumber: updatedUser.idNumber,
+        companyName: updatedUser.companyName,
+        companyRegNumber: updatedUser.companyRegNumber,
+        lastProfileUpdateAt: updatedUser.lastProfileUpdateAt,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth/Profile]', error);
+    return res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
 // POST /api/auth/logout
 router.post('/logout', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user!;

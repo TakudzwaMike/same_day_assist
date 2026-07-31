@@ -1,0 +1,616 @@
+import React, { useState } from 'react';
+import { Shield, User, Building2, MapPin, Wrench, Bell, Lock, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
+import { ServiceCategory } from '../../types';
+
+interface OnboardingWizardProps {
+  onComplete: (data: any) => Promise<void>;
+  onCancel: () => void;
+}
+
+const ALL_SERVICES: ServiceCategory[] = [
+  'Security Services',
+  'Armed Response',
+  'VIP Protection',
+  'Event Security',
+  'Alarm Response',
+  'CCTV Monitoring',
+  'Guarding Services',
+  'Patrol Services',
+  'Cleaning Services',
+  'Plumbing',
+  'Electrical Services',
+  'Locksmith Services',
+  'Towing Services',
+  'Roadside Assistance',
+  'Medical Assistance',
+  'Emergency Home Assistance',
+  'Maintenance Services',
+];
+
+export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps) {
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    // Step 1: Personal
+    name: '',
+    email: '',
+    phone: '',
+    secondaryPhone: '',
+    idNumber: '',
+
+    // Step 2: Company / Account Type
+    accountType: 'Individual' as 'Individual' | 'Business',
+    companyName: '',
+    companyRegNumber: '',
+    vatNumber: '',
+    industry: '',
+
+    // Step 3: Saved Locations
+    primaryAddress: '',
+    primaryLabel: 'Main Residence',
+    accessNotes: '',
+
+    // Step 4: Preferred Services
+    preferredServices: ['Security Services', 'Armed Response'] as ServiceCategory[],
+
+    // Step 5: Communication
+    preferredContactMethod: 'Email' as 'Email' | 'SMS' | 'WhatsApp' | 'Push',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    communicationPreferences: {
+      marketing: false,
+      smsAlerts: true,
+      emailInvoices: true,
+    },
+
+    // Step 6: Security Verification
+    password: '',
+    confirmPassword: '',
+    termsAccepted: false,
+  });
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleService = (service: ServiceCategory) => {
+    setFormData(prev => {
+      const exists = prev.preferredServices.includes(service);
+      const updated = exists
+        ? prev.preferredServices.filter(s => s !== service)
+        : [...prev.preferredServices, service];
+      return { ...prev, preferredServices: updated };
+    });
+  };
+
+  const validateStep = (currentStep: number) => {
+    setErrorMessage(null);
+    if (currentStep === 1) {
+      if (!formData.name.trim()) return 'Full Name is required';
+      if (!formData.email.trim() || !formData.email.includes('@')) return 'A valid Email Address is required';
+      if (!formData.phone.trim()) return 'Primary Phone Number is required';
+    } else if (currentStep === 2) {
+      if (formData.accountType === 'Business' && !formData.companyName.trim()) {
+        return 'Company Name is required for Business accounts';
+      }
+    } else if (currentStep === 3) {
+      if (!formData.primaryAddress.trim()) return 'Physical Address is required';
+    } else if (currentStep === 4) {
+      if (formData.preferredServices.length === 0) return 'Please select at least one preferred service category';
+    } else if (currentStep === 6) {
+      if (!formData.password || formData.password.length < 5) return 'Password must be at least 5 characters long';
+      if (formData.password !== formData.confirmPassword) return 'Passwords do not match';
+      if (!formData.termsAccepted) return 'You must accept the terms of service to proceed';
+    }
+    return null;
+  };
+
+  const handleNext = () => {
+    const error = validateStep(step);
+    if (error) {
+      setErrorMessage(error);
+      return;
+    }
+    setStep(prev => prev + 1);
+  };
+
+  const handleBack = () => {
+    setErrorMessage(null);
+    setStep(prev => prev - 1);
+  };
+
+  const handleSubmit = async () => {
+    const error = validateStep(6);
+    if (error) {
+      setErrorMessage(error);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        secondaryPhone: formData.secondaryPhone || undefined,
+        idNumber: formData.idNumber || undefined,
+        accountType: formData.accountType,
+        companyName: formData.accountType === 'Business' ? formData.companyName : undefined,
+        companyRegNumber: formData.accountType === 'Business' ? formData.companyRegNumber : undefined,
+        vatNumber: formData.accountType === 'Business' ? formData.vatNumber : undefined,
+        industry: formData.accountType === 'Business' ? formData.industry : undefined,
+        address: formData.primaryAddress,
+        preferredContactMethod: formData.preferredContactMethod,
+        emergencyContactName: formData.emergencyContactName || undefined,
+        emergencyContactPhone: formData.emergencyContactPhone || undefined,
+        preferredServices: formData.preferredServices,
+        communicationPreferences: formData.communicationPreferences,
+        password: formData.password,
+        savedLocations: [
+          {
+            label: formData.primaryLabel,
+            address: formData.primaryAddress,
+            lat: -26.2041,
+            lng: 28.0473,
+            accessNotes: formData.accessNotes,
+          },
+        ],
+      };
+
+      await onComplete(payload);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Onboarding submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const stepsList = [
+    { num: 1, title: 'Personal', icon: User },
+    { num: 2, title: 'Company', icon: Building2 },
+    { num: 3, title: 'Locations', icon: MapPin },
+    { num: 4, title: 'Services', icon: Wrench },
+    { num: 5, title: 'Preferences', icon: Bell },
+    { num: 6, title: 'Security', icon: Lock },
+    { num: 7, title: 'Review', icon: CheckCircle2 },
+  ];
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-4xl mx-auto shadow-2xl text-slate-100">
+      {/* Header */}
+      <div className="flex justify-between items-center pb-6 border-b border-slate-800 mb-6">
+        <div>
+          <div className="flex items-center gap-2 text-red-500 font-semibold tracking-wider text-xs uppercase mb-1">
+            <Shield className="w-4 h-4" /> Enterprise Customer Onboarding
+          </div>
+          <h2 className="text-2xl font-bold text-white">Complete Profile Generation</h2>
+          <p className="text-sm text-slate-400">Step {step} of 7 — {stepsList[step - 1].title} Details</p>
+        </div>
+        <button
+          onClick={onCancel}
+          className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* Progress Bar & Indicators */}
+      <div className="grid grid-cols-7 gap-2 mb-8">
+        {stepsList.map(item => {
+          const Icon = item.icon;
+          const isActive = item.num === step;
+          const isDone = item.num < step;
+          return (
+            <div key={item.num} className="text-center">
+              <div
+                className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all ${
+                  isDone
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                    : isActive
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className={`text-[10px] mt-1.5 block font-medium ${isActive ? 'text-white' : 'text-slate-500'}`}>
+                {item.title}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {errorMessage && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-3 text-sm">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* STEP CONTENT */}
+      <div className="space-y-6 min-h-[320px]">
+        {/* STEP 1: Personal Details */}
+        {step === 1 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={e => handleChange('name', e.target.value)}
+                placeholder="e.g. Takudzwa Mike"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Email Address *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={e => handleChange('email', e.target.value)}
+                placeholder="mike@samedayassist.co.za"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Phone Number *</label>
+              <input
+                type="text"
+                value={formData.phone}
+                onChange={e => handleChange('phone', e.target.value)}
+                placeholder="+27 82 555 1000"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Secondary / Landline Phone</label>
+              <input
+                type="text"
+                value={formData.secondaryPhone}
+                onChange={e => handleChange('secondaryPhone', e.target.value)}
+                placeholder="+27 11 555 9111"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">ID or Passport Number</label>
+              <input
+                type="text"
+                value={formData.idNumber}
+                onChange={e => handleChange('idNumber', e.target.value)}
+                placeholder="e.g. 9001015800088 / Passport A1234567"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Required for verified emergency response dispatch authorization.</p>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Company Information */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Type *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleChange('accountType', 'Individual')}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    formData.accountType === 'Individual'
+                      ? 'border-red-500 bg-red-500/10 text-white'
+                      : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <User className="w-6 h-6 mb-2 text-red-400" />
+                  <div className="font-semibold text-sm">Individual / Homeowner</div>
+                  <p className="text-xs text-slate-400 mt-1">Personal security, residential emergency assistance & home maintenance.</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleChange('accountType', 'Business')}
+                  className={`p-4 rounded-xl border text-left transition-all ${
+                    formData.accountType === 'Business'
+                      ? 'border-red-500 bg-red-500/10 text-white'
+                      : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <Building2 className="w-6 h-6 mb-2 text-red-400" />
+                  <div className="font-semibold text-sm">Corporate / Business</div>
+                  <p className="text-xs text-slate-400 mt-1">Commercial properties, multiple sites, enterprise dispatch & billing.</p>
+                </button>
+              </div>
+            </div>
+
+            {formData.accountType === 'Business' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Registered Company Name *</label>
+                  <input
+                    type="text"
+                    value={formData.companyName}
+                    onChange={e => handleChange('companyName', e.target.value)}
+                    placeholder="e.g. Same Day Assist Holdings (Pty) Ltd"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Company Registration Number</label>
+                  <input
+                    type="text"
+                    value={formData.companyRegNumber}
+                    onChange={e => handleChange('companyRegNumber', e.target.value)}
+                    placeholder="2026/123456/07"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">VAT Registration Number</label>
+                  <input
+                    type="text"
+                    value={formData.vatNumber}
+                    onChange={e => handleChange('vatNumber', e.target.value)}
+                    placeholder="4123456789"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Industry / Sector</label>
+                  <input
+                    type="text"
+                    value={formData.industry}
+                    onChange={e => handleChange('industry', e.target.value)}
+                    placeholder="e.g. Real Estate & Commercial Facilities"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 3: Saved Locations */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Physical Address *</label>
+              <input
+                type="text"
+                value={formData.primaryAddress}
+                onChange={e => handleChange('primaryAddress', e.target.value)}
+                placeholder="e.g. 88 Grayston Drive, Sandton, Johannesburg"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Location Label</label>
+                <select
+                  value={formData.primaryLabel}
+                  onChange={e => handleChange('primaryLabel', e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                >
+                  <option value="Home">Home</option>
+                  <option value="Office">Office</option>
+                  <option value="Warehouse">Warehouse</option>
+                  <option value="Factory">Factory</option>
+                  <option value="Branch">Branch</option>
+                  <option value="Construction Site">Construction Site</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Site Access Instructions / Gate Code</label>
+                <input
+                  type="text"
+                  value={formData.accessNotes}
+                  onChange={e => handleChange('accessNotes', e.target.value)}
+                  placeholder="e.g. Gate code #4092, Guard house check-in required"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Preferred Services */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <p className="text-xs text-slate-400">Select all Same Day Assist services you plan to request or manage for your profile:</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[280px] overflow-y-auto pr-1">
+              {ALL_SERVICES.map(service => {
+                const selected = formData.preferredServices.includes(service);
+                return (
+                  <button
+                    key={service}
+                    type="button"
+                    onClick={() => toggleService(service)}
+                    className={`p-3 rounded-xl border text-left text-xs font-medium transition-all flex items-center justify-between ${
+                      selected
+                        ? 'bg-red-600/20 border-red-500 text-white'
+                        : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                    }`}
+                  >
+                    <span>{service}</span>
+                    {selected && <CheckCircle2 className="w-4 h-4 text-red-500" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: Communication Preferences */}
+        {step === 5 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preferred Contact Method</label>
+                <select
+                  value={formData.preferredContactMethod}
+                  onChange={e => handleChange('preferredContactMethod', e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                >
+                  <option value="Email">Email</option>
+                  <option value="SMS">SMS</option>
+                  <option value="WhatsApp">WhatsApp</option>
+                  <option value="Push">App Push Notification</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Name</label>
+                <input
+                  type="text"
+                  value={formData.emergencyContactName}
+                  onChange={e => handleChange('emergencyContactName', e.target.value)}
+                  placeholder="e.g. Sarah Molefe (Spouse)"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Phone</label>
+                <input
+                  type="text"
+                  value={formData.emergencyContactPhone}
+                  onChange={e => handleChange('emergencyContactPhone', e.target.value)}
+                  placeholder="+27 82 999 0000"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: Security Verification */}
+        {step === 6 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Passcode / Password *</label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={e => handleChange('password', e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirm Passcode *</label>
+                <input
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={e => handleChange('confirmPassword', e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.termsAccepted}
+                  onChange={e => handleChange('termsAccepted', e.target.checked)}
+                  className="mt-1 rounded bg-slate-800 border-slate-700 text-red-600 focus:ring-0"
+                />
+                <span className="text-xs text-slate-400">
+                  I agree to Same Day Assist Service Terms, Emergency Dispatch Protocols, and 60-day profile data integrity policies.
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 7: Review & Submit */}
+        {step === 7 && (
+          <div className="space-y-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Onboarding Profile Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <span className="text-slate-500 block">Name:</span>
+                <span className="font-semibold text-white">{formData.name}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Email:</span>
+                <span className="font-semibold text-white">{formData.email}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Phone:</span>
+                <span className="font-semibold text-white">{formData.phone}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Account Type:</span>
+                <span className="font-semibold text-red-400">{formData.accountType}</span>
+              </div>
+              {formData.accountType === 'Business' && (
+                <div>
+                  <span className="text-slate-500 block">Company:</span>
+                  <span className="font-semibold text-white">{formData.companyName}</span>
+                </div>
+              )}
+              <div>
+                <span className="text-slate-500 block">Location:</span>
+                <span className="font-semibold text-white">{formData.primaryAddress}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-slate-500 block">Preferred Services ({formData.preferredServices.length}):</span>
+                <span className="font-semibold text-slate-300">{formData.preferredServices.join(', ')}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between items-center pt-6 border-t border-slate-800 mt-8">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+        ) : <div />}
+
+        {step < 7 ? (
+          <button
+            type="button"
+            onClick={handleNext}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30"
+          >
+            Next Step <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+            className="flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Generating Profile...' : 'Complete & Generate Profile'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

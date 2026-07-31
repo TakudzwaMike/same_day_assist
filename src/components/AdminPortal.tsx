@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Clipboard, Activity, FileText, Users, LogOut } from 'lucide-react';
+import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import AdminDashboard from './admin/AdminDashboard';
@@ -7,13 +7,14 @@ import EnquiriesManager from './admin/EnquiriesManager';
 import ContractorsMonitor from './admin/ContractorsMonitor';
 import ReportsViewer from './admin/ReportsViewer';
 import AuditLogViewer from './admin/AuditLogViewer';
+import { AdminProfileRequests } from './admin/AdminProfileRequests';
 
 export default function AdminPortal() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
   const role = user?.role || 'Dispatcher';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'enquiries' | 'jobs' | 'reports' | 'logs'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests'>(() => {
     return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
 
@@ -30,11 +31,13 @@ export default function AdminPortal() {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
   } else if (role === 'Super Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
     tabs.push({ id: 'logs', label: 'Audit trail', icon: Clipboard });
   }
@@ -131,9 +134,11 @@ export default function AdminPortal() {
         {activeTab === 'overview' && <AdminDashboard />}
         {activeTab === 'enquiries' && <EnquiriesManager />}
         {activeTab === 'jobs' && <ContractorsMonitor />}
+        {activeTab === 'profileRequests' && <AdminProfileRequests />}
         {activeTab === 'reports' && <ReportsViewer />}
         {activeTab === 'logs' && <AuditLogViewer />}
       </div>
     </div>
   );
 }
+

@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import CustomerHome from './customer/CustomerHome';
 import CustomerProfile from './customer/CustomerProfile';
 import CustomerInvoices from './customer/CustomerInvoices';
 import CustomerActiveJob from './customer/CustomerActiveJob';
+import { LiveServiceTracker } from './customer/LiveServiceTracker';
+import { SavedLocationsManager } from './customer/SavedLocationsManager';
+import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
 
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'locations' | 'contacts'>('home');
+
 
   // Find active customer record
   const activeCustomer = state.customers.find(c => c.id === user?.id) || state.customers[0];
@@ -47,6 +51,30 @@ export default function CustomerApp() {
           >
             <Shield className="w-4 h-4 text-red" />
             <span>Emergency Dispatch</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveDeviceTab('locations')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'locations'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <MapPin className="w-4 h-4 text-slate-500" />
+            <span>Saved Locations</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveDeviceTab('contacts')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'contacts'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <Users className="w-4 h-4 text-slate-500" />
+            <span>Authorised Contacts</span>
           </button>
           <button
             type="button"
@@ -98,7 +126,7 @@ export default function CustomerApp() {
         <div className="max-w-4xl mx-auto flex flex-col gap-6">
           {activeDeviceTab === 'home' && (
             activeJob ? (
-              <CustomerActiveJob activeJob={activeJob} assignedContractor={assignedContractor} />
+              <LiveServiceTracker job={activeJob} />
             ) : (
               <CustomerHome 
                 activeCustomer={activeCustomer} 
@@ -108,6 +136,12 @@ export default function CustomerApp() {
               />
             )
           )}
+          {activeDeviceTab === 'locations' && (
+            <SavedLocationsManager />
+          )}
+          {activeDeviceTab === 'contacts' && (
+            <AuthorisedContactsManager />
+          )}
           {activeDeviceTab === 'profile' && (
             <CustomerProfile activeCustomer={activeCustomer} />
           )}
@@ -116,6 +150,7 @@ export default function CustomerApp() {
           )}
         </div>
       </div>
+
     </div>
   );
 }
