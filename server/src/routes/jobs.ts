@@ -8,7 +8,7 @@ import { Server as SocketServer } from 'socket.io';
 const router = Router();
 
 // Inject io via middleware factory
-export function createJobsRouter(io: SocketServer) {
+export function createJobsRouter(io?: SocketServer) {
 
   // GET /api/jobs — Admin/Contractor/Dispatcher: get all jobs
   router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Contractor', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
