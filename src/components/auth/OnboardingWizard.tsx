@@ -200,15 +200,15 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
       </div>
 
       {/* Progress Bar & Indicators */}
-      <div className="grid grid-cols-7 gap-2 mb-8">
+      <div className="flex items-center justify-between gap-1 sm:gap-3 mb-8 overflow-x-auto pb-2 scrollbar-none">
         {stepsList.map(item => {
           const Icon = item.icon;
           const isActive = item.num === step;
           const isDone = item.num < step;
           return (
-            <div key={item.num} className="text-center">
+            <div key={item.num} className="flex-1 min-w-[38px] sm:min-w-[50px] text-center shrink-0">
               <div
-                className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center transition-all ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 mx-auto rounded-xl flex items-center justify-center transition-all ${
                   isDone
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
                     : isActive
@@ -216,9 +216,9 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     : 'bg-slate-800 text-slate-500 border border-slate-700'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className={`text-[10px] mt-1.5 block font-medium ${isActive ? 'text-white' : 'text-slate-500'}`}>
+              <span className={`text-[9px] sm:text-[10px] mt-1.5 block font-medium truncate ${isActive ? 'text-white font-bold' : 'text-slate-500 hidden sm:block'}`}>
                 {item.title}
               </span>
             </div>
@@ -542,38 +542,38 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
         {/* STEP 7: Review & Submit */}
         {step === 7 && (
-          <div className="space-y-4 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Onboarding Profile Summary</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-              <div>
-                <span className="text-slate-500 block">Name:</span>
-                <span className="font-semibold text-white">{formData.name}</span>
+          <div className="space-y-4 bg-slate-950/50 p-4 md:p-6 rounded-xl border border-slate-800">
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 pb-2 border-b border-slate-800">Onboarding Profile Summary</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 text-xs">
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Name</span>
+                <span className="font-semibold text-white break-words">{formData.name}</span>
               </div>
-              <div>
-                <span className="text-slate-500 block">Email:</span>
-                <span className="font-semibold text-white">{formData.email}</span>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Email</span>
+                <span className="font-semibold text-white break-all">{formData.email}</span>
               </div>
-              <div>
-                <span className="text-slate-500 block">Phone:</span>
-                <span className="font-semibold text-white">{formData.phone}</span>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Phone</span>
+                <span className="font-semibold text-white break-words">{formData.phone}</span>
               </div>
-              <div>
-                <span className="text-slate-500 block">Account Type:</span>
-                <span className="font-semibold text-red-400">{formData.accountType}</span>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Account Type</span>
+                <span className="font-semibold text-red-400 break-words">{formData.accountType}</span>
               </div>
               {formData.accountType === 'Business' && (
-                <div>
-                  <span className="text-slate-500 block">Company:</span>
-                  <span className="font-semibold text-white">{formData.companyName}</span>
+                <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                  <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Company</span>
+                  <span className="font-semibold text-white break-words">{formData.companyName}</span>
                 </div>
               )}
-              <div>
-                <span className="text-slate-500 block">Location:</span>
-                <span className="font-semibold text-white">{formData.primaryAddress}</span>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 sm:col-span-2 md:col-span-1">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Location</span>
+                <span className="font-semibold text-white break-words leading-relaxed">{formData.primaryAddress}</span>
               </div>
-              <div className="col-span-2">
-                <span className="text-slate-500 block">Preferred Services ({formData.preferredServices.length}):</span>
-                <span className="font-semibold text-slate-300">{formData.preferredServices.join(', ')}</span>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2 md:col-span-3">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Preferred Services ({formData.preferredServices.length})</span>
+                <span className="font-semibold text-slate-300 break-words leading-relaxed">{formData.preferredServices.join(', ')}</span>
               </div>
             </div>
           </div>

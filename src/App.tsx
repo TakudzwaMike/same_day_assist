@@ -173,7 +173,7 @@ export default function App() {
         </>
 
         {/* Dynamic Header */}
-        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
+        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-3 px-4 md:px-12 flex flex-col sm:flex-row justify-between items-center gap-3 z-10">
           <div className="flex items-center gap-3">
             <div className="mx-auto w-8 h-8 rounded-full flex items-center justify-center bg-red/10 border border-red/20 shrink-0">
               <Shield className="w-4 h-4 text-red" />
