@@ -27,21 +27,21 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(255),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(10, 'Phone number must be at least 10 characters').max(20),
-  address: z.string().min(5, 'Address is required').max(500),
-  serviceCategory: z.enum(['Security', 'Electrical', 'Plumbing', 'Construction']).optional(),
+  phone: z.string().min(5, 'Phone number must be at least 5 characters').max(30),
+  address: z.string().min(2, 'Address is required').max(500),
+  serviceCategory: z.string().optional().default('Security'),
   notes: z.string().max(1000).optional(),
   password: z.string().min(4, 'Password must be at least 4 characters'),
-  role: z.enum(['Customer', 'Contractor', 'Dispatcher', 'Administrator', 'Super Administrator']),
+  role: z.enum(['Customer', 'Contractor', 'Dispatcher', 'Administrator', 'Super Administrator']).optional().default('Customer'),
   adminSecret: z.string().optional(),
 });
 
 export const enquirySchema = z.object({
-  customerName: z.string().min(2).max(255),
+  customerName: z.string().min(1).max(255),
   email: z.string().email(),
-  phone: z.string().min(10).max(20),
-  address: z.string().min(5).max(500),
-  serviceCategory: z.enum(['Security', 'Electrical', 'Plumbing', 'Construction']),
+  phone: z.string().min(5).max(30),
+  address: z.string().min(1).max(500),
+  serviceCategory: z.string().optional().default('Security'),
   notes: z.string().max(1000).optional().default(''),
 });
 

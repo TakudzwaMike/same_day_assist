@@ -149,11 +149,11 @@ class ApiClient {
 
   async register(payload: {
     name: string; email: string; phone: string; address: string;
-    serviceCategory: string; notes?: string; password: string;
+    serviceCategory?: string; notes?: string; password: string; role?: string; adminSecret?: string;
   }) {
     const data = await this.request<{ accessToken: string; refreshToken: string; user: any }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ role: 'Customer', serviceCategory: 'Security', ...payload }),
     });
     this.setTokens(data.accessToken, data.refreshToken);
     localStorage.setItem('sda_user', JSON.stringify(data.user));

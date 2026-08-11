@@ -230,15 +230,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const createEnquiry = async (payload: { name: string; email: string; phone: string; address: string; serviceCategory: any; notes?: string }) => {
     setError(null);
     try {
-      // In the mockup onboarding context, registration and enquiry are coupled
       await api.register({
         name: payload.name,
         email: payload.email,
         phone: payload.phone,
         address: payload.address,
-        serviceCategory: payload.serviceCategory,
+        serviceCategory: payload.serviceCategory || 'Security',
         notes: payload.notes,
-        password: 'demo-passcode', // Default demo passcode
+        password: 'demo-passcode',
+        role: 'Customer',
       });
       await refreshData();
     } catch (err: any) {
