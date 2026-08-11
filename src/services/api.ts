@@ -63,6 +63,7 @@ class ApiClient {
     const token = this.getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'bypass-tunnel-reminder': 'true',
       ...(options.headers as Record<string, string> || {}),
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;

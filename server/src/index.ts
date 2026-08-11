@@ -36,16 +36,33 @@ const app = express();
 const server = http.createServer(app);
 
 // Socket.IO for real-time dispatch
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'https://same-day-assist.vercel.app',
+  'http://localhost:3000',
+].filter(Boolean);
+
 const io = new SocketServer(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all web clients in production
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    callback(null, true); // Allow web requests from Vercel deployments
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
