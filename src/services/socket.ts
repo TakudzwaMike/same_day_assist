@@ -4,11 +4,11 @@ import { Capacitor } from '@capacitor/core';
 let socket: Socket | null = null;
 
 const getSocketUrl = () => {
+  const metaEnv = (import.meta as any).env;
+  if (metaEnv && metaEnv.VITE_API_URL) {
+    return metaEnv.VITE_API_URL.replace(/\/api\/?$/, '');
+  }
   if (Capacitor.isNativePlatform()) {
-    const metaEnv = (import.meta as any).env;
-    if (metaEnv && metaEnv.VITE_API_URL) {
-      return metaEnv.VITE_API_URL.replace(/\/api\/?$/, '');
-    }
     return 'http://10.0.2.2:5000';
   }
   return '/';
