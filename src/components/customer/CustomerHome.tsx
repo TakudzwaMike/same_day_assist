@@ -199,10 +199,15 @@ export default function CustomerHome({
             </div>
           </div>
 
-          <form onSubmit={handleEnquirySubmit} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col gap-4">
-            <div className="border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-bold text-navy uppercase tracking-wider">Request Onboarding Survey</h3>
-              <p className="text-[9px] text-slate-400">Fill in details to set up a mandatory compliance survey of your property</p>
+          <form onSubmit={handleEnquirySubmit} className="bg-slate-900 text-slate-100 p-6 rounded-3xl border-2 border-red-500/50 shadow-xl flex flex-col gap-4">
+            <div className="border-b border-slate-800 pb-3 flex justify-between items-center">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Request Onboarding Survey</h3>
+                  <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">Fill in details to set up a mandatory compliance & safety survey of your property</p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -212,7 +217,7 @@ export default function CustomerHome({
                 required
                 value={enquiryName}
                 onChange={e => setEnquiryName(e.target.value)}
-                className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input 
@@ -221,7 +226,7 @@ export default function CustomerHome({
                   required
                   value={enquiryEmail}
                   onChange={e => setEnquiryEmail(e.target.value)}
-                  className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                  className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
                 />
                 <input 
                   type="tel" 
@@ -229,7 +234,7 @@ export default function CustomerHome({
                   required
                   value={enquiryPhone}
                   onChange={e => setEnquiryPhone(e.target.value)}
-                  className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                  className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
                 />
               </div>
               <input 
@@ -238,37 +243,37 @@ export default function CustomerHome({
                 required
                 value={enquiryAddress}
                 onChange={e => setEnquiryAddress(e.target.value)}
-                className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase">Primary Assistance Needed</label>
+                  <label className="text-[10px] font-bold text-slate-300 uppercase">Primary Assistance Needed</label>
                   <select
                     value={enquiryCategory}
                     onChange={e => setEnquiryCategory(e.target.value as ServiceCategory)}
-                    className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy font-bold"
+                    className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white font-bold"
                   >
-                    <option value="Security">🛡️ Security Shield</option>
-                    <option value="Electrical">⚡ Electrical Shield</option>
-                    <option value="Plumbing">💧 Plumbing Shield</option>
-                    <option value="Construction">🔨 Infrastructure Guard</option>
+                    <option value="Security Systems Assistance">🛡️ Security Systems Assistance</option>
+                    <option value="Solar Systems Assistance">☀️ Solar Systems Assistance</option>
+                    <option value="Electrical Assistance">⚡ Electrical Assistance</option>
+                    <option value="Plumbing Assistance">💧 Plumbing Assistance</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase">Onboarding Notes (Optional)</label>
+                  <label className="text-[10px] font-bold text-slate-300 uppercase">Onboarding Notes (Optional)</label>
                   <input
                     type="text"
-                    placeholder="Electric fence details, dogs on property, etc."
+                    placeholder="Electric fence details, gate code, dogs on property, etc."
                     value={enquiryNotes}
                     onChange={e => setEnquiryNotes(e.target.value)}
-                    className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none"
+                    className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-red hover:bg-red/90 text-white font-brand-header text-xs py-3 rounded-xl tracking-wider shadow-xs uppercase cursor-pointer"
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs py-3.5 rounded-xl tracking-wider shadow-lg shadow-red-600/30 uppercase cursor-pointer transition-all mt-1"
               >
                 Submit Survey Request
               </button>

@@ -5,6 +5,10 @@
 
 export type ServiceCategory =
   | 'Security Services'
+  | 'Security Systems Assistance'
+  | 'Solar Systems Assistance'
+  | 'Electrical Assistance'
+  | 'Plumbing Assistance'
   | 'Armed Response'
   | 'VIP Protection'
   | 'Event Security'

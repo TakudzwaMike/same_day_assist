@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, User, Building2, MapPin, Wrench, Bell, Lock, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Shield, User, Building2, MapPin, Wrench, Bell, Lock, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { ServiceCategory } from '../../types';
 
 interface OnboardingWizardProps {
@@ -7,30 +7,14 @@ interface OnboardingWizardProps {
   onCancel: () => void;
 }
 
-const ALL_SERVICES: ServiceCategory[] = [
-  'Security Services',
-  'Armed Response',
-  'VIP Protection',
-  'Event Security',
-  'Alarm Response',
-  'CCTV Monitoring',
-  'Guarding Services',
-  'Patrol Services',
-  'Cleaning Services',
-  'Plumbing',
-  'Electrical Services',
-  'Locksmith Services',
-  'Towing Services',
-  'Roadside Assistance',
-  'Medical Assistance',
-  'Emergency Home Assistance',
-  'Maintenance Services',
-];
-
 export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Password visibility controls
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -41,25 +25,26 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
     secondaryPhone: '',
     idNumber: '',
 
-    // Step 2: Company / Account Type
+    // Step 2: Account Type
     accountType: 'Individual' as 'Individual' | 'Business',
     companyName: '',
     companyRegNumber: '',
     vatNumber: '',
     industry: '',
 
-    // Step 3: Saved Locations
+    // Step 3: Address
     primaryAddress: '',
     primaryLabel: 'Main Residence',
     accessNotes: '',
 
     // Step 4: Preferred Services
-    preferredServices: ['Security Services', 'Armed Response'] as ServiceCategory[],
+    preferredServices: ['Security Systems Assistance'] as ServiceCategory[],
 
-    // Step 5: Communication
+    // Step 5: Communication & Next of Kin Details
     preferredContactMethod: 'Email' as 'Email' | 'SMS' | 'WhatsApp' | 'Push',
     emergencyContactName: '',
     emergencyContactPhone: '',
+    requestOnboardingSurvey: true,
     communicationPreferences: {
       marketing: false,
       smsAlerts: true,
@@ -148,6 +133,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         preferredContactMethod: formData.preferredContactMethod,
         emergencyContactName: formData.emergencyContactName || undefined,
         emergencyContactPhone: formData.emergencyContactPhone || undefined,
+        requestOnboardingSurvey: formData.requestOnboardingSurvey,
         preferredServices: formData.preferredServices,
         communicationPreferences: formData.communicationPreferences,
         password: formData.password,
@@ -172,8 +158,8 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
   const stepsList = [
     { num: 1, title: 'Personal', icon: User },
-    { num: 2, title: 'Company', icon: Building2 },
-    { num: 3, title: 'Locations', icon: MapPin },
+    { num: 2, title: 'Account Type', icon: Building2 },
+    { num: 3, title: 'Address', icon: MapPin },
     { num: 4, title: 'Services', icon: Wrench },
     { num: 5, title: 'Preferences', icon: Bell },
     { num: 6, title: 'Security', icon: Lock },
@@ -296,23 +282,24 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           </div>
         )}
 
-        {/* STEP 2: Company Information */}
+        {/* STEP 2: Account Type */}
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Type *</label>
-              <div className="grid grid-cols-2 gap-4">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Account Type *</label>
+              <p className="text-xs text-slate-400 mb-3">Select the type of account you are creating for Same Day Assist:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => handleChange('accountType', 'Individual')}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     formData.accountType === 'Individual'
-                      ? 'border-red-500 bg-red-500/10 text-white'
+                      ? 'border-red-500 bg-red-500/10 text-white shadow-lg shadow-red-500/10'
                       : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <User className="w-6 h-6 mb-2 text-red-400" />
-                  <div className="font-semibold text-sm">Individual / Homeowner</div>
+                  <div className="font-semibold text-sm text-white">Personal Account</div>
                   <p className="text-xs text-slate-400 mt-1">Personal security, residential emergency assistance & home maintenance.</p>
                 </button>
 
@@ -321,12 +308,12 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                   onClick={() => handleChange('accountType', 'Business')}
                   className={`p-4 rounded-xl border text-left transition-all ${
                     formData.accountType === 'Business'
-                      ? 'border-red-500 bg-red-500/10 text-white'
+                      ? 'border-red-500 bg-red-500/10 text-white shadow-lg shadow-red-500/10'
                       : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <Building2 className="w-6 h-6 mb-2 text-red-400" />
-                  <div className="font-semibold text-sm">Corporate / Business</div>
+                  <div className="font-semibold text-sm text-white">Business Account</div>
                   <p className="text-xs text-slate-400 mt-1">Commercial properties, multiple sites, enterprise dispatch & billing.</p>
                 </button>
               </div>
@@ -382,11 +369,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           </div>
         )}
 
-        {/* STEP 3: Saved Locations */}
+        {/* STEP 3: Address */}
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Physical Address *</label>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Address *</label>
               <input
                 type="text"
                 value={formData.primaryAddress}
@@ -398,7 +385,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Location Label</label>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Address Label</label>
                 <select
                   value={formData.primaryLabel}
                   onChange={e => handleChange('primaryLabel', e.target.value)}
@@ -427,71 +414,147 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           </div>
         )}
 
-        {/* STEP 4: Preferred Services */}
+        {/* STEP 4: Services */}
         {step === 4 && (
           <div className="space-y-4">
-            <p className="text-xs text-slate-400">Select all Same Day Assist services you plan to request or manage for your profile:</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[280px] overflow-y-auto pr-1">
-              {ALL_SERVICES.map(service => {
-                const selected = formData.preferredServices.includes(service);
-                return (
-                  <button
-                    key={service}
-                    type="button"
-                    onClick={() => toggleService(service)}
-                    className={`p-3 rounded-xl border text-left text-xs font-medium transition-all flex items-center justify-between ${
-                      selected
-                        ? 'bg-red-600/20 border-red-500 text-white'
-                        : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <span>{service}</span>
-                    {selected && <CheckCircle2 className="w-4 h-4 text-red-500" />}
-                  </button>
-                );
-              })}
+            <div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Services</h3>
+              <p className="text-xs text-slate-400 mb-3">Select from our available service offerings below:</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 1. Security Systems Assistance (Active & Selectable) */}
+              <button
+                type="button"
+                onClick={() => toggleService('Security Systems Assistance')}
+                className={`p-4 rounded-xl border text-left transition-all flex items-start justify-between cursor-pointer ${
+                  formData.preferredServices.includes('Security Systems Assistance')
+                    ? 'bg-red-600/20 border-red-500 text-white shadow-lg shadow-red-600/10'
+                    : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-white">Security Systems Assistance</span>
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+                  </div>
+                  <p className="text-xs text-slate-400">Security monitoring, dispatch, emergency response & system installations.</p>
+                </div>
+                {formData.preferredServices.includes('Security Systems Assistance') && (
+                  <CheckCircle2 className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                )}
+              </button>
+
+              {/* 2. Solar Systems Assistance (Greyed out / unavailable) */}
+              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-400">Solar Systems Assistance</span>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
+                </div>
+                <span className="text-slate-600 text-xs font-mono">○</span>
+              </div>
+
+              {/* 3. Electrical Assistance (Greyed out / unavailable) */}
+              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-400">Electrical Assistance</span>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
+                </div>
+                <span className="text-slate-600 text-xs font-mono">○</span>
+              </div>
+
+              {/* 4. Plumbing Assistance (Greyed out / unavailable) */}
+              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-400">Plumbing Assistance</span>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
+                  </div>
+                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
+                </div>
+                <span className="text-slate-600 text-xs font-mono">○</span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* STEP 5: Communication Preferences */}
+        {/* STEP 5: Communication Preferences & Next of Kin Details */}
         {step === 5 && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preferred Contact Method</label>
-                <select
-                  value={formData.preferredContactMethod}
-                  onChange={e => handleChange('preferredContactMethod', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                >
-                  <option value="Email">Email</option>
-                  <option value="SMS">SMS</option>
-                  <option value="WhatsApp">WhatsApp</option>
-                  <option value="Push">App Push Notification</option>
-                </select>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Communication & Next of Kin Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preferred Contact Method</label>
+                  <select
+                    value={formData.preferredContactMethod}
+                    onChange={e => handleChange('preferredContactMethod', e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  >
+                    <option value="Email">Email</option>
+                    <option value="SMS">SMS</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Push">App Push Notification</option>
+                  </select>
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Name</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContactName}
-                  onChange={e => handleChange('emergencyContactName', e.target.value)}
-                  placeholder="e.g. Sarah Molefe (Spouse)"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                />
+            {/* NEXT OF KIN DETAILS SECTION */}
+            <div className="pt-4 border-t border-slate-800">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Next of Kin Details</h3>
+              <p className="text-xs text-slate-400 mb-3">Provide primary contact information for your next of kin in case of emergency response.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Next of Kin Full Name</label>
+                  <input
+                    type="text"
+                    value={formData.emergencyContactName}
+                    onChange={e => handleChange('emergencyContactName', e.target.value)}
+                    placeholder="e.g. Sarah Molefe (Spouse / Next of Kin)"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Next of Kin Phone Number</label>
+                  <input
+                    type="text"
+                    value={formData.emergencyContactPhone}
+                    onChange={e => handleChange('emergencyContactPhone', e.target.value)}
+                    placeholder="+27 82 999 0000"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
               </div>
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Phone</label>
-                <input
-                  type="text"
-                  value={formData.emergencyContactPhone}
-                  onChange={e => handleChange('emergencyContactPhone', e.target.value)}
-                  placeholder="+27 82 999 0000"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                />
+            {/* REQUEST ONBOARDING SURVEY OPTION (HIGH VISIBILITY) */}
+            <div className="pt-4 border-t border-slate-800">
+              <div className="p-4 rounded-xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 shadow-xl transition-all hover:border-red-500">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.requestOnboardingSurvey}
+                    onChange={e => handleChange('requestOnboardingSurvey', e.target.checked)}
+                    className="mt-1 w-5 h-5 rounded bg-slate-950 border-slate-600 text-red-600 focus:ring-red-500 shrink-0 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white tracking-wide uppercase">Request Onboarding Survey</span>
+                      <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">Recommended</span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Dispatch a certified Same Day Assist inspector to perform an initial property safety & compliance assessment upon registration.
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
@@ -503,24 +566,44 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Passcode / Password *</label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={e => handleChange('password', e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    onChange={e => handleChange('password', e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white transition-colors p-0.5 rounded-md hover:bg-slate-700/50 cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirm Passcode *</label>
-                <input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={e => handleChange('confirmPassword', e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    onChange={e => handleChange('confirmPassword', e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white transition-colors p-0.5 rounded-md hover:bg-slate-700/50 cursor-pointer"
+                    title={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -530,7 +613,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                   type="checkbox"
                   checked={formData.termsAccepted}
                   onChange={e => handleChange('termsAccepted', e.target.checked)}
-                  className="mt-1 rounded bg-slate-800 border-slate-700 text-red-600 focus:ring-0"
+                  className="mt-1 rounded bg-slate-800 border-slate-700 text-red-600 focus:ring-0 cursor-pointer"
                 />
                 <span className="text-xs text-slate-400">
                   I agree to Same Day Assist Service Terms, Emergency Dispatch Protocols, and 60-day profile data integrity policies.
@@ -559,7 +642,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
                 <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Account Type</span>
-                <span className="font-semibold text-red-400 break-words">{formData.accountType}</span>
+                <span className="font-semibold text-red-400 break-words">{formData.accountType === 'Business' ? 'Business Account' : 'Personal Account'}</span>
               </div>
               {formData.accountType === 'Business' && (
                 <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
@@ -568,13 +651,25 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                 </div>
               )}
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 sm:col-span-2 md:col-span-1">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Location</span>
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Address</span>
                 <span className="font-semibold text-white break-words leading-relaxed">{formData.primaryAddress}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2 md:col-span-3">
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2">
                 <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Preferred Services ({formData.preferredServices.length})</span>
                 <span className="font-semibold text-slate-300 break-words leading-relaxed">{formData.preferredServices.join(', ')}</span>
               </div>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Onboarding Survey</span>
+                <span className={`font-semibold ${formData.requestOnboardingSurvey ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {formData.requestOnboardingSurvey ? 'Requested ✓' : 'Not Requested'}
+                </span>
+              </div>
+              {formData.emergencyContactName && (
+                <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2 md:col-span-3">
+                  <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Next of Kin Details</span>
+                  <span className="font-semibold text-white break-words">{formData.emergencyContactName} ({formData.emergencyContactPhone || 'No phone provided'})</span>
+                </div>
+              )}
             </div>
           </div>
         )}
