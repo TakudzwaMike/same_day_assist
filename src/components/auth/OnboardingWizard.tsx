@@ -175,7 +175,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             <Shield className="w-4 h-4" /> Enterprise Customer Onboarding
           </div>
           <h2 className="text-2xl font-bold text-white">Complete Profile Generation</h2>
-          <p className="text-sm text-slate-400">Step {step} of 7 — {stepsList[step - 1].title} Details</p>
+          <p className="text-sm text-slate-400">Step {step} of 7 — {stepsList[step - 1].title}</p>
         </div>
         <button
           onClick={onCancel}
@@ -204,7 +204,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               >
                 <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className={`text-[9px] sm:text-[10px] mt-1.5 block font-medium truncate ${isActive ? 'text-white font-bold' : 'text-slate-500 hidden sm:block'}`}>
+              <span className={`text-[9px] sm:text-[10px] mt-1.5 block font-medium leading-tight text-center ${isActive ? 'text-white font-bold' : 'text-slate-500 hidden sm:block'}`}>
                 {item.title}
               </span>
             </div>
