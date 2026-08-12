@@ -63,9 +63,11 @@ export default function AdminPortal() {
       {/* ADMIN HEADER */}
       <div className="bg-navy text-white px-8 py-5 flex justify-between items-center border-b border-navy-light relative">
         <div className="flex items-center gap-3">
-          <div className="mx-auto w-10 h-10 rounded-full flex items-center justify-center bg-red/10 border border-red/20 shrink-0">
-            <Shield className="w-5 h-5 text-red" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Same Day Assist Logo" 
+            className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
+          />
           <div>
             <h1 className="text-lg font-brand-header tracking-wide uppercase">SAME DAY ASSIST</h1>
             <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">{getSubTitle()}</p>

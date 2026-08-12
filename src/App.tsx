@@ -175,9 +175,11 @@ export default function App() {
         {/* Dynamic Header */}
         <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md py-3 px-4 md:px-12 flex flex-col sm:flex-row justify-between items-center gap-3 z-10">
           <div className="flex items-center gap-3">
-            <div className="mx-auto w-8 h-8 rounded-full flex items-center justify-center bg-red/10 border border-red/20 shrink-0">
-              <Shield className="w-4 h-4 text-red" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Same Day Assist Logo" 
+              className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
+            />
             <div>
               <div className="flex items-baseline gap-1">
                 <h1 className="text-sm font-black italic tracking-wide leading-none uppercase font-brand-header text-white">
@@ -232,8 +234,8 @@ export default function App() {
           ) : (
             <div className="w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100">
               <div className="text-center space-y-1.5">
-                <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-1.5 bg-red/10 border border-red/20">
-                  <Lock className="w-5 h-5 text-red animate-pulse" />
+                <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-white p-1 shadow-xl border border-slate-700">
+                  <img src="/logo.png" alt="Same Day Assist Logo" className="w-full h-full object-contain rounded-full" />
                 </div>
                 <h2 className="text-lg font-brand-header tracking-wide uppercase text-white">
                   {isCustomerTheme ? 'Sign In To Account' : 'Secure Operator Entrance'}
