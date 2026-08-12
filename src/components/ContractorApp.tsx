@@ -3,6 +3,7 @@ import { Wrench, LogOut, Shield, FileCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
 import { ContractorVettingModal } from './contractor/ContractorVettingModal';
+import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
@@ -17,7 +18,7 @@ export default function ContractorApp() {
       <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo.png" 
+            src={logoImg} 
             alt="Same Day Assist Logo" 
             onClick={() => setIsOnline(true)}
             className="w-10 h-10 object-contain shrink-0 cursor-pointer" 

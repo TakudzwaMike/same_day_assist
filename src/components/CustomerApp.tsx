@@ -10,6 +10,7 @@ import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
+import logoImg from '../assets/logo.png';
 
 export default function CustomerApp() {
   const { state } = useAppState();
@@ -27,7 +28,7 @@ export default function CustomerApp() {
       <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo.png" 
+            src={logoImg} 
             alt="Same Day Assist Logo" 
             onClick={() => setActiveDeviceTab('home')}
             className="w-10 h-10 object-contain shrink-0 cursor-pointer" 

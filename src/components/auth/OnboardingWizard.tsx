@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, User, Building2, MapPin, Wrench, Bell, Lock, CheckCircle2, ChevronRight, ChevronLeft, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { ServiceCategory } from '../../types';
+import logoImg from '../../assets/logo.png';
 
 interface OnboardingWizardProps {
   onComplete: (data: any) => Promise<void>;
@@ -172,7 +173,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
       <div className="flex justify-between items-center pb-6 border-b border-slate-800 mb-6">
         <div>
           <div className="flex items-center gap-2.5 text-red-500 font-semibold tracking-wider text-xs uppercase mb-1">
-            <img src="/logo.png" alt="Same Day Assist Logo" className="w-7 h-7 rounded-full object-contain bg-white p-0.5 shadow-md shrink-0" />
+            <img src={logoImg} alt="Same Day Assist Logo" className="w-7 h-7 rounded-full object-contain bg-white p-0.5 shadow-md shrink-0" />
             <span>Enterprise Customer Onboarding</span>
           </div>
           <h2 className="text-2xl font-bold text-white">Complete Profile Generation</h2>

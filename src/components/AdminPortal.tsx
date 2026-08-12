@@ -9,6 +9,7 @@ import ReportsViewer from './admin/ReportsViewer';
 import AuditLogViewer from './admin/AuditLogViewer';
 import { AdminProfileRequests } from './admin/AdminProfileRequests';
 import { AdminVettingQueue } from './admin/AdminVettingQueue';
+import logoImg from '../assets/logo.png';
 
 export default function AdminPortal() {
   const { state } = useAppState();
@@ -64,7 +65,7 @@ export default function AdminPortal() {
       <div className="bg-navy text-white px-8 py-5 flex justify-between items-center border-b border-navy-light relative">
         <div className="flex items-center gap-3">
           <img 
-            src="/logo.png" 
+            src={logoImg} 
             alt="Same Day Assist Logo" 
             className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
           />
