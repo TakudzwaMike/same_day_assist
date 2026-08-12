@@ -175,6 +175,42 @@ export interface OnboardingPayload {
   }>;
 }
 
+export type CustomerStatus =
+  | 'APPLICATION_STARTED'
+  | 'APPLICATION_SUBMITTED'
+  | 'WAITING_FOR_SURVEY'
+  | 'SURVEY_ASSIGNED'
+  | 'SURVEY_SCHEDULED'
+  | 'SURVEY_IN_PROGRESS'
+  | 'SURVEY_COMPLETED'
+  | 'ADMIN_REVIEW'
+  | 'MORE_INFORMATION_REQUIRED'
+  | 'APPLICATION_REJECTED'
+  | 'APPLICATION_APPROVED'
+  | 'PAYMENT_REQUIRED'
+  | 'PAYMENT_RECEIVED'
+  | 'WAITING_FOR_ACTIVATION'
+  | 'ACTIVE';
+
+export interface SurveyReport {
+  id: string;
+  enquiryId: string;
+  customerId?: string;
+  customerName?: string;
+  inspectorId: string;
+  inspectorName: string;
+  propertyAssessment: string;
+  safetyObservations: string;
+  complianceObservations: string;
+  existingSystems: string;
+  risksIdentified: string;
+  recommendedActions: string;
+  photos: string[];
+  recommendation: 'RECOMMEND_APPROVAL' | 'RECOMMEND_REVISION' | 'RECOMMEND_REJECT';
+  inspectionDate: string;
+  submittedAt: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -191,7 +227,17 @@ export interface Customer {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   lastProfileUpdateAt?: string;
-  status: 'Onboarding' | 'Active' | 'Suspended' | 'Expired';
+  status: CustomerStatus | 'Onboarding' | 'Active' | 'Suspended' | 'Expired';
+  onboardingStatus?: CustomerStatus;
+  surveyRequested?: boolean;
+  surveyInspectorId?: string;
+  surveyInspectorName?: string;
+  surveyScheduledDate?: string;
+  surveyReport?: SurveyReport;
+  adminReviewNotes?: string;
+  initialPaymentAmount?: number;
+  initialPaymentPaidAt?: string;
+  activationScheduledDate?: string;
   package: 'Gold' | 'Platinum' | 'Diamond';
   memberSince?: string;
   repairsCount: number;
@@ -300,13 +346,21 @@ export interface Payment {
 
 export interface Enquiry {
   id: string;
+  customerId?: string;
   customerName: string;
   email: string;
   phone: string;
   address: string;
+  accountType?: 'Individual' | 'Business';
   serviceCategory: ServiceCategory | string;
   notes: string;
-  status: 'Pending' | 'Scheduled' | 'Assessed' | 'Quoted' | 'Approved' | 'Completed';
+  status: CustomerStatus | 'Pending' | 'Scheduled' | 'Assessed' | 'Quoted' | 'Approved' | 'Completed';
+  surveyRequested?: boolean;
+  surveyInspectorId?: string;
+  surveyInspectorName?: string;
+  surveyScheduledDate?: string;
+  surveyReport?: SurveyReport;
+  adminReviewNotes?: string;
   createdAt: string;
 }
 

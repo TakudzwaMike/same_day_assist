@@ -3,12 +3,14 @@ import { Wrench, LogOut, Shield, FileCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
 import { ContractorVettingModal } from './contractor/ContractorVettingModal';
+import { InspectorSurveyPortal } from './contractor/InspectorSurveyPortal';
 import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
+  const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys'>('jobs');
 
   const verificationStatus = user?.verificationStatus || 'Pending Review';
 
@@ -27,6 +29,28 @@ export default function ContractorApp() {
             <h1 className="text-lg font-black italic text-white leading-none uppercase">Same Day Assist</h1>
             <p className="text-[10px] font-mono tracking-wider text-red font-bold uppercase font-brand-sub">Contractor Responder Terminal</p>
           </div>
+        </div>
+
+        {/* TAB BUTTONS */}
+        <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+          <button
+            type="button"
+            onClick={() => setContractorTab('jobs')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              contractorTab === 'jobs' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Emergency Dispatches
+          </button>
+          <button
+            type="button"
+            onClick={() => setContractorTab('surveys')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              contractorTab === 'surveys' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Property Safety Surveys
+          </button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -82,7 +106,11 @@ export default function ContractorApp() {
       {/* PORTAL VIEW CONTAINER */}
       <div className="p-6 md:p-8 flex-1 bg-zinc-900/45">
         <div className="max-w-4xl mx-auto flex flex-col gap-6">
-          <ContractorDashboard />
+          {contractorTab === 'jobs' ? (
+            <ContractorDashboard />
+          ) : (
+            <InspectorSurveyPortal />
+          )}
         </div>
       </div>
     </div>

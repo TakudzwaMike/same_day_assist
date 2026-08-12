@@ -25,6 +25,12 @@ interface AppStateContextType {
   rateJob: (jobId: string, rating: number, ratingComment?: string) => Promise<void>;
   closeJob: (jobId: string) => Promise<void>;
   initiatePayment: (type: string, amount: number) => Promise<void>;
+  assignSurveyInspector: (enquiryId: string, inspectorId: string, scheduledDate: string) => Promise<void>;
+  updateSurveyProgress: (enquiryId: string, status: 'SURVEY_SCHEDULED' | 'SURVEY_IN_PROGRESS') => Promise<void>;
+  submitSurveyReport: (enquiryId: string, report: Partial<import('../types').SurveyReport>) => Promise<void>;
+  adminReviewSurvey: (enquiryId: string, decision: 'APPROVE' | 'REQUEST_INFO' | 'REJECT', notes?: string) => Promise<void>;
+  processInitialPayment: (customerId: string, amount: number, paymentMethod: string) => Promise<void>;
+  activateCustomerAccount: (customerId: string) => Promise<void>;
   clearError: () => void;
   updateState: (newState: Partial<AppState>) => void;
   addAuditLogLocal: (action: string, details: string) => void;
@@ -356,6 +362,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const createJob = async (payload: { serviceType: any; description: string; photoUrl?: string }) => {
     setError(null);
+    const activeCustomer = state.customers.find(c => c.id === user?.id);
+    const status = activeCustomer?.status || activeCustomer?.onboardingStatus;
+    if (status && status !== 'ACTIVE' && status !== 'Active') {
+      const msg = 'Your account is still undergoing onboarding.';
+      setError(msg);
+      throw new Error(msg);
+    }
     try {
       await api.createJob(payload);
       await refreshData();
@@ -457,6 +470,183 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const assignSurveyInspector = async (enquiryId: string, inspectorId: string, scheduledDate: string) => {
+    setError(null);
+    const inspector = state.contractors.find(c => c.id === inspectorId);
+    const inspectorName = inspector?.name || 'Certified Inspector';
+
+    updateState({
+      enquiries: state.enquiries.map(enq => {
+        if (enq.id === enquiryId) {
+          return {
+            ...enq,
+            status: 'SURVEY_ASSIGNED' as const,
+            surveyInspectorId: inspectorId,
+            surveyInspectorName: inspectorName,
+            surveyScheduledDate: scheduledDate,
+          };
+        }
+        return enq;
+      }),
+      customers: state.customers.map(cust => {
+        const matchingEnq = state.enquiries.find(e => e.id === enquiryId);
+        if (cust.id === state.currentUserId || cust.email === matchingEnq?.email) {
+          return {
+            ...cust,
+            status: 'SURVEY_ASSIGNED' as const,
+            onboardingStatus: 'SURVEY_ASSIGNED' as const,
+            surveyInspectorId: inspectorId,
+            surveyInspectorName: inspectorName,
+            surveyScheduledDate: scheduledDate,
+          };
+        }
+        return cust;
+      })
+    });
+    addAuditLogLocal('Survey Inspector Assigned', `Assigned inspector ${inspectorName} to survey request ${enquiryId} scheduled for ${scheduledDate}.`);
+  };
+
+  const updateSurveyProgress = async (enquiryId: string, status: 'SURVEY_SCHEDULED' | 'SURVEY_IN_PROGRESS') => {
+    setError(null);
+    const enq = state.enquiries.find(e => e.id === enquiryId);
+    updateState({
+      enquiries: state.enquiries.map(e => e.id === enquiryId ? { ...e, status } : e),
+      customers: state.customers.map(cust => {
+        if (cust.id === state.currentUserId || cust.email === enq?.email) {
+          return { ...cust, status, onboardingStatus: status };
+        }
+        return cust;
+      })
+    });
+    addAuditLogLocal('Survey Progress Updated', `Survey status updated to ${status} for enquiry ${enquiryId}.`);
+  };
+
+  const submitSurveyReport = async (enquiryId: string, reportData: Partial<import('../types').SurveyReport>) => {
+    setError(null);
+    const enq = state.enquiries.find(e => e.id === enquiryId);
+    const fullReport: import('../types').SurveyReport = {
+      id: 'sr-' + Date.now(),
+      enquiryId,
+      customerId: enq?.customerId,
+      customerName: enq?.customerName || 'Customer',
+      inspectorId: reportData.inspectorId || 'c1',
+      inspectorName: reportData.inspectorName || 'Certified Inspector',
+      propertyAssessment: reportData.propertyAssessment || 'Property structurally sound with compliant entry points.',
+      safetyObservations: reportData.safetyObservations || 'Perimeter fence active. Intercom system verified.',
+      complianceObservations: reportData.complianceObservations || 'Access control points meet Same Day Assist 2026 security guidelines.',
+      existingSystems: reportData.existingSystems || 'Alarm module, CCTV cameras, electric gate sensor.',
+      risksIdentified: reportData.risksIdentified || 'Minor overgrown vegetation near south perimeter fence.',
+      recommendedActions: reportData.recommendedActions || 'Trim trees near south fence line before monsoon season.',
+      photos: reportData.photos || ['https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=600&auto=format&fit=crop&q=60'],
+      recommendation: reportData.recommendation || 'RECOMMEND_APPROVAL',
+      inspectionDate: new Date().toISOString().split('T')[0],
+      submittedAt: new Date().toISOString(),
+    };
+
+    updateState({
+      enquiries: state.enquiries.map(e => {
+        if (e.id === enquiryId) {
+          return {
+            ...e,
+            status: 'SURVEY_COMPLETED' as const,
+            surveyReport: fullReport,
+          };
+        }
+        return e;
+      }),
+      customers: state.customers.map(c => {
+        if (c.email === enq?.email || c.id === enq?.customerId) {
+          return {
+            ...c,
+            status: 'SURVEY_COMPLETED' as const,
+            onboardingStatus: 'SURVEY_COMPLETED' as const,
+            surveyReport: fullReport,
+          };
+        }
+        return c;
+      })
+    });
+    addAuditLogLocal('Survey Report Submitted', `Inspector ${fullReport.inspectorName} submitted compliance survey report for ${fullReport.customerName}.`);
+  };
+
+  const adminReviewSurvey = async (enquiryId: string, decision: 'APPROVE' | 'REQUEST_INFO' | 'REJECT', notes?: string) => {
+    setError(null);
+    const targetStatus = decision === 'APPROVE' 
+      ? ('PAYMENT_REQUIRED' as const) 
+      : decision === 'REQUEST_INFO' 
+      ? ('MORE_INFORMATION_REQUIRED' as const) 
+      : ('APPLICATION_REJECTED' as const);
+
+    const enq = state.enquiries.find(e => e.id === enquiryId);
+
+    updateState({
+      enquiries: state.enquiries.map(e => e.id === enquiryId ? { ...e, status: targetStatus, adminReviewNotes: notes } : e),
+      customers: state.customers.map(c => {
+        if (c.email === enq?.email || c.id === enq?.customerId) {
+          return {
+            ...c,
+            status: targetStatus,
+            onboardingStatus: targetStatus,
+            adminReviewNotes: notes,
+          };
+        }
+        return c;
+      })
+    });
+    addAuditLogLocal('Admin Survey Review', `Administrator reviewed survey for ${enq?.customerName}. Decision: ${decision}. Notes: ${notes || 'None'}`);
+  };
+
+  const processInitialPayment = async (customerId: string, amount: number, paymentMethod: string) => {
+    setError(null);
+    const newPayment: Payment = {
+      id: 'pay-' + Date.now(),
+      customerId,
+      customerName: state.customers.find(c => c.id === customerId)?.name || 'Customer',
+      type: 'Onboarding Fee',
+      amount,
+      status: 'Paid',
+      date: new Date().toISOString(),
+    };
+
+    const activationDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    updateState({
+      payments: [newPayment, ...state.payments],
+      customers: state.customers.map(c => {
+        if (c.id === customerId || c.email === state.customers.find(cu => cu.id === customerId)?.email) {
+          return {
+            ...c,
+            status: 'WAITING_FOR_ACTIVATION' as const,
+            onboardingStatus: 'WAITING_FOR_ACTIVATION' as const,
+            initialPaymentAmount: amount,
+            initialPaymentPaidAt: new Date().toISOString(),
+            activationScheduledDate: activationDate,
+            totalPaid: c.totalPaid + amount,
+          };
+        }
+        return c;
+      })
+    });
+    addAuditLogLocal('Initial Payment Received', `Received 50% initial activation payment of R${amount} via ${paymentMethod} from customer. Status updated to WAITING_FOR_ACTIVATION.`);
+  };
+
+  const activateCustomerAccount = async (customerId: string) => {
+    setError(null);
+    updateState({
+      customers: state.customers.map(c => {
+        if (c.id === customerId || c.email === state.customers.find(cu => cu.id === customerId)?.email) {
+          return {
+            ...c,
+            status: 'ACTIVE' as const,
+            onboardingStatus: 'ACTIVE' as const,
+          };
+        }
+        return c;
+      })
+    });
+    addAuditLogLocal('Account Service Activated', `Customer account ${customerId} successfully activated for full Same Day Assist access.`);
+  };
+
   return (
     <AppStateContext.Provider value={{
       state,
@@ -478,6 +668,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       rateJob,
       closeJob,
       initiatePayment,
+      assignSurveyInspector,
+      updateSurveyProgress,
+      submitSurveyReport,
+      adminReviewSurvey,
+      processInitialPayment,
+      activateCustomerAccount,
       clearError,
       updateState,
       addAuditLogLocal,

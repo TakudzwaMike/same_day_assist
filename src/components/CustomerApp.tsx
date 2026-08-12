@@ -10,6 +10,7 @@ import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
+import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
 import logoImg from '../assets/logo.png';
 
 export default function CustomerApp() {
@@ -21,6 +22,8 @@ export default function CustomerApp() {
   const activeCustomer = state.customers.find(c => c.id === user?.id) || state.customers[0];
   const activeJob = state.jobs.find(j => j.customerId === activeCustomer?.id && j.status !== 'Closed' && j.status !== 'Rated');
   const assignedContractor = activeJob ? state.contractors.find(c => c.id === activeJob.assignedContractorId) : null;
+
+  const isFullyActive = activeCustomer?.status === 'ACTIVE' || activeCustomer?.onboardingStatus === 'ACTIVE';
 
   return (
     <div className="w-full bg-white border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn">
@@ -51,7 +54,7 @@ export default function CustomerApp() {
             }`}
           >
             <Shield className="w-4 h-4 text-red" />
-            <span>Emergency Dispatch</span>
+            <span>{isFullyActive ? 'Emergency Dispatch' : 'Onboarding Status'}</span>
           </button>
           <button
             type="button"
@@ -138,7 +141,9 @@ export default function CustomerApp() {
       <div className="p-6 md:p-8 flex-1 bg-slate-50/50">
         <div className="max-w-4xl mx-auto flex flex-col gap-6">
           {activeDeviceTab === 'home' && (
-            activeJob ? (
+            !isFullyActive ? (
+              <OnboardingCommandCentre customer={activeCustomer} />
+            ) : activeJob ? (
               <LiveServiceTracker job={activeJob} />
             ) : (
               <CustomerHome 
