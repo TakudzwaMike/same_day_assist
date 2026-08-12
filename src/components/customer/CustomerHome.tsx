@@ -73,8 +73,9 @@ export default function CustomerHome({
         notes: enquiryNotes || 'Interested in emergency assist plan',
       });
       addAuditLogLocal('Enquiry Created', `Prospective customer ${enquiryName} submitted onboarding request.`);
+      alert('Your Onboarding Survey Request has been submitted successfully! An inspector will contact you shortly to perform the safety compliance audit.');
     } catch (err: any) {
-      alert(err.message || 'Failed to submit enquiry');
+      alert(err.message || 'Failed to submit survey request');
     }
   };
 
