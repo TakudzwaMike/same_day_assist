@@ -27,7 +27,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
     idNumber: '',
 
     // Step 2: Account Type
-    accountType: 'Individual' as 'Individual' | 'Business',
+    accountType: 'Residential' as 'Residential' | 'Individual' | 'Business',
     companyName: '',
     companyRegNumber: '',
     vatNumber: '',
@@ -39,7 +39,14 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
     accessNotes: '',
 
     // Step 4: Preferred Services
-    preferredServices: ['Security Systems Assistance'] as ServiceCategory[],
+    preferredServices: [
+      'Garage & Gate Automation',
+      'Audio & Video Intercoms',
+      'Access Control',
+      'Electric Fence',
+      'Alarm',
+      'CCTV',
+    ] as ServiceCategory[],
 
     // Step 5: Communication & Next of Kin Details
     preferredContactMethod: 'Email' as 'Email' | 'SMS' | 'WhatsApp' | 'Push',
@@ -85,7 +92,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
     } else if (currentStep === 3) {
       if (!formData.primaryAddress.trim()) return 'Physical Address is required';
     } else if (currentStep === 4) {
-      if (formData.preferredServices.length === 0) return 'Please select at least one preferred service category';
+      if (formData.preferredServices.length === 0) return 'Please select at least one service under Security Systems Assistance';
     } else if (currentStep === 6) {
       if (!formData.password || formData.password.length < 5) return 'Password must be at least 5 characters long';
       if (formData.password !== formData.confirmPassword) return 'Passwords do not match';
@@ -293,15 +300,15 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
-                  onClick={() => handleChange('accountType', 'Individual')}
+                  onClick={() => handleChange('accountType', 'Residential')}
                   className={`p-4 rounded-xl border text-left transition-all ${
-                    formData.accountType === 'Individual'
+                    formData.accountType === 'Residential' || formData.accountType === 'Individual'
                       ? 'border-red-500 bg-red-500/10 text-white shadow-lg shadow-red-500/10'
                       : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-700'
                   }`}
                 >
                   <User className="w-6 h-6 mb-2 text-red-400" />
-                  <div className="font-semibold text-sm text-white">Personal Account</div>
+                  <div className="font-semibold text-sm text-white">Residential Account</div>
                   <p className="text-xs text-slate-400 mt-1">Personal security, residential emergency assistance & home maintenance.</p>
                 </button>
 
@@ -424,63 +431,53 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <p className="text-xs text-slate-400 mb-3">Select from our available service offerings below:</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 1. Security Systems Assistance (Active & Selectable) */}
-              <button
-                type="button"
-                onClick={() => toggleService('Security Systems Assistance')}
-                className={`p-4 rounded-xl border text-left transition-all flex items-start justify-between cursor-pointer ${
-                  formData.preferredServices.includes('Security Systems Assistance')
-                    ? 'bg-red-600/20 border-red-500 text-white shadow-lg shadow-red-600/10'
-                    : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-white">Security Systems Assistance</span>
-                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
-                  </div>
-                  <p className="text-xs text-slate-400">Security monitoring, dispatch, emergency response & system installations.</p>
+            {/* Main Category Card */}
+            <div className="p-4 rounded-xl border border-red-500 bg-red-600/10 text-white flex items-center justify-between shadow-lg shadow-red-600/10">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-red-500 shrink-0" />
+                  <span className="font-bold text-sm text-white tracking-wide uppercase">SECURITY SYSTEMS ASSISTANCE</span>
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
                 </div>
-                {formData.preferredServices.includes('Security Systems Assistance') && (
-                  <CheckCircle2 className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                )}
-              </button>
-
-              {/* 2. Solar Systems Assistance (Greyed out / unavailable) */}
-              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-400">Solar Systems Assistance</span>
-                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
-                </div>
-                <span className="text-slate-600 text-xs font-mono">○</span>
+                <p className="text-xs text-slate-400">Primary security infrastructure, surveillance & access control services.</p>
               </div>
+            </div>
 
-              {/* 3. Electrical Assistance (Greyed out / unavailable) */}
-              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-400">Electrical Assistance</span>
-                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
-                </div>
-                <span className="text-slate-600 text-xs font-mono">○</span>
-              </div>
-
-              {/* 4. Plumbing Assistance (Greyed out / unavailable) */}
-              <div className="p-4 rounded-xl border border-slate-800/60 bg-slate-800/20 text-slate-500 opacity-60 cursor-not-allowed flex items-start justify-between select-none">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm text-slate-400">Plumbing Assistance</span>
-                    <span className="bg-slate-800 text-slate-400 border border-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Unavailable</span>
-                  </div>
-                  <p className="text-xs text-slate-500">Planned expansion offering — currently unavailable for selection.</p>
-                </div>
-                <span className="text-slate-600 text-xs font-mono">○</span>
+            {/* Selectable Services List */}
+            <div className="pt-2">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                Security Systems Assistance Services
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  'Garage & Gate Automation',
+                  'Audio & Video Intercoms',
+                  'Access Control',
+                  'Electric Fence',
+                  'Alarm',
+                  'CCTV',
+                ].map((serviceName) => {
+                  const isSelected = formData.preferredServices.includes(serviceName as ServiceCategory);
+                  return (
+                    <button
+                      key={serviceName}
+                      type="button"
+                      onClick={() => toggleService(serviceName as ServiceCategory)}
+                      className={`p-3.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
+                        isSelected
+                          ? 'bg-red-600/20 border-red-500 text-white shadow-md shadow-red-600/10'
+                          : 'bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="font-semibold text-xs text-slate-200">{serviceName}</span>
+                      {isSelected ? (
+                        <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-slate-600 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -537,26 +534,27 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
             </div>
 
-            {/* REQUEST ONBOARDING SURVEY OPTION (HIGH VISIBILITY) */}
+            {/* ONBOARDING SITE ASSESSMENT (MANDATORY) */}
             <div className="pt-4 border-t border-slate-800">
-              <div className="p-4 rounded-xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 shadow-xl transition-all hover:border-red-500">
-                <label className="flex items-start gap-3 cursor-pointer">
+              <div className="p-4 rounded-xl border-2 border-red-500/60 bg-gradient-to-r from-red-950/40 via-slate-900 to-slate-900 shadow-xl">
+                <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    checked={formData.requestOnboardingSurvey}
-                    onChange={e => handleChange('requestOnboardingSurvey', e.target.checked)}
-                    className="mt-1 w-5 h-5 rounded bg-slate-950 border-slate-600 text-red-600 focus:ring-red-500 shrink-0 cursor-pointer"
+                    checked={true}
+                    disabled
+                    readOnly
+                    className="mt-1 w-5 h-5 rounded bg-slate-950 border-red-500 text-red-600 focus:ring-0 shrink-0 cursor-not-allowed"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white tracking-wide uppercase">Request Onboarding Survey</span>
-                      <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">Recommended</span>
+                      <span className="text-sm font-bold text-white tracking-wide uppercase">ONBOARDING SITE ASSESSMENT</span>
+                      <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">MANDATORY</span>
                     </div>
                     <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                      Dispatch a certified Same Day Assist inspector to perform an initial property safety & compliance assessment upon registration.
+                      A certified Same Day Assist inspector will perform a mandatory property safety & compliance site assessment prior to application approval.
                     </p>
                   </div>
-                </label>
+                </div>
               </div>
             </div>
           </div>
@@ -644,7 +642,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
                 <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Account Type</span>
-                <span className="font-semibold text-red-400 break-words">{formData.accountType === 'Business' ? 'Business Account' : 'Personal Account'}</span>
+                <span className="font-semibold text-red-400 break-words">{formData.accountType === 'Business' ? 'Business Account' : 'Residential Account'}</span>
               </div>
               {formData.accountType === 'Business' && (
                 <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
@@ -661,9 +659,9 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                 <span className="font-semibold text-slate-300 break-words leading-relaxed">{formData.preferredServices.join(', ')}</span>
               </div>
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Onboarding Survey</span>
-                <span className={`font-semibold ${formData.requestOnboardingSurvey ? 'text-emerald-400' : 'text-slate-400'}`}>
-                  {formData.requestOnboardingSurvey ? 'Requested ✓' : 'Not Requested'}
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Site Assessment</span>
+                <span className="font-semibold text-emerald-400">
+                  MANDATORY ✓
                 </span>
               </div>
               {formData.emergencyContactName && (

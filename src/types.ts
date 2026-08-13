@@ -23,8 +23,13 @@ export type ServiceCategory =
   | 'Towing Services'
   | 'Roadside Assistance'
   | 'Medical Assistance'
-  | 'Emergency Home Assistance'
-  | 'Maintenance Services';
+  | 'Maintenance Services'
+  | 'Garage & Gate Automation'
+  | 'Audio & Video Intercoms'
+  | 'Access Control'
+  | 'Electric Fence'
+  | 'Alarm'
+  | 'CCTV';
 
 export type UserRole = 'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator' | 'Super Administrator';
 
@@ -150,7 +155,7 @@ export interface OnboardingPayload {
   phone: string;
   secondaryPhone?: string;
   idNumber?: string;
-  accountType: 'Individual' | 'Business';
+  accountType: 'Residential' | 'Individual' | 'Business';
   companyName?: string;
   companyRegNumber?: string;
   vatNumber?: string;
@@ -218,7 +223,7 @@ export interface Customer {
   phone: string;
   address: string;
   idNumber?: string;
-  accountType?: 'Individual' | 'Business';
+  accountType?: 'Residential' | 'Individual' | 'Business';
   companyName?: string;
   companyRegNumber?: string;
   vatNumber?: string;
