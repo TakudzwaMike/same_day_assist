@@ -18,12 +18,30 @@ export default function CustomerApp() {
   const { user, logout } = useAuth();
   const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'locations' | 'contacts' | 'wallet'>('home');
 
-  // Find active customer record
-  const activeCustomer = state.customers.find(c => c.id === user?.id) || state.customers[0];
-  const activeJob = state.jobs.find(j => j.customerId === activeCustomer?.id && j.status !== 'Closed' && j.status !== 'Rated');
-  const assignedContractor = activeJob ? state.contractors.find(c => c.id === activeJob.assignedContractorId) : null;
+  // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
+  const activeCustomer = 
+    state.customers.find(c => c.id === user?.id || c.email?.toLowerCase() === user?.email?.toLowerCase()) ||
+    (user ? {
+      id: user.id || 'cust-dynamic',
+      name: user.name || user.email?.split('@')[0] || 'Customer',
+      email: user.email,
+      phone: user.phone || '+27 82 555 1000',
+      address: user.address || 'Sandton, Johannesburg',
+      accountType: user.accountType || 'Residential',
+      status: user.status || 'ACTIVE',
+      onboardingStatus: user.onboardingStatus || user.status || 'ACTIVE',
+      package: user.package || 'Diamond',
+      repairsCount: user.repairsCount || 0,
+      totalPaid: user.totalPaid || 0,
+    } as any : state.customers[0]);
 
-  const isFullyActive = activeCustomer?.status === 'ACTIVE' || activeCustomer?.onboardingStatus === 'ACTIVE';
+  const isFullyActive = 
+    activeCustomer?.status === 'ACTIVE' || 
+    activeCustomer?.status === 'Active' || 
+    activeCustomer?.onboardingStatus === 'ACTIVE';
+
+  const activeJob = state.jobs.find(j => (j.customerId === activeCustomer?.id || j.customerId === user?.id) && j.status !== 'Closed' && j.status !== 'Rated');
+  const assignedContractor = activeJob ? state.contractors.find(c => c.id === activeJob.assignedContractorId) : null;
 
   return (
     <div className="w-full bg-white border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn">

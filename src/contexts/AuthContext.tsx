@@ -82,19 +82,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initSocket(userData.id, userData.role);
     } catch (err: any) {
       if (err.message?.includes('Connection failed') || err.message?.includes('network')) {
-        const role = email.toLowerCase().includes('contractor') ? 'Contractor' :
-                     email.toLowerCase().includes('admin') ? 'Administrator' : 'Customer';
+        const cleanEmail = email.trim().toLowerCase();
+        let role = 'Customer';
+        let name = cleanEmail.split('@')[0].toUpperCase();
+        let status = 'ACTIVE';
+        let onboardingStatus = 'ACTIVE';
+        let accountType: 'Residential' | 'Business' = 'Residential';
+        let packageType = 'Diamond';
+
+        if (cleanEmail.includes('mike') || cleanEmail.includes('developer')) {
+          role = 'Super Administrator';
+          name = 'Mike';
+        } else if (cleanEmail.includes('admin') || cleanEmail.includes('controlroom')) {
+          role = 'Administrator';
+          name = 'Operations Manager';
+        } else if (cleanEmail.includes('dispatcher')) {
+          role = 'Dispatcher';
+          name = 'Operations Dispatcher Hub';
+        } else if (cleanEmail.includes('sipho') || cleanEmail.includes('jan') || cleanEmail.includes('sarah') || cleanEmail.includes('marcus') || cleanEmail.includes('contractor')) {
+          role = 'Contractor';
+          if (cleanEmail.includes('sipho')) name = 'Sipho Ndlovu';
+          else if (cleanEmail.includes('jan')) name = 'Jan de Klerk';
+          else if (cleanEmail.includes('sarah')) name = 'Sarah Naidoo';
+          else if (cleanEmail.includes('marcus')) name = 'Marcus Nkosi';
+          else name = 'Contractor Provider';
+        } else if (cleanEmail.includes('bright')) {
+          role = 'Customer';
+          name = 'Bright';
+          status = 'ACTIVE';
+          onboardingStatus = 'ACTIVE';
+          packageType = 'Diamond';
+        } else if (cleanEmail.includes('thabo')) {
+          role = 'Customer';
+          name = 'Thabo Mokoena';
+          status = 'ACTIVE';
+          onboardingStatus = 'ACTIVE';
+          accountType = 'Business';
+          packageType = 'Platinum';
+        } else if (cleanEmail.includes('lerato')) {
+          role = 'Customer';
+          name = 'Lerato Molefe';
+          status = 'Onboarding';
+          onboardingStatus = 'WAITING_FOR_SURVEY';
+          packageType = 'Diamond';
+        }
+
         const demoUser = {
           id: 'user-' + Date.now(),
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
           role,
-          name: email.split('@')[0].toUpperCase() || 'Demo User',
-          phone: '+27 70 000 0000',
+          name,
+          phone: '+27 82 555 7777',
           address: 'Sandton City, Johannesburg',
-          status: 'Active',
-          memberSince: new Date().toISOString(),
+          accountType,
+          status,
+          onboardingStatus,
+          package: packageType,
+          memberSince: '2026-01-01',
           repairsCount: 1,
-          totalPaid: 850,
+          totalPaid: 2500,
         };
         localStorage.setItem('sda_user', JSON.stringify(demoUser));
         localStorage.setItem('sda_access_token', 'demo-token-' + Date.now());

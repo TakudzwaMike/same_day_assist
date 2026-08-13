@@ -127,12 +127,28 @@ export const INITIAL_ENQUIRIES: Enquiry[] = [
 
 export const INITIAL_CUSTOMERS: Customer[] = [
   {
+    id: 'cust-200',
+    name: 'Bright',
+    email: 'bright@samedayassist.co.za',
+    phone: '+27 82 555 7777',
+    address: '77 Sunset Boulevard, Sandton',
+    status: 'ACTIVE',
+    onboardingStatus: 'ACTIVE',
+    accountType: 'Residential',
+    package: 'Diamond',
+    memberSince: '2026-01-01',
+    repairsCount: 1,
+    totalPaid: 2500
+  },
+  {
     id: 'cust-201',
     name: 'Lerato Molefe',
     email: 'lerato@molefefamily.co.za',
     phone: '+27 82 123 4567',
     address: '12 West Street, Sandown, Sandton',
     status: 'Onboarding',
+    onboardingStatus: 'WAITING_FOR_SURVEY',
+    accountType: 'Residential',
     package: 'Diamond',
     repairsCount: 0,
     totalPaid: 0
@@ -143,7 +159,10 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     email: 'thabo@mokoenaholdings.com',
     phone: '+27 72 456 7890',
     address: '88 Grayston Drive, Sandton',
-    status: 'Active',
+    status: 'ACTIVE',
+    onboardingStatus: 'ACTIVE',
+    accountType: 'Business',
+    companyName: 'Mokoena Holdings (Pty) Ltd',
     package: 'Platinum',
     memberSince: '2026-01-15',
     repairsCount: 2,
