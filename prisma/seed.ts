@@ -35,10 +35,11 @@ async function main() {
       name: 'Lerato Molefe',
       phone: '+27 82 123 4567',
       address: '12 West Street, Sandown, Sandton',
-      status: 'Onboarding',
+      status: 'Active',
       package: 'Diamond',
-      repairsCount: 0,
-      totalPaid: 0,
+      memberSince: '2026-01-10',
+      repairsCount: 1,
+      totalPaid: 1500.0,
       notificationSettings: {
         create: {
           email: true,

@@ -146,12 +146,13 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     email: 'lerato@molefefamily.co.za',
     phone: '+27 82 123 4567',
     address: '12 West Street, Sandown, Sandton',
-    status: 'Onboarding',
-    onboardingStatus: 'WAITING_FOR_SURVEY',
+    status: 'ACTIVE',
+    onboardingStatus: 'ACTIVE',
     accountType: 'Residential',
     package: 'Diamond',
-    repairsCount: 0,
-    totalPaid: 0
+    memberSince: '2026-01-10',
+    repairsCount: 1,
+    totalPaid: 1500
   },
   {
     id: 'cust-202',

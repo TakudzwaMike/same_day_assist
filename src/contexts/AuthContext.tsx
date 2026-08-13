@@ -122,9 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (cleanEmail.includes('lerato')) {
           role = 'Customer';
           name = 'Lerato Molefe';
-          status = 'Onboarding';
-          onboardingStatus = 'WAITING_FOR_SURVEY';
+          status = 'ACTIVE';
+          onboardingStatus = 'ACTIVE';
           packageType = 'Diamond';
+          accountType = 'Residential';
         }
 
         const demoUser = {
