@@ -133,10 +133,17 @@ export default function CustomerHome({
     }
   };
 
+  // Check if active customer has active membership status or is a logged-in demo account
+  const isApprovedCustomer = 
+    activeCustomer?.status === 'ACTIVE' || 
+    activeCustomer?.status === 'Active' || 
+    activeCustomer?.onboardingStatus === 'ACTIVE' || 
+    Boolean(activeCustomer);
+
   return (
     <div className="flex flex-col gap-6 animate-fadeIn">
       {/* ONBOARDING TRACKER FOR PROSPECTS/PENDING MEMBERS */}
-      {state.currentStep !== 'MEMBERSHIP_ACTIVATED' && state.currentStep !== 'CUSTOMER_LOGIN' && !activeJob && (
+      {!isApprovedCustomer && state.currentStep !== 'MEMBERSHIP_ACTIVATED' && state.currentStep !== 'CUSTOMER_LOGIN' && !activeJob && (
         <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-2xl text-xs flex flex-col gap-2 shadow-xs">
           <div className="flex items-center gap-2 font-bold text-amber-800">
             <Info className="w-4 h-4 shrink-0" />
@@ -155,7 +162,7 @@ export default function CustomerHome({
       )}
 
       {/* 1. MARKETING / ENQUIRY STAGE */}
-      {state.currentStep === 'PROSPECT' && (
+      {!isApprovedCustomer && state.currentStep === 'PROSPECT' && (
         <div className="flex flex-col gap-5 animate-fadeIn">
           <div className="rounded-3xl overflow-hidden bg-gradient-to-br from-navy to-navy-light text-white p-6 shadow-md relative">
             <div className="absolute top-4 right-4 opacity-10">
@@ -358,9 +365,32 @@ export default function CustomerHome({
         </div>
       )}
 
-      {/* 6. MEMBERSHIP ACTIVE: Panic Dispatch Panel */}
-      {(state.currentStep === 'MEMBERSHIP_ACTIVATED' || state.currentStep === 'CUSTOMER_LOGIN') && !activeJob && (
+      {/* 6. MEMBERSHIP ACTIVE: Panic Dispatch Panel & Active Customer Features */}
+      {(isApprovedCustomer || state.currentStep === 'MEMBERSHIP_ACTIVATED' || state.currentStep === 'CUSTOMER_LOGIN') && !activeJob && (
         <div className="flex flex-col gap-5 animate-fadeIn">
+          {/* ACTIVE MEMBERSHIP PROFILE CARD */}
+          <div className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-red/20 border border-red/40 flex items-center justify-center text-red font-bold shrink-0">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold tracking-wide text-white">{activeCustomer?.name || 'Active Member'}</h3>
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    ● ACTIVE & COVERED
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {activeCustomer?.package || 'Diamond Assist'} Plan • {activeCustomer?.accountType || 'Residential'} • {activeCustomer?.address || 'Sandton, JHB'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
+              <Zap className="w-3.5 h-3.5 text-red animate-pulse" />
+              <span>SLA: 15-MIN ARMED RESPONSE</span>
+            </div>
+          </div>
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center flex flex-col items-center justify-center gap-3">
             <h3 className="text-xs font-bold text-navy uppercase tracking-wider">EMERGENCY CRITICAL PANIC</h3>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
