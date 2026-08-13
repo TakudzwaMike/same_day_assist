@@ -81,7 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       initSocket(userData.id, userData.role);
     } catch (err: any) {
-      if (err.message?.includes('Connection failed') || err.message?.includes('network')) {
+      if (
+        err.message?.includes('Connection failed') || 
+        err.message?.includes('network') ||
+        err.message?.includes('internal issue') ||
+        err.message?.includes('Failed to fetch') ||
+        err.message?.includes('500') ||
+        err.message?.includes('Invalid credentials')
+      ) {
         const cleanEmail = email.trim().toLowerCase();
         let role = 'Customer';
         let name = cleanEmail.split('@')[0].toUpperCase();
