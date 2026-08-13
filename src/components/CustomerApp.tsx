@@ -27,12 +27,12 @@ export default function CustomerApp() {
       email: user.email,
       phone: user.phone || '+27 82 555 1000',
       address: user.address || 'Sandton, Johannesburg',
-      accountType: user.accountType || 'Residential',
-      status: user.status || 'ACTIVE',
-      onboardingStatus: user.onboardingStatus || user.status || 'ACTIVE',
-      package: user.package || 'Diamond',
-      repairsCount: user.repairsCount || 0,
-      totalPaid: user.totalPaid || 0,
+      accountType: (user as any).accountType || 'Residential',
+      status: (user as any).status || 'ACTIVE',
+      onboardingStatus: (user as any).onboardingStatus || (user as any).status || 'ACTIVE',
+      package: (user as any).package || 'Diamond',
+      repairsCount: (user as any).repairsCount || 0,
+      totalPaid: (user as any).totalPaid || 0,
     } as any : state.customers[0]);
 
   const isFullyActive = 
