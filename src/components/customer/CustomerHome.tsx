@@ -104,13 +104,13 @@ export default function CustomerHome({
       try {
         await createJob({
           serviceType: 'Security',
-          description: 'CRITICAL SECURITY THREAT: Panic Button Pressed in Mobile App',
+          description: 'CRITICAL SECURITY THREAT: Assistance Button Pressed in Mobile App',
         });
-        addAuditLogLocal('Emergency Panic Triggered', `Customer ${activeCustomer?.name} triggered the emergency panic button! Dispatching armed response.`);
+        addAuditLogLocal('Emergency Assistance Triggered', `Customer ${activeCustomer?.name} triggered the emergency assistance button! Dispatching armed response.`);
         
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
-          const speech = new SpeechSynthesisUtterance(`Warning. Emergency panic trigger received. Armed security response cruiser has been dispatched. ETA 8 minutes.`);
+          const speech = new SpeechSynthesisUtterance(`Warning. Emergency assistance trigger received. Armed security response cruiser has been dispatched. ETA 8 minutes.`);
           speech.rate = 1.05;
           speech.pitch = 1.0;
           window.speechSynthesis.speak(speech);
@@ -392,9 +392,9 @@ export default function CustomerHome({
             </div>
           </div>
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center flex flex-col items-center justify-center gap-3">
-            <h3 className="text-xs font-bold text-navy uppercase tracking-wider">EMERGENCY CRITICAL PANIC</h3>
+            <h3 className="text-xs font-bold text-navy uppercase tracking-wider">EMERGENCY CRITICAL ASSISTANCE</h3>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-              Press and hold the panic button below for 2 seconds to instantly summon armed security or responder cruisers to your address.
+              Press and hold the assistance button below for 2 seconds to instantly summon armed security or responder cruisers to your address.
             </p>
 
             <div className="relative my-4">
@@ -416,7 +416,7 @@ export default function CustomerHome({
                   }`}
                 >
                   <AlertTriangle className="w-7 h-7 mb-1" />
-                  <span className="font-brand-header text-xs">PANIC</span>
+                  <span className="font-brand-header text-xs">ASSISTANCE</span>
                   <span className="text-[7.5px] uppercase font-mono tracking-widest text-white/80">HOLD 2s</span>
                 </button>
               )}
@@ -461,10 +461,10 @@ export default function CustomerHome({
                 required
                 value={assistDesc}
                 onChange={e => setAssistDesc(e.target.value)}
-                className="text-xs p-3 border border-slate-200 rounded-xl h-20 resize-none focus:outline-none focus:border-navy"
+                className="w-full text-xs p-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl h-24 resize-none text-slate-900 font-medium placeholder:text-slate-500 placeholder:opacity-100 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20 focus:outline-none transition-all shadow-inner"
               />
 
-              <div className="border border-dashed border-slate-200 rounded-xl p-3 text-center relative bg-slate-50/50 hover:bg-slate-50 transition-colors">
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center relative bg-slate-50 hover:bg-slate-100/80 transition-colors">
                 {assistPhoto ? (
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
