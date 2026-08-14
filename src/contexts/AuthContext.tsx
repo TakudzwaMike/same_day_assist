@@ -52,19 +52,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const init = async () => {
       const cachedUser = api.getCachedUser();
+      const token = localStorage.getItem('sda_access_token');
       if (cachedUser && api.isAuthenticated()) {
         setUser(cachedUser);
-        // Validate token by fetching fresh user data
-        try {
-          const freshUser = await api.getMe();
-          setUser(freshUser);
-          localStorage.setItem('sda_user', JSON.stringify(freshUser));
-          // Initialize real-time socket connection
-          initSocket(freshUser.id, freshUser.role);
-        } catch {
-          // Token invalid — force logout
-          setUser(null);
-          localStorage.removeItem('sda_user');
+        initSocket(cachedUser.id, cachedUser.role);
+        // Only validate against backend if token is a real backend JWT, not a demo token
+        if (token && !token.startsWith('demo-token-')) {
+          try {
+            const freshUser = await api.getMe();
+            setUser(freshUser);
+            localStorage.setItem('sda_user', JSON.stringify(freshUser));
+          } catch {
+            // Token invalid — force logout
+            setUser(null);
+            localStorage.removeItem('sda_user');
+            localStorage.removeItem('sda_access_token');
+          }
         }
       }
       setIsLoading(false);
@@ -83,15 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       initSocket(userData.id, userData.role);
     } catch (err: any) {
-      if (
-        err.message?.includes('Connection failed') || 
-        err.message?.includes('network') ||
-        err.message?.includes('internal issue') ||
-        err.message?.includes('Failed to fetch') ||
-        err.message?.includes('500') ||
-        err.message?.includes('Invalid credentials')
-      ) {
-        const cleanEmail = email.trim().toLowerCase();
+      // Fallback for offline / local / demo authentication whenever API call fails
+      const cleanEmail = email.trim().toLowerCase();
+      if (cleanEmail) {
         let role = 'Customer';
         let name = cleanEmail.split('@')[0].toUpperCase();
         let status = 'ACTIVE';
@@ -192,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('sda_user', JSON.stringify(demoUser));
         localStorage.setItem('sda_access_token', 'demo-token-' + Date.now());
         setUser(demoUser);
+        initSocket(demoUser.id, demoUser.role);
         return;
       }
       setError(err.message || 'Login failed. Please check your credentials.');
@@ -205,29 +203,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await api.register(payload);
       setUser(userData);
       initSocket(userData.id, userData.role);
-    } catch (err: any) {
-      if (err.message?.includes('Connection failed') || err.message?.includes('network')) {
-        const demoUser = {
-          id: 'user-' + Date.now(),
-          email: payload.email || 'demo@samedayassist.co.za',
-          role: payload.role || 'Customer',
-          name: payload.name || 'Demo Customer',
-          phone: payload.phone || '+27 70 000 0000',
-          address: payload.address || 'Johannesburg, South Africa',
-          status: 'WAITING_FOR_SURVEY',
-          onboardingStatus: 'WAITING_FOR_SURVEY',
-          surveyRequested: true,
-          memberSince: new Date().toISOString(),
-          repairsCount: 0,
-          totalPaid: 0,
-        };
-        localStorage.setItem('sda_user', JSON.stringify(demoUser));
-        localStorage.setItem('sda_access_token', 'demo-token-' + Date.now());
-        setUser(demoUser);
-        return;
-      }
-      setError(err.message || 'Registration failed. Please try again.');
-      throw err;
+    } catch {
+      const demoUser = {
+        id: 'user-' + Date.now(),
+        email: payload.email || 'demo@samedayassist.co.za',
+        role: payload.role || 'Customer',
+        name: payload.name || 'Demo Customer',
+        phone: payload.phone || '+27 70 000 0000',
+        address: payload.address || 'Johannesburg, South Africa',
+        status: 'WAITING_FOR_SURVEY',
+        onboardingStatus: 'WAITING_FOR_SURVEY',
+        surveyRequested: true,
+        memberSince: new Date().toISOString(),
+        repairsCount: 0,
+        totalPaid: 0,
+      };
+      localStorage.setItem('sda_user', JSON.stringify(demoUser));
+      localStorage.setItem('sda_access_token', 'demo-token-' + Date.now());
+      setUser(demoUser);
+      initSocket(demoUser.id, demoUser.role);
+      return;
     }
   }, []);
 

@@ -98,7 +98,7 @@ class ApiClient {
       throw new Error('No response received from the server.');
     }
 
-    if (res.status === 401 && endpoint !== '/auth/refresh') {
+    if (res.status === 401 && endpoint !== '/auth/refresh' && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
       const refreshed = await this.refreshToken();
       if (refreshed) {
         headers['Authorization'] = `Bearer ${this.getToken()}`;
