@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import { Wrench, LogOut, Shield, FileCheck } from 'lucide-react';
+import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
 import { ContractorVettingModal } from './contractor/ContractorVettingModal';
 import { InspectorSurveyPortal } from './contractor/InspectorSurveyPortal';
+import { ContractorChatCenter } from './contractor/ContractorChatCenter';
+import { ContractorEarningsView } from './contractor/ContractorEarningsView';
 import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
-  const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys'>('jobs');
+  const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys' | 'chat' | 'earnings'>('jobs');
 
   const verificationStatus = user?.verificationStatus || 'Pending Review';
 
   return (
     <div className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn text-zinc-100">
       {/* BRANDING HEADER */}
-      <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <img 
             src={logoImg} 
@@ -32,28 +34,53 @@ export default function ContractorApp() {
         </div>
 
         {/* TAB BUTTONS */}
-        <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-2xl border border-zinc-800">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
           <button
             type="button"
             onClick={() => setContractorTab('jobs')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               contractorTab === 'jobs' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Emergency Dispatches
+            <Wrench className="w-3.5 h-3.5" />
+            <span>Emergency Dispatches</span>
           </button>
+
           <button
             type="button"
             onClick={() => setContractorTab('surveys')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               contractorTab === 'surveys' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
             }`}
           >
-            Property Safety Surveys
+            <FileCheck className="w-3.5 h-3.5" />
+            <span>Property Safety Surveys</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContractorTab('chat')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              contractorTab === 'chat' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Live Chat (Client & Admin)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContractorTab('earnings')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              contractorTab === 'earnings' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Balances & Payouts</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setShowVettingModal(true)}
@@ -105,12 +132,11 @@ export default function ContractorApp() {
 
       {/* PORTAL VIEW CONTAINER */}
       <div className="p-6 md:p-8 flex-1 bg-zinc-900/45">
-        <div className="max-w-4xl mx-auto flex flex-col gap-6">
-          {contractorTab === 'jobs' ? (
-            <ContractorDashboard />
-          ) : (
-            <InspectorSurveyPortal />
-          )}
+        <div className="max-w-5xl mx-auto flex flex-col gap-6">
+          {contractorTab === 'jobs' && <ContractorDashboard />}
+          {contractorTab === 'surveys' && <InspectorSurveyPortal />}
+          {contractorTab === 'chat' && <ContractorChatCenter />}
+          {contractorTab === 'earnings' && <ContractorEarningsView />}
         </div>
       </div>
     </div>

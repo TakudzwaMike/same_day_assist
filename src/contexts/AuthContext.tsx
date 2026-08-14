@@ -9,7 +9,9 @@ interface AuthUser {
   name: string;
   phone: string;
   address: string;
+  accountType?: string;
   status?: string;
+  onboardingStatus?: string;
   package?: string;
   memberSince?: string;
   repairsCount?: number;
@@ -97,6 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let accountType: 'Residential' | 'Business' = 'Residential';
         let packageType = 'Diamond';
 
+        let userId = 'user-' + Date.now();
+        let specialty: string | undefined = undefined;
+        let verificationStatus = 'Approved';
+        let rating = 4.9;
+        let certifications: string[] = [];
+
         if (cleanEmail.includes('mike') || cleanEmail.includes('developer')) {
           role = 'Super Administrator';
           name = 'Mike';
@@ -106,13 +114,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (cleanEmail.includes('dispatcher')) {
           role = 'Dispatcher';
           name = 'Operations Dispatcher Hub';
-        } else if (cleanEmail.includes('sipho') || cleanEmail.includes('jan') || cleanEmail.includes('sarah') || cleanEmail.includes('marcus') || cleanEmail.includes('contractor')) {
+        } else if (cleanEmail.includes('sipho') || cleanEmail.includes('cctv') || cleanEmail.includes('security') || cleanEmail.includes('jan') || cleanEmail.includes('sarah') || cleanEmail.includes('marcus') || cleanEmail.includes('contractor')) {
           role = 'Contractor';
-          if (cleanEmail.includes('sipho')) name = 'Sipho Ndlovu';
-          else if (cleanEmail.includes('jan')) name = 'Jan de Klerk';
-          else if (cleanEmail.includes('sarah')) name = 'Sarah Naidoo';
-          else if (cleanEmail.includes('marcus')) name = 'Marcus Nkosi';
-          else name = 'Contractor Provider';
+          if (cleanEmail.includes('cctv') || cleanEmail.includes('sipho') || cleanEmail.includes('security')) {
+            userId = 'con-001';
+            name = 'Sipho Ndlovu (Apex CCTV & Security)';
+            specialty = 'Security & CCTV Systems';
+            rating = 4.9;
+            certifications = ['SABS CCTV Certified Installer', 'PSIRA Grade-A Security Officer', 'HD IP Surveillance Master'];
+          } else if (cleanEmail.includes('jan')) {
+            userId = 'con-002';
+            name = 'Jan de Klerk';
+            specialty = 'Electrical';
+            rating = 4.8;
+            certifications = ['SABS Red Seal Electrician', 'Wireman\'s License'];
+          } else if (cleanEmail.includes('sarah')) {
+            userId = 'con-003';
+            name = 'Sarah Naidoo';
+            specialty = 'Plumbing';
+            rating = 4.7;
+            certifications = ['PIRB Registered Plumber', 'Solar Geyser Qualified'];
+          } else if (cleanEmail.includes('marcus')) {
+            userId = 'con-004';
+            name = 'Marcus Nkosi';
+            specialty = 'Construction';
+            rating = 4.9;
+            certifications = ['NHBRC Registered Builder'];
+          } else {
+            userId = 'con-001';
+            name = 'Apex CCTV & Security Solutions';
+            specialty = 'Security & CCTV Systems';
+            rating = 4.9;
+            certifications = ['SABS CCTV Certified Installer', 'PSIRA Grade-A Security Officer'];
+          }
         } else if (cleanEmail.includes('bright')) {
           role = 'Customer';
           name = 'Bright';
@@ -135,20 +169,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           accountType = 'Residential';
         }
 
-        const demoUser = {
-          id: 'user-' + Date.now(),
+        const demoUser: AuthUser = {
+          id: userId,
           email: cleanEmail,
           role,
           name,
-          phone: '+27 82 555 7777',
-          address: 'Sandton City, Johannesburg',
+          phone: '+27 82 555 0192',
+          address: 'Sandton Core, Johannesburg',
           accountType,
           status,
           onboardingStatus,
           package: packageType,
           memberSince: '2026-01-01',
-          repairsCount: 1,
-          totalPaid: 2500,
+          repairsCount: 4,
+          totalPaid: 4500,
+          specialty,
+          verificationStatus,
+          rating,
+          certifications,
+          isAvailable: true,
         };
         localStorage.setItem('sda_user', JSON.stringify(demoUser));
         localStorage.setItem('sda_access_token', 'demo-token-' + Date.now());

@@ -44,11 +44,11 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
 export const INITIAL_CONTRACTORS: Contractor[] = [
   {
     id: 'con-001',
-    name: 'Sipho Ndlovu',
+    name: 'Sipho Ndlovu (Apex CCTV & Security)',
     phone: '+27 82 555 0192',
-    email: 'sipho.ndlovu@samedayassist.co.za',
+    email: 'cctv@samedayassist.co.za',
     rating: 4.9,
-    specialty: 'Security',
+    specialty: 'Security & CCTV Systems',
     isAvailable: true,
     location: {
       lat: 35,
