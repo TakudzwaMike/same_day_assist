@@ -98,15 +98,20 @@ class ApiClient {
       throw new Error('No response received from the server.');
     }
 
+    const currentToken = this.getToken();
+    const isDemoToken = Boolean(currentToken && currentToken.startsWith('demo-token-'));
+
     if (res.status === 401 && endpoint !== '/auth/refresh' && endpoint !== '/auth/login' && endpoint !== '/auth/register') {
-      const refreshed = await this.refreshToken();
-      if (refreshed) {
-        headers['Authorization'] = `Bearer ${this.getToken()}`;
-        res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
-      } else {
-        this.clearTokens();
-        window.location.href = '/';
-        throw new Error('Your session has expired. Please log in again.');
+      if (!isDemoToken) {
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          headers['Authorization'] = `Bearer ${this.getToken()}`;
+          res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+        } else {
+          this.clearTokens();
+          window.location.href = '/';
+          throw new Error('Your session has expired. Please log in again.');
+        }
       }
     }
 
