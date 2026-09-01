@@ -489,8 +489,8 @@ export default function CustomerHome({
                     value={assistDesc}
                     onChange={e => setAssistDesc(e.target.value)}
                     rows={4}
-                    style={{ color: '#000000', backgroundColor: '#FFFFFF' }}
-                    className="w-full text-sm p-4 bg-white border-2 border-slate-400 rounded-xl resize-none text-black font-semibold placeholder:text-slate-500 placeholder:font-normal placeholder:opacity-100 focus:bg-white focus:border-navy focus:ring-3 focus:ring-navy/20 focus:outline-none transition-all shadow-inner leading-relaxed"
+                    style={{ color: '#000000', backgroundColor: '#FFFFFF', WebkitTextFillColor: '#000000', caretColor: '#000000' }}
+                    className="w-full text-sm p-4 !bg-white bg-white border-2 border-slate-400 rounded-xl resize-none !text-black text-black font-bold placeholder:text-slate-500 placeholder:font-normal placeholder:opacity-100 focus:!bg-white focus:border-navy focus:ring-3 focus:ring-navy/20 focus:outline-none transition-all shadow-inner leading-relaxed"
                   />
                 </div>
                 

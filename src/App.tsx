@@ -461,9 +461,17 @@ export default function App() {
       )}
       {/* Dynamic Active Portal */}
       <div className="flex-1 flex flex-col justify-center p-4 md:p-8">
-        {user?.role === 'Customer' && <CustomerApp />}
+        {user?.role === 'Customer' && (
+          <div className="w-full text-slate-900">
+            <CustomerApp />
+          </div>
+        )}
         {user?.role === 'Contractor' && <ContractorApp />}
-        {(user?.role === 'Dispatcher' || user?.role === 'Administrator' || user?.role === 'Super Administrator') && <AdminPortal />}
+        {(user?.role === 'Dispatcher' || user?.role === 'Administrator' || user?.role === 'Super Administrator') && (
+          <div className="w-full text-slate-900">
+            <AdminPortal />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -44,7 +44,7 @@ export default function CustomerApp() {
   const assignedContractor = activeJob ? state.contractors.find(c => c.id === activeJob.assignedContractorId) : null;
 
   return (
-    <div className="w-full bg-white border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn">
+    <div className="w-full bg-white border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn text-slate-900">
       {/* BRANDING HEADER */}
       <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">

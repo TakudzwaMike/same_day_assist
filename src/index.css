@@ -59,13 +59,26 @@ body {
 }
 
 /* Accessibility Focus & High Contrast Form Controls */
-textarea, input[type="text"], input[type="email"], input[type="tel"], input[type="search"] {
-  color: #0f172a;
+textarea, input[type="text"], input[type="email"], input[type="tel"], input[type="search"], select {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
 }
 
 textarea::placeholder, input::placeholder {
-  color: #64748b;
-  opacity: 1;
+  color: #475569 !important;
+  -webkit-text-fill-color: #475569 !important;
+  opacity: 1 !important;
+}
+
+/* Explicit Dark Theme Input Overrides */
+.bg-slate-950 textarea, .bg-slate-950 input, .bg-slate-900 textarea, .bg-slate-900 input, .bg-zinc-950 input, .bg-zinc-950 textarea {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.bg-slate-950 textarea::placeholder, .bg-slate-950 input::placeholder, .bg-slate-900 textarea::placeholder, .bg-slate-900 input::placeholder, .bg-zinc-950 input::placeholder, .bg-zinc-950 textarea::placeholder {
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
 }
 
 input:focus, select:focus, textarea:focus {
