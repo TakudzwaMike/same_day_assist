@@ -63,6 +63,92 @@ export default function AdminDashboard() {
 
   return (
     <div className="grid grid-cols-12 gap-6 animate-fadeIn">
+      {/* 🚨 REAL-TIME LIVE INCOMING CUSTOMER CALLS & EMERGENCY PANIC QUEUE */}
+      {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').length > 0 && (
+        <div className="col-span-12 bg-red-600/10 border-2 border-red-500 rounded-3xl p-6 shadow-xl flex flex-col gap-4 animate-pulse">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-500/30 pb-3">
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 bg-red-600 text-white rounded-2xl animate-ping">
+                <AlertTriangle className="w-6 h-6" />
+              </span>
+              <div>
+                <h2 className="text-base font-brand-header text-red-600 uppercase tracking-wide flex items-center gap-2">
+                  <span>LIVE INCOMING EMERGENCY CALLS & ALARMS</span>
+                  <span className="bg-red-600 text-white text-[10px] font-mono px-2 py-0.5 rounded-full animate-bounce">
+                    {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').length} URGENT
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-700 font-medium">Immediate customer action required. Responders on standby.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={broadcastRadioDispatch}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+            >
+              <Volume2 className="w-4 h-4" />
+              <span>Voice Alert All Units</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').map(alarm => (
+              <div 
+                key={alarm.id} 
+                className="bg-white border-2 border-red-500 rounded-2xl p-4.5 shadow-lg flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="bg-red-600 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded font-mono">
+                        {alarm.serviceType || 'EMERGENCY DISPATCH'}
+                      </span>
+                      <h3 className="text-sm font-bold text-slate-900 mt-1.5 flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-red-600" />
+                        <span>{alarm.customerName || 'Customer'}</span>
+                      </h3>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                      LIVE ALARM
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-800 font-semibold mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 leading-snug">
+                    "{alarm.description}"
+                  </p>
+
+                  <div className="mt-2.5 text-[11px] text-slate-600 space-y-1">
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <span className="font-bold text-slate-900">📍 Address:</span> {alarm.customerAddress || 'Sandton, Johannesburg'}
+                    </p>
+                    <p className="flex items-center gap-1.5 font-medium">
+                      <span className="font-bold text-slate-900">📞 Phone:</span> {alarm.customerPhone || '+27 82 555 1000'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-slate-100">
+                  <a
+                    href={`tel:${alarm.customerPhone || '+27825551000'}`}
+                    className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center transition-colors"
+                  >
+                    <span>📞 Call Client Back</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={broadcastRadioDispatch}
+                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center shadow-xs cursor-pointer transition-colors"
+                  >
+                    <span>🚨 Dispatch Unit</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* METRIC BENTO CARDS */}
       <div className="col-span-12 sm:col-span-6 md:col-span-3 bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-xs hover:shadow-sm transition-shadow">
         <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Active Members</span>
@@ -74,11 +160,11 @@ export default function AdminDashboard() {
       </div>
 
       <div className="col-span-12 sm:col-span-6 md:col-span-3 bg-white rounded-2xl border border-slate-200 p-6 flex flex-col justify-between shadow-xs hover:shadow-sm transition-shadow">
-        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Critical Alarms</span>
+        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Critical Alarms & Calls</span>
         <div className="flex items-baseline gap-2 mt-2">
           <span className="text-3xl font-brand-header text-red font-bold">{criticalAlarms}</span>
           <span className={`text-xs font-bold ${criticalAlarms > 0 ? 'text-red animate-pulse' : 'text-slate-400'}`}>
-            {criticalAlarms > 0 ? 'PANICS ACTIVE' : 'NO ACTIVE ALARMS'}
+            {criticalAlarms > 0 ? 'ACTIVE DISPATCHES' : 'NO ACTIVE ALARMS'}
           </span>
         </div>
         <p className="text-[9px] text-slate-400 mt-2 font-mono">Immediate rapid dispatch queue</p>

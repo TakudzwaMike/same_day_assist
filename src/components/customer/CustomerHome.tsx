@@ -101,28 +101,39 @@ export default function CustomerHome({
 
   const triggerPanicEmergency = async () => {
     setIsTriggeringEmergency(true);
-    setTimeout(async () => {
-      try {
-        await createJob({
-          serviceType: 'Security',
-          description: 'CRITICAL SECURITY THREAT: Assistance Button Pressed in Mobile App',
-        });
-        addAuditLogLocal('Emergency Assistance Triggered', `Customer ${activeCustomer?.name} triggered the emergency assistance button! Dispatching armed response.`);
-        
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const speech = new SpeechSynthesisUtterance(`Warning. Emergency assistance trigger received. Armed security response cruiser has been dispatched. ETA 8 minutes.`);
-          speech.rate = 1.05;
-          speech.pitch = 1.0;
-          window.speechSynthesis.speak(speech);
-        }
-      } catch (err: any) {
-        alert(err.message || 'Failed to trigger panic');
-      } finally {
-        setIsTriggeringEmergency(false);
-        setIsEmergencyArmed(false);
+    try {
+      await createJob({
+        serviceType: 'Security',
+        description: '🚨 CRITICAL SECURITY THREAT: Assistance Button Pressed in Mobile App',
+      });
+      addAuditLogLocal('Emergency Assistance Triggered', `Customer ${activeCustomer?.name} triggered emergency panic button! Dispatching armed patrol.`);
+      
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const speech = new SpeechSynthesisUtterance(`Warning. Emergency assistance trigger received. Armed security response unit notified.`);
+        speech.rate = 1.05;
+        window.speechSynthesis.speak(speech);
       }
-    }, 2000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to trigger emergency dispatch');
+    } finally {
+      setIsTriggeringEmergency(false);
+      setIsEmergencyArmed(false);
+    }
+  };
+
+  const handleDirectVoiceCall = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await createJob({
+        serviceType: 'Security',
+        description: `📞 INCOMING HOTLINE VOICE CALL: Customer ${activeCustomer?.name || 'Member'} dialed direct 24/7 Operations Hotline (+27 11 555-9111).`,
+      });
+      addAuditLogLocal('Hotline Call Logged', `Customer ${activeCustomer?.name} placed an urgent voice call to Operations Dispatch.`);
+    } catch (err) {
+      console.warn('Voice call logged locally', err);
+    }
+    window.location.href = 'tel:+27115559111';
   };
 
   const handleManualPayClick = async () => {
@@ -563,9 +574,14 @@ export default function CustomerHome({
                 <p className="text-xs font-mono font-bold text-navy">+27 (11) 555-9111</p>
               </div>
             </div>
-            <a href="tel:+27115559111" className="px-4 py-2 bg-red text-white text-[10px] font-bold rounded-xl hover:bg-red/90 transition-all shadow-xs">
-              Call Dispatcher
-            </a>
+            <button 
+              type="button"
+              onClick={handleDirectVoiceCall} 
+              className="px-4 py-2.5 bg-red text-white text-xs font-bold rounded-xl hover:bg-red/90 transition-all shadow-md cursor-pointer flex items-center gap-1.5 uppercase font-brand-header tracking-wider"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              <span>Call Dispatcher</span>
+            </button>
           </div>
         </div>
       )}
