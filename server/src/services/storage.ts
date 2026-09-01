@@ -1,11 +1,17 @@
 import path from 'path';
 import fs from 'fs';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+const UPLOAD_DIR = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  ? path.join('/tmp', 'uploads')
+  : path.join(process.cwd(), 'uploads');
 
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Ensure upload directory exists safely
+try {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+} catch (e) {
+  console.warn('[Storage] mkdir warning:', e);
 }
 
 export async function saveFile(buffer: Buffer, originalName: string, mimeType: string): Promise<string> {

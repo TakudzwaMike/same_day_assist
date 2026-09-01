@@ -7,7 +7,7 @@
     "dev": "node scripts/dev.js",
     "dev:vite": "vite --port=3000 --host=0.0.0.0",
     "server": "tsx watch server/src/index.ts",
-    "build": "prisma generate && prisma db push --accept-data-loss && tsx prisma/seed.ts && vite build",
+    "build": "prisma generate && prisma db push --accept-data-loss && tsx prisma/seed.ts && esbuild server/src/vercel-handler.ts --bundle --platform=node --format=esm --packages=external --outfile=api/index.js && vite build",
     "preview": "vite preview",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
