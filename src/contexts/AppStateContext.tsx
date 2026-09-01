@@ -138,27 +138,34 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
       const results = await Promise.all(promises);
       
+      const normalizeJob = (j: any) => ({
+        ...j,
+        customerName: j.customerName || j.customer?.name || 'Valued Member',
+        customerAddress: j.customerAddress || j.customer?.address || 'Sandton, Johannesburg',
+        status: (j.status === 'Request Received' ? 'Requested' : j.status) || 'Requested',
+      });
+
       setState(prev => {
         let updated = { ...prev };
         let idx = 0;
 
         if (isClient) {
-          updated.jobs = results[idx++] || [];
+          updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.quotations = results[idx++] || [];
           updated.assessments = results[idx++] || [];
           updated.payments = results[idx++] || [];
         } else if (isAdmin) {
-          updated.jobs = results[idx++] || [];
+          updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
           updated.payments = results[idx++] || [];
           updated.auditLogs = results[idx++]?.logs || [];
         } else if (isDispatcher) {
-          updated.jobs = results[idx++] || [];
+          updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
         } else if (isContractor) {
-          updated.jobs = results[idx++] || [];
+          updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.assessments = results[idx++] || [];
         }
 

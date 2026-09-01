@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 
 const getBaseUrl = () => {
   const metaEnv = (import.meta as any).env;
-  if (metaEnv && metaEnv.VITE_API_URL) {
+  if (metaEnv && metaEnv.VITE_API_URL && !metaEnv.VITE_API_URL.includes('loca.lt')) {
     return metaEnv.VITE_API_URL;
   }
   if (Capacitor.isNativePlatform()) {

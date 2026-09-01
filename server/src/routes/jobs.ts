@@ -32,7 +32,13 @@ export function createJobsRouter(io?: SocketServer) {
           orderBy: { createdAt: 'desc' },
         });
       }
-      return res.json(jobs);
+      const formatted = jobs.map(j => ({
+        ...j,
+        customerName: j.customer?.name || 'Valued Member',
+        customerAddress: j.customer?.address || 'Sandton, Johannesburg',
+        customerPhone: j.customer?.phone || '',
+      }));
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to retrieve jobs' });
     }
@@ -44,11 +50,18 @@ export function createJobsRouter(io?: SocketServer) {
       const jobs = await prisma.job.findMany({
         where: { customerId: req.user!.id },
         include: {
+          customer: { select: { id: true, name: true, phone: true, address: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
-      return res.json(jobs);
+      const formatted = jobs.map(j => ({
+        ...j,
+        customerName: j.customer?.name || 'Valued Member',
+        customerAddress: j.customer?.address || 'Sandton, Johannesburg',
+        customerPhone: j.customer?.phone || '',
+      }));
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to retrieve jobs' });
     }
@@ -71,7 +84,7 @@ export function createJobsRouter(io?: SocketServer) {
           serviceType: req.body.serviceType,
           description: req.body.description,
           photoUrl: req.body.photoUrl,
-          status: 'Request Received',
+          status: 'Requested',
           trackerProgress: 10,
         },
         include: {
@@ -79,8 +92,15 @@ export function createJobsRouter(io?: SocketServer) {
         },
       });
 
+      const formattedJob = {
+        ...job,
+        customerName: customer.name,
+        customerAddress: customer.address,
+        customerPhone: customer.phone,
+      };
+
       // Emit to control room via WebSocket
-      io.to('admin-room').emit('new-job', job);
+      io?.to('admin-room').emit('new-job', formattedJob);
 
       await writeAuditLog({
         userId: req.user!.id,
@@ -92,7 +112,7 @@ export function createJobsRouter(io?: SocketServer) {
         newValue: { jobId: job.id, serviceType: job.serviceType },
       });
 
-      return res.status(201).json(job);
+      return res.status(201).json(formattedJob);
     } catch (error) {
       console.error('[Jobs/Create]', error);
       return res.status(500).json({ error: 'Failed to create job request' });
