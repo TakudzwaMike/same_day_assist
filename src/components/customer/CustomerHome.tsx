@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Shield, AlertTriangle, Phone, CreditCard, 
-  Zap, Droplet, Hammer, Camera, Send, Info, CheckCircle 
+  Zap, Droplet, Hammer, Camera, Send, Info, CheckCircle,
+  FileText, Edit3 
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -432,56 +433,105 @@ export default function CustomerHome({
           </div>
 
           {/* NORMAL ASSISTANCE REQUEST FORM */}
-          <form onSubmit={handleAssistanceSubmit} className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col gap-4">
-            <div className="border-b border-slate-100 pb-2">
-              <h4 className="text-xs font-bold text-navy uppercase tracking-wider">Log Non-Emergency Repair</h4>
-              <p className="text-[9px] text-slate-400">Request regular contractor maintenance assistance</p>
+          <form onSubmit={handleAssistanceSubmit} className="bg-white p-6 rounded-3xl border-2 border-slate-200 shadow-md flex flex-col gap-4">
+            <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+              <div>
+                <h4 className="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-red" />
+                  <span>Log Non-Emergency Repair</span>
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">Request regular contractor maintenance assistance</p>
+              </div>
+              <span className="text-[10px] font-bold font-mono bg-slate-100 text-navy px-2.5 py-1 rounded-full border border-slate-200">
+                CATEGORY: {assistCategory.toUpperCase()}
+              </span>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex gap-1.5">
-                {(['Security', 'Electrical', 'Plumbing', 'Construction'] as ServiceCategory[]).map(cat => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setAssistCategory(cat)}
-                    className={`flex-1 py-2 rounded-xl border text-[10px] font-bold transition-all cursor-pointer ${
-                      assistCategory === cat 
-                        ? 'bg-navy border-navy text-white shadow-2xs' 
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+            <div className="flex flex-col gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Select Trade Specialty:
+                </label>
+                <div className="flex gap-1.5">
+                  {(['Security', 'Electrical', 'Plumbing', 'Construction'] as ServiceCategory[]).map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setAssistCategory(cat)}
+                      className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        assistCategory === cat 
+                          ? 'bg-navy border-navy text-white shadow-xs' 
+                          : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <textarea
-                placeholder="Please describe the repair request in detail..."
-                required
-                value={assistDesc}
-                onChange={e => setAssistDesc(e.target.value)}
-                className="w-full text-xs p-3.5 bg-slate-50 border-2 border-slate-300 rounded-xl h-24 resize-none text-slate-900 font-medium placeholder:text-slate-500 placeholder:opacity-100 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20 focus:outline-none transition-all shadow-inner"
-              />
+              {/* PROBLEM DESCRIPTION INPUT BOX */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-navy" />
+                    <span>Describe Your Problem / Repair Request <span className="text-red font-bold">*</span></span>
+                  </label>
+                  <span className="text-[11px] font-mono text-slate-600 font-semibold">
+                    {assistDesc.length > 0 ? `${assistDesc.length} characters typed` : 'Required'}
+                  </span>
+                </div>
 
-              <div className="border-2 border-dashed border-slate-300 rounded-xl p-3 text-center relative bg-slate-50 hover:bg-slate-100/80 transition-colors">
+                <div className="relative">
+                  <textarea
+                    placeholder="Type your problem here... (e.g. Electric fence sensor is tripping intermittently, gate motor battery needs replacement, or water leak under bathroom sink)"
+                    required
+                    value={assistDesc}
+                    onChange={e => setAssistDesc(e.target.value)}
+                    rows={4}
+                    style={{ color: '#000000', backgroundColor: '#FFFFFF' }}
+                    className="w-full text-sm p-4 bg-white border-2 border-slate-400 rounded-xl resize-none text-black font-semibold placeholder:text-slate-500 placeholder:font-normal placeholder:opacity-100 focus:bg-white focus:border-navy focus:ring-3 focus:ring-navy/20 focus:outline-none transition-all shadow-inner leading-relaxed"
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between text-[11px] text-slate-600 font-medium px-1">
+                  <span>✍️ Type clear problem details above before clicking Submit.</span>
+                  {assistDesc.trim() && (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Ready to dispatch
+                    </span>
+                  )}
+                </div>
+
+                {/* LIVE CONFIRMATION PREVIEW */}
+                {assistDesc.trim().length > 0 && (
+                  <div className="bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-800 animate-fadeIn">
+                    <span className="font-bold text-[10px] text-slate-500 uppercase block mb-0.5">Live Description Preview:</span>
+                    <p className="font-semibold text-black whitespace-pre-wrap leading-relaxed">{assistDesc}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* PHOTO ATTACHMENT */}
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-3.5 text-center relative bg-slate-50 hover:bg-slate-100/80 transition-colors">
                 {assistPhoto ? (
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4" /> File Attached
+                    <span className="text-xs text-emerald-700 font-bold flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4" /> Incident Photo Attached
                     </span>
                     <button 
                       type="button" 
                       onClick={() => setAssistPhoto(null)} 
-                      className="text-[10px] text-red font-bold hover:underline"
+                      className="text-xs text-red font-bold hover:underline cursor-pointer"
                     >
-                      Clear
+                      Remove Photo
                     </button>
                   </div>
                 ) : (
                   <label className="cursor-pointer flex flex-col items-center justify-center py-2">
-                    <Camera className="w-5 h-5 text-slate-400 mb-1" />
-                    <span className="text-[10px] text-slate-500 font-bold">Upload Incident Photo (Optional)</span>
+                    <Camera className="w-5 h-5 text-slate-500 mb-1" />
+                    <span className="text-xs text-slate-700 font-bold">Upload Incident Photo (Optional)</span>
+                    <span className="text-[10px] text-slate-500">Attach a photo of the repair issue for the responder</span>
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -494,9 +544,9 @@ export default function CustomerHome({
 
               <button
                 type="submit"
-                className="w-full bg-navy hover:bg-navy/95 text-white py-3 rounded-xl text-xs font-brand-header tracking-wider shadow-xs uppercase flex items-center justify-center gap-2 cursor-pointer mt-1"
+                className="w-full bg-navy hover:bg-navy/90 text-white py-3.5 rounded-xl text-xs font-brand-header tracking-wider shadow-md uppercase flex items-center justify-center gap-2 cursor-pointer mt-1 transition-all"
               >
-                <Send className="w-3.5 h-3.5" />
+                <Send className="w-4 h-4" />
                 <span>Submit Repair Dispatch</span>
               </button>
             </div>

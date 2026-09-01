@@ -58,9 +58,18 @@ body {
   background: #94a3b8;
 }
 
-/* Accessibility Focus States */
+/* Accessibility Focus & High Contrast Form Controls */
+textarea, input[type="text"], input[type="email"], input[type="tel"], input[type="search"] {
+  color: #0f172a;
+}
+
+textarea::placeholder, input::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
 input:focus, select:focus, textarea:focus {
-  outline: 2px solid #CC322C;
+  outline: 2px solid #091C3E;
   outline-offset: 1px;
 }
 

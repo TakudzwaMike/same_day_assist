@@ -108,7 +108,8 @@ export default function CustomerActiveJob({ activeJob, assignedContractor }: Cus
             placeholder="Write details about the responder's efficiency (optional)..."
             value={ratingComment}
             onChange={e => setRatingComment(e.target.value)}
-            className="text-xs p-3 border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-navy h-16 resize-none"
+            style={{ color: '#000000', backgroundColor: '#FFFFFF' }}
+            className="text-xs p-3 border-2 border-slate-300 rounded-xl bg-white text-black font-semibold placeholder:text-slate-500 focus:outline-none focus:border-navy h-16 resize-none shadow-xs"
           />
 
           <button 
