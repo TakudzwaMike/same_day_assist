@@ -329,6 +329,96 @@ export default function App() {
                   {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SECURE LOGIN'}
                 </button>
 
+                {/* QUICK DEMO ACCOUNTS FOR E2E TESTING */}
+                <div className="mt-4 pt-4 border-t border-slate-800 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold font-mono text-slate-400 uppercase tracking-wider">
+                      TESTING ACCOUNTS (1-CLICK LOGIN)
+                    </span>
+                    <span className="text-[9px] text-red font-mono font-bold animate-pulse">E2E READY</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('bright@samedayassist.co.za');
+                        setLoginPassword('12345');
+                        login('bright@samedayassist.co.za', '12345');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">👤 Bright (Customer)</span>
+                      <span className="text-[8px] font-mono text-slate-500">12345</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('lerato@molefefamily.co.za');
+                        setLoginPassword('demo-passcode');
+                        login('lerato@molefefamily.co.za', 'demo-passcode');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">👤 Lerato (Customer)</span>
+                      <span className="text-[8px] font-mono text-slate-500">demo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('sipho.ndlovu@samedayassist.co.za');
+                        setLoginPassword('demo-passcode');
+                        login('sipho.ndlovu@samedayassist.co.za', 'demo-passcode');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">🛠️ Sipho (Security Provider)</span>
+                      <span className="text-[8px] font-mono text-slate-500">demo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('jan.deklerk@samedayassist.co.za');
+                        setLoginPassword('demo-passcode');
+                        login('jan.deklerk@samedayassist.co.za', 'demo-passcode');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">🛠️ Jan (Electrical Provider)</span>
+                      <span className="text-[8px] font-mono text-slate-500">demo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('controlroom@samedayassist.co.za');
+                        setLoginPassword('demo-passcode');
+                        login('controlroom@samedayassist.co.za', 'demo-passcode');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">🛡️ Control Room (Admin)</span>
+                      <span className="text-[8px] font-mono text-slate-500">demo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginEmail('mike@samedayassist.co.za');
+                        setLoginPassword('12345');
+                        login('mike@samedayassist.co.za', '12345');
+                      }}
+                      className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="truncate">⚡ Mike (Super Admin)</span>
+                      <span className="text-[8px] font-mono text-slate-500">12345</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="text-center text-[10.5px] text-slate-400 mt-2">
                   Don't have an account?{' '}
                   <button

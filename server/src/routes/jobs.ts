@@ -60,7 +60,8 @@ export function createJobsRouter(io?: SocketServer) {
       const customer = await prisma.user.findUnique({ where: { id: req.user!.id } });
       if (!customer) return res.status(404).json({ error: 'Customer not found' });
 
-      if (customer.status !== 'Active Member' && customer.status !== 'ACTIVE') {
+      const statusUpper = (customer.status || '').toUpperCase();
+      if (statusUpper !== 'ACTIVE MEMBER' && statusUpper !== 'ACTIVE') {
         return res.status(403).json({ error: 'Your account is still undergoing onboarding.' });
       }
 

@@ -200,10 +200,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, user]);
 
-  // Trigger fetches on auth state
+  // Trigger fetches on auth state & periodic real-time sync (polling every 4 seconds)
   useEffect(() => {
     if (isAuthenticated) {
       refreshData();
+      const intervalId = setInterval(() => {
+        refreshData();
+      }, 4000);
+      return () => clearInterval(intervalId);
     } else {
       updateState({
         jobs: [],
