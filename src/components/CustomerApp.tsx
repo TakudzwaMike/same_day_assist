@@ -96,7 +96,7 @@ export default function CustomerApp() {
             }`}
           >
             <MapPin className="w-4 h-4 text-slate-500" />
-            <span>Saved Locations</span>
+            <span>ADDRESS</span>
           </button>
           <button
             type="button"
@@ -108,7 +108,7 @@ export default function CustomerApp() {
             }`}
           >
             <Users className="w-4 h-4 text-slate-500" />
-            <span>Authorised Contacts</span>
+            <span>NEXT OF KIN DETAILS</span>
           </button>
           <button
             type="button"

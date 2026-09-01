@@ -22,7 +22,8 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
   const pkg = SERVICE_PACKAGES.find(p => p.name === customer.package) || SERVICE_PACKAGES[1]; // Platinum default
 
   // Calculate 50% of first month fee dynamically based on selected package monthly price
-  const initialFee = Math.round((pkg.price || 349) * 0.50);
+  const initialFeeNum = (pkg.price || 349) * 0.50;
+  const initialFee = initialFeeNum % 1 === 0 ? initialFeeNum.toString() : initialFeeNum.toFixed(2);
 
   // Automatic Month 2 activation when waiting period expires in production
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
   // Stages
   const stages = [
     { key: 'SUBMITTED', title: 'Submitted', done: true },
-    { key: 'SURVEY', title: 'Survey Assessment', done: ['SURVEY_SCHEDULED', 'SURVEY_IN_PROGRESS', 'SURVEY_COMPLETED', 'ADMIN_REVIEW', 'PAYMENT_REQUIRED', 'PAYMENT_RECEIVED', 'WAITING_FOR_ACTIVATION', 'ACTIVE'].includes(status) },
+    { key: 'SURVEY', title: 'ONBOARDING SITE ASSESSMENT (MANDATORY)', done: ['SURVEY_SCHEDULED', 'SURVEY_IN_PROGRESS', 'SURVEY_COMPLETED', 'ADMIN_REVIEW', 'PAYMENT_REQUIRED', 'PAYMENT_RECEIVED', 'WAITING_FOR_ACTIVATION', 'ACTIVE'].includes(status) },
     { key: 'COMPLETED', title: 'Survey Completed', done: ['SURVEY_COMPLETED', 'ADMIN_REVIEW', 'PAYMENT_REQUIRED', 'PAYMENT_RECEIVED', 'WAITING_FOR_ACTIVATION', 'ACTIVE'].includes(status) },
     { key: 'REVIEW', title: 'Admin Review', done: ['PAYMENT_REQUIRED', 'PAYMENT_RECEIVED', 'WAITING_FOR_ACTIVATION', 'ACTIVE'].includes(status) },
     { key: 'PAYMENT', title: '50% Initial Payment', done: ['PAYMENT_RECEIVED', 'WAITING_FOR_ACTIVATION', 'ACTIVE'].includes(status) },
@@ -52,7 +53,7 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
     setIsProcessingPayment(true);
     try {
       await new Promise(res => setTimeout(res, 1200));
-      await processInitialPayment(customer.id, initialFee, paymentMethod.toUpperCase());
+      await processInitialPayment(customer.id, initialFeeNum, paymentMethod.toUpperCase());
       alert(`Initial payment of R${initialFee} received! Your account is now in the activation waiting period.`);
     } catch (err: any) {
       alert(err.message || 'Payment processing failed');
@@ -365,17 +366,14 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
               </p>
             </div>
 
-            {/* DEV-MODE ONLY SIMULATE ACTIVATION BUTTON FOR LOCAL TESTING */}
-            {import.meta.env.DEV && (
-              <button
-                type="button"
-                onClick={handleSimulateActivation}
-                className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>[DEV TEST ONLY] Simulate Month 2 Activation</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleSimulateActivation}
+              className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-emerald-600/20 transition-all shrink-0 cursor-pointer flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Simulate Month 2 Activation</span>
+            </button>
           </div>
         </div>
       )}
@@ -393,16 +391,45 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
         </div>
       )}
 
-      {/* REJECTED / MORE INFO NEEDED */}
+      {/* MORE INFORMATION REQUIRED */}
+      {status === 'MORE_INFORMATION_REQUIRED' && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 md:p-8 text-amber-200 space-y-4 shadow-xl">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-7 h-7 text-amber-400 shrink-0" />
+            <div>
+              <h2 className="text-lg font-bold text-white">More Information Required for Onboarding Approval</h2>
+              <p className="text-xs text-amber-300/80">Action required: Our Operations Administrator requested additional property details or safety revisions.</p>
+            </div>
+          </div>
+          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs space-y-2">
+            <div className="font-bold text-white uppercase tracking-wider text-[11px]">Administrator Revision Prompt:</div>
+            <p className="text-slate-300 italic">"{customer.adminReviewNotes || 'Please provide updated site entry directions or secondary emergency contact numbers.'}"</p>
+          </div>
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => alert('Please submit updated details to info@samedayassist.co.za or update your account profile.')}
+              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider shadow-md transition-all cursor-pointer"
+            >
+              Submit Requested Information
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* REJECTED */}
       {status === 'APPLICATION_REJECTED' && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-3xl p-6 md:p-8 text-red-300 space-y-3">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-3xl p-6 md:p-8 text-red-300 space-y-3 shadow-xl">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-7 h-7 text-red-400 shrink-0" />
             <h2 className="text-lg font-bold text-white">Application Unsuccessful</h2>
           </div>
-          <p className="text-xs text-slate-300">
+          <p className="text-xs text-slate-300 leading-relaxed">
             {customer.adminReviewNotes || 'Your property compliance survey did not meet the required safety threshold for automatic dispatch.'}
           </p>
+          <div className="text-xs text-slate-400 pt-2 border-t border-red-500/20">
+            Platform services remain locked. Contact <a href="mailto:compliance@samedayassist.co.za" className="text-red-400 underline font-semibold">compliance@samedayassist.co.za</a> for administrative appeal.
+          </div>
         </div>
       )}
     </div>

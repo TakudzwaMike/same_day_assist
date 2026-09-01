@@ -151,6 +151,28 @@ export function InspectorSurveyPortal() {
                       <button type="button" onClick={() => setActiveEnquiryId(null)} className="text-zinc-400 hover:text-white text-xs">Cancel</button>
                     </div>
 
+                    {/* SECURITY SYSTEMS ASSISTANCE AUDIT */}
+                    <div className="p-4 rounded-xl bg-zinc-800/80 border border-zinc-700 space-y-2">
+                      <label className="block text-xs font-extrabold text-red-400 uppercase tracking-wider">
+                        Security Systems Assistance Inspection Checklist
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {[
+                          'Garage & Gate Automation',
+                          'Audio & Video Intercoms',
+                          'Access Control',
+                          'Electric Fence',
+                          'Alarm',
+                          'CCTV',
+                        ].map((sys) => (
+                          <label key={sys} className="flex items-center gap-2 p-2 rounded-lg bg-zinc-900/60 border border-zinc-700/60 text-[11px] text-zinc-300">
+                            <input type="checkbox" defaultChecked className="rounded bg-zinc-800 border-zinc-600 text-red-600 focus:ring-0" />
+                            <span>{sys}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-zinc-400 font-semibold mb-1">Property Structural Assessment *</label>

@@ -202,11 +202,10 @@ export function ContractorEarningsView() {
                   +R{item.totalAmount.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
                 </div>
                 <span
-                  className={`text-[9.5px] font-mono font-bold px-2.5 py-0.5 rounded-full ${
-                    item.status === 'Paid'
+                  className={`text-[9.5px] font-mono font-bold px-2.5 py-0.5 rounded-full ${item.status === 'Paid'
                       ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                       : 'bg-amber-950 text-amber-400 border border-amber-800 animate-pulse'
-                  }`}
+                    }`}
                 >
                   {item.status}
                 </span>

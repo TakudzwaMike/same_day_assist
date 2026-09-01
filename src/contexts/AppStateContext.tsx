@@ -548,7 +548,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         if (e.id === enquiryId) {
           return {
             ...e,
-            status: 'SURVEY_COMPLETED' as const,
+            status: 'ADMIN_REVIEW' as const,
             surveyReport: fullReport,
           };
         }
@@ -558,8 +558,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         if (c.email === enq?.email || c.id === enq?.customerId) {
           return {
             ...c,
-            status: 'SURVEY_COMPLETED' as const,
-            onboardingStatus: 'SURVEY_COMPLETED' as const,
+            status: 'ADMIN_REVIEW' as const,
+            onboardingStatus: 'ADMIN_REVIEW' as const,
             surveyReport: fullReport,
           };
         }
