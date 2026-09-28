@@ -42,6 +42,7 @@ import verificationRouter from './routes/verification';
 import ratingsRouter from './routes/ratings';
 import messagesRouter from './routes/messages';
 import walletRouter from './routes/wallet';
+import vehiclesRouter from './routes/vehicles';
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use('/api/files', filesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/contacts', contactsRouter);
+app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/profile-requests', profileRequestsRouter);
 app.use('/api/verification', verificationRouter);
 app.use('/api/ratings', ratingsRouter);

@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 
 export default function AdminDashboard() {
-  const { state, addAuditLogLocal } = useAppState();
+  const { state, refreshData, addAuditLogLocal } = useAppState();
   const { user } = useAuth();
   
   // Reseed states
@@ -16,18 +16,19 @@ export default function AdminDashboard() {
   const [reseedError, setReseedError] = useState('');
 
   // Stats
-  const activeMembers = state.customers.filter(c => c.status === 'Active').length;
+  const activeMembers = state.customers.filter(c => c.status === 'Active' || (c.status as string) === 'Active Member').length;
   const pendingEnquiries = state.enquiries.filter(e => e.status === 'Pending').length;
-  const criticalAlarms = state.jobs.filter(j => j.status === 'Requested').length;
+  const criticalAlarms = state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').length;
+  const emergencyNonMemberCount = state.jobs.filter(j => j.customerType === 'NON_MEMBER_EMERGENCY').length;
   const totalRevenue = state.payments.reduce((sum, p) => p.status === 'Paid' ? sum + p.amount : sum, 0);
 
   const broadcastRadioDispatch = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const activeAlarm = state.jobs.find(j => j.status === 'Requested');
-      let text = 'Attention all cruisers: Same Day Assist control rooms reports status normal. Standby for rapid response dispatches.';
+      const activeAlarm = state.jobs.find(j => j.status === 'Requested' || j.status === 'Request Received');
+      let text = 'Attention all cruisers: Same Day Assist control room reports status normal. Standby for rapid response dispatches.';
       if (activeAlarm) {
-        text = `Attention Sandton units, emergency dispatch triggered. Armed response officer requested for client ${activeAlarm.customerName} at ${activeAlarm.customerAddress}. Repeat, armed response requested immediately. Code 4.`;
+        text = `Attention Sandton units, emergency dispatch triggered. Immediate response requested for ${activeAlarm.customerName} at ${activeAlarm.customerAddress}. Repeat, response requested immediately. Code 4.`;
       }
       const speech = new SpeechSynthesisUtterance(text);
       speech.rate = 1.05;
@@ -51,9 +52,8 @@ export default function AdminDashboard() {
       setReseedMessage(res.message || 'System re-seed triggered successfully. The database will reset shortly.');
       addAuditLogLocal('Database Reset', 'Super Administrator triggered system database re-seed.');
       setConfirmPassword('');
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+      await refreshData();
+      setShowReseedModal(false);
     } catch (err: any) {
       setReseedError(err.message || 'Failed to trigger reseed. Verify password and access permissions.');
     } finally {
@@ -93,58 +93,87 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').map(alarm => (
-              <div 
-                key={alarm.id} 
-                className="bg-white border-2 border-red-500 rounded-2xl p-4.5 shadow-lg flex flex-col justify-between gap-3"
-              >
-                <div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="bg-red-600 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded font-mono">
-                        {alarm.serviceType || 'EMERGENCY DISPATCH'}
+            {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').map(alarm => {
+              const isNonMember = alarm.customerType === 'NON_MEMBER_EMERGENCY';
+              const vehObj = typeof alarm.customerVehicle === 'object' && alarm.customerVehicle !== null 
+                ? (alarm.customerVehicle as any) 
+                : typeof alarm.customerVehicle === 'string' && alarm.customerVehicle.startsWith('{')
+                  ? (() => { try { return JSON.parse(alarm.customerVehicle); } catch { return null; } })()
+                  : null;
+              const vehString = typeof alarm.customerVehicle === 'string' && !vehObj ? alarm.customerVehicle : null;
+              return (
+                <div 
+                  key={alarm.id} 
+                  className="bg-white border-2 border-red-500 rounded-2xl p-4.5 shadow-lg flex flex-col justify-between gap-3"
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-red-600 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded font-mono">
+                            {alarm.serviceType || 'EMERGENCY DISPATCH'}
+                          </span>
+                          <span className={`text-[8.5px] font-bold font-mono px-2 py-0.5 rounded-full uppercase ${
+                            isNonMember 
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                              : 'bg-navy/10 text-navy border border-navy/20'
+                          }`}>
+                            {isNonMember ? '🚨 NON-MEMBER EMERGENCY' : '🛡️ MEMBER REQUEST'}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-bold text-slate-900 mt-1.5 flex items-center gap-1.5">
+                          <Shield className="w-4 h-4 text-red-600" />
+                          <span>{alarm.customerName || 'Emergency Customer'}</span>
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
+                        LIVE ALARM
                       </span>
-                      <h3 className="text-sm font-bold text-slate-900 mt-1.5 flex items-center gap-1.5">
-                        <Shield className="w-4 h-4 text-red-600" />
-                        <span>{alarm.customerName || 'Customer'}</span>
-                      </h3>
                     </div>
-                    <span className="text-[10px] font-mono font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                      LIVE ALARM
-                    </span>
+
+                    <p className="text-xs text-slate-800 font-semibold mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 leading-snug">
+                      "{alarm.description}"
+                    </p>
+
+                    <div className="mt-2.5 text-[11px] text-slate-600 space-y-1">
+                      <p className="flex items-center gap-1.5 font-medium">
+                        <span className="font-bold text-slate-900">📍 Incident Location:</span> {alarm.customerAddress || 'Sandton, Johannesburg'}
+                      </p>
+                      <p className="flex items-center gap-1.5 font-medium">
+                        <span className="font-bold text-slate-900">📞 Phone:</span> {alarm.customerPhone || '+27 82 555 1000'}
+                      </p>
+                      {vehObj && (
+                        <p className="flex items-center gap-1.5 font-medium text-slate-800">
+                          <span className="font-bold text-slate-900">🚗 Customer Vehicle:</span>{' '}
+                          {vehObj.make} {vehObj.model} ({vehObj.year || 'N/A'}) • {vehObj.licensePlate} • {vehObj.color}
+                        </p>
+                      )}
+                      {vehString && (
+                        <p className="flex items-center gap-1.5 font-medium text-slate-800">
+                          <span className="font-bold text-slate-900">🚗 Customer Vehicle:</span> {vehString}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-xs text-slate-800 font-semibold mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 leading-snug">
-                    "{alarm.description}"
-                  </p>
-
-                  <div className="mt-2.5 text-[11px] text-slate-600 space-y-1">
-                    <p className="flex items-center gap-1.5 font-medium">
-                      <span className="font-bold text-slate-900">📍 Address:</span> {alarm.customerAddress || 'Sandton, Johannesburg'}
-                    </p>
-                    <p className="flex items-center gap-1.5 font-medium">
-                      <span className="font-bold text-slate-900">📞 Phone:</span> {alarm.customerPhone || '+27 82 555 1000'}
-                    </p>
+                  <div className="flex gap-2 pt-2 border-t border-slate-100">
+                    <a
+                      href={`tel:${alarm.customerPhone || '+27825551000'}`}
+                      className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center transition-colors"
+                    >
+                      <span>📞 Call Client Back</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={broadcastRadioDispatch}
+                      className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center shadow-xs cursor-pointer transition-colors"
+                    >
+                      <span>🚨 Dispatch Unit</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-2 border-t border-slate-100">
-                  <a
-                    href={`tel:${alarm.customerPhone || '+27825551000'}`}
-                    className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center transition-colors"
-                  >
-                    <span>📞 Call Client Back</span>
-                  </a>
-                  <button
-                    type="button"
-                    onClick={broadcastRadioDispatch}
-                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center shadow-xs cursor-pointer transition-colors"
-                  >
-                    <span>🚨 Dispatch Unit</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

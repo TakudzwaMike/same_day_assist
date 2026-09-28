@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Lock, Eye, EyeOff, Mail, Key, AlertCircle, RefreshCw } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, Mail, Key, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useAppState } from './contexts/AppStateContext';
 import CustomerApp from './components/CustomerApp';
 import ContractorApp from './components/ContractorApp';
 import AdminPortal from './components/AdminPortal';
 import { OnboardingWizard } from './components/auth/OnboardingWizard';
+import { EmergencyNonMemberPortal } from './components/emergency/EmergencyNonMemberPortal';
 import logoImg from './assets/logo.png';
 
 export default function App() {
@@ -17,6 +18,8 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showEmergencyPortal, setShowEmergencyPortal] = useState(false);
+  const [emergencyTrackId, setEmergencyTrackId] = useState<string | null>(null);
 
   // Authentication & Session Preferences
   const [portalType, setPortalType] = useState<'customer' | 'operations'>(() => {
@@ -155,6 +158,19 @@ export default function App() {
     alert('Please contact operations administration to reset your security passcode.');
   };
 
+  // Render Emergency Non-Member Portal if activated
+  if (showEmergencyPortal) {
+    return (
+      <EmergencyNonMemberPortal 
+        onBackToLogin={() => {
+          setShowEmergencyPortal(false);
+          setEmergencyTrackId(null);
+        }}
+        initialJobId={emergencyTrackId}
+      />
+    );
+  }
+
   // 1. RENDER LOGIN GATES IF NOT AUTHENTICATED
   if (!isAuthenticated) {
     const isCustomerTheme = portalType === 'customer';
@@ -194,29 +210,43 @@ export default function App() {
             </div>
           </div>
           
-          <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => handlePortalSwitch('customer')}
-              className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
-                isCustomerTheme 
-                  ? 'bg-red text-white shadow-2xs' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => {
+                setEmergencyTrackId(null);
+                setShowEmergencyPortal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red hover:bg-red/90 text-white text-[9px] font-black tracking-wider uppercase rounded-lg shadow-md cursor-pointer animate-pulse"
             >
-              CLIENT PORTAL
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>EMERGENCY DISPATCH (NON-MEMBER)</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handlePortalSwitch('operations')}
-              className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
-                !isCustomerTheme 
-                  ? 'bg-red text-white shadow-2xs' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              STAFF GATEWAY
-            </button>
+
+            <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+              <button
+                type="button"
+                onClick={() => handlePortalSwitch('customer')}
+                className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
+                  isCustomerTheme 
+                    ? 'bg-red text-white shadow-2xs' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                CLIENT PORTAL
+              </button>
+              <button
+                type="button"
+                onClick={() => handlePortalSwitch('operations')}
+                className={`px-3 py-1.5 text-[8px] font-extrabold rounded transition-all cursor-pointer ${
+                  !isCustomerTheme 
+                    ? 'bg-red text-white shadow-2xs' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                STAFF GATEWAY
+              </button>
+            </div>
           </div>
         </header>
 
@@ -233,7 +263,57 @@ export default function App() {
               />
             </div>
           ) : (
-            <div className="w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100">
+            <>
+              {/* PROMINENT NON-MEMBER EMERGENCY ASSISTANCE HERO CARD */}
+              <div className="w-full max-w-md bg-gradient-to-br from-red/20 via-slate-900 to-slate-900 border-2 border-red/40 rounded-3xl p-5 mb-5 shadow-2xl relative overflow-hidden">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-3 bg-red rounded-2xl text-white shadow-lg shrink-0">
+                    <AlertTriangle className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-red font-mono bg-red/10 border border-red/30 px-2 py-0.5 rounded-full">
+                        ON-DEMAND ROADSIDE ASSIST
+                      </span>
+                      <span className="text-[9px] font-mono text-slate-400">NO MEMBERSHIP REQUIRED</span>
+                    </div>
+                    <h3 className="text-base font-black uppercase tracking-wide text-white mt-1.5">
+                      NEED HELP NOW?
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                      Not a Same Day Assist member? That's okay. Request emergency assistance and pay for the service once the work is completed.
+                    </p>
+                    
+                    <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEmergencyTrackId(null);
+                          setShowEmergencyPortal(true);
+                        }}
+                        className="flex-1 py-2.5 px-3 bg-red hover:bg-red/90 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <span>Request Emergency Assistance</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const entered = prompt('Enter your 6-digit Emergency PIN or Reference ID:');
+                          if (entered && entered.trim()) {
+                            setEmergencyTrackId(entered.trim());
+                            setShowEmergencyPortal(true);
+                          }
+                        }}
+                        className="py-2.5 px-3 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-700 font-bold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span>Track Request</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full max-w-md border transition-all duration-300 rounded-3xl p-6 md:p-8 flex flex-col gap-5 bg-slate-900 border-slate-800 shadow-2xl text-slate-100">
               <div className="text-center space-y-1.5">
                 <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-white p-1 shadow-xl border border-slate-700">
                   <img src={logoImg} alt="Same Day Assist Logo" className="w-full h-full object-contain rounded-full" />
@@ -433,6 +513,7 @@ export default function App() {
                 </div>
               </form>
             </div>
+          </>
           )}
         </main>
 

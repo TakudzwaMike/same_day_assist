@@ -1,16 +1,50 @@
 import { Router, Response } from 'express';
 import { prisma } from '../config/db';
 import { requireAuth, requireRoles, AuthenticatedRequest } from '../middleware/auth';
-import { validate, jobCreateSchema, jobStatusSchema, completionSchema, ratingSchema } from '../middleware/validation';
+import { validate, jobCreateSchema, completionSchema, ratingSchema } from '../middleware/validation';
 import { writeAuditLog } from '../middleware/auditLog';
 import { Server as SocketServer } from 'socket.io';
 
 const router = Router();
 
+function formatJob(j: any) {
+  const isNonMember = j.customerType === 'NON_MEMBER_EMERGENCY';
+  let parsedVehicle = null;
+  if (j.customerVehicle) {
+    try {
+      parsedVehicle = typeof j.customerVehicle === 'string' ? JSON.parse(j.customerVehicle) : j.customerVehicle;
+    } catch {
+      parsedVehicle = j.customerVehicle;
+    }
+  }
+  let parsedResponderVehicle = null;
+  if (j.vehicleInfo) {
+    try {
+      parsedResponderVehicle = typeof j.vehicleInfo === 'string' ? JSON.parse(j.vehicleInfo) : j.vehicleInfo;
+    } catch {
+      parsedResponderVehicle = j.vehicleInfo;
+    }
+  }
+
+  return {
+    ...j,
+    customerType: j.customerType || 'MEMBER',
+    customerName: isNonMember ? (j.nonMemberName || 'Emergency Caller') : (j.customer?.name || 'Valued Member'),
+    customerAddress: isNonMember ? (j.nonMemberAddress || 'On-Scene Location') : (j.customer?.address || 'Sandton, Johannesburg'),
+    customerPhone: isNonMember ? (j.nonMemberPhone || '') : (j.customer?.phone || ''),
+    customerEmail: isNonMember ? (j.nonMemberEmail || '') : (j.customer?.email || ''),
+    customerVehicle: parsedVehicle,
+    vehicleInfo: parsedResponderVehicle,
+    finalAmount: j.finalAmount || 0,
+    paymentStatus: j.paymentStatus || 'Pending',
+    servicePerformed: j.servicePerformed || null,
+  };
+}
+
 // Inject io via middleware factory
 export function createJobsRouter(io?: SocketServer) {
 
-  // GET /api/jobs — Admin/Contractor/Dispatcher: get all jobs
+  // GET /api/jobs — Admin/Contractor/Dispatcher: get all jobs (both member & non-member)
   router.get('/', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Contractor', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
     try {
       let jobs;
@@ -18,7 +52,7 @@ export function createJobsRouter(io?: SocketServer) {
         jobs = await prisma.job.findMany({
           where: { assignedContractorId: req.user!.id },
           include: {
-            customer: { select: { id: true, name: true, phone: true, address: true } },
+            customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
             assignedContractor: { select: { id: true, name: true, phone: true, specialty: true } },
           },
           orderBy: { createdAt: 'desc' },
@@ -26,48 +60,37 @@ export function createJobsRouter(io?: SocketServer) {
       } else {
         jobs = await prisma.job.findMany({
           include: {
-            customer: { select: { id: true, name: true, phone: true, address: true } },
+            customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
             assignedContractor: { select: { id: true, name: true, phone: true, specialty: true } },
           },
           orderBy: { createdAt: 'desc' },
         });
       }
-      const formatted = jobs.map(j => ({
-        ...j,
-        customerName: j.customer?.name || 'Valued Member',
-        customerAddress: j.customer?.address || 'Sandton, Johannesburg',
-        customerPhone: j.customer?.phone || '',
-      }));
-      return res.json(formatted);
+      return res.json(jobs.map(formatJob));
     } catch (error) {
+      console.error('[Jobs/GET]', error);
       return res.status(500).json({ error: 'Failed to retrieve jobs' });
     }
   });
 
-  // GET /api/jobs/my — Customer: get own jobs
+  // GET /api/jobs/my — Member Customer: get own jobs
   router.get('/my', requireAuth, requireRoles('Customer'), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const jobs = await prisma.job.findMany({
         where: { customerId: req.user!.id },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
-      const formatted = jobs.map(j => ({
-        ...j,
-        customerName: j.customer?.name || 'Valued Member',
-        customerAddress: j.customer?.address || 'Sandton, Johannesburg',
-        customerPhone: j.customer?.phone || '',
-      }));
-      return res.json(formatted);
+      return res.json(jobs.map(formatJob));
     } catch (error) {
       return res.status(500).json({ error: 'Failed to retrieve jobs' });
     }
   });
 
-  // POST /api/jobs — Customer: create emergency request
+  // POST /api/jobs — Member Customer: create emergency / service request
   router.post('/', requireAuth, requireRoles('Customer'), validate(jobCreateSchema), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const customer = await prisma.user.findUnique({ where: { id: req.user!.id } });
@@ -78,26 +101,28 @@ export function createJobsRouter(io?: SocketServer) {
         return res.status(403).json({ error: 'Your account is still undergoing onboarding.' });
       }
 
+      let customerVehicleStr: string | null = null;
+      if (req.body.vehicle) {
+        customerVehicleStr = typeof req.body.vehicle === 'string' ? req.body.vehicle : JSON.stringify(req.body.vehicle);
+      }
+
       const job = await prisma.job.create({
         data: {
+          customerType: 'MEMBER',
           customerId: req.user!.id,
           serviceType: req.body.serviceType,
           description: req.body.description,
           photoUrl: req.body.photoUrl,
+          customerVehicle: customerVehicleStr,
           status: 'Requested',
           trackerProgress: 10,
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
         },
       });
 
-      const formattedJob = {
-        ...job,
-        customerName: customer.name,
-        customerAddress: customer.address,
-        customerPhone: customer.phone,
-      };
+      const formattedJob = formatJob(job);
 
       // Emit to control room via WebSocket
       io?.to('admin-room').emit('new-job', formattedJob);
@@ -105,17 +130,240 @@ export function createJobsRouter(io?: SocketServer) {
       await writeAuditLog({
         userId: req.user!.id,
         userType: 'Customer',
-        action: 'On-Demand Service Requested',
-        details: `Customer ${customer.name} requested service: ${req.body.serviceType} — "${req.body.description}"`,
+        action: 'Member Service Requested',
+        details: `Member ${customer.name} requested service: ${req.body.serviceType} — "${req.body.description}"`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
-        newValue: { jobId: job.id, serviceType: job.serviceType },
+        newValue: { jobId: job.id, serviceType: job.serviceType, customerType: 'MEMBER' },
       });
 
       return res.status(201).json(formattedJob);
     } catch (error) {
       console.error('[Jobs/Create]', error);
       return res.status(500).json({ error: 'Failed to create job request' });
+    }
+  });
+
+  // =========================================================================
+  // EMERGENCY NON-MEMBER ENDPOINTS (ONE-TIME SERVICE, STRICTLY SEPARATE BILLING)
+  // =========================================================================
+
+  // POST /api/jobs/emergency-non-member — Public entry point for non-member emergency requests
+  router.post('/emergency-non-member', async (req: any, res: Response) => {
+    const { name, phone, email, address, serviceType, description, photoUrl, vehicle } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Customer name is required for emergency dispatch.' });
+    }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: 'Contact phone number is required so our response unit can reach you.' });
+    }
+    if (!address || !address.trim()) {
+      return res.status(400).json({ error: 'Emergency incident location or address is required.' });
+    }
+    if (!serviceType || !serviceType.trim()) {
+      return res.status(400).json({ error: 'Service category is required.' });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Please describe the emergency incident.' });
+    }
+
+    try {
+      let vehicleStr = null;
+      if (vehicle) {
+        vehicleStr = typeof vehicle === 'string' ? vehicle : JSON.stringify(vehicle);
+      }
+
+      const job = await prisma.job.create({
+        data: {
+          customerType: 'NON_MEMBER_EMERGENCY',
+          customerId: null,
+          nonMemberName: name.trim(),
+          nonMemberPhone: phone.trim(),
+          nonMemberEmail: email ? email.trim() : null,
+          nonMemberAddress: address.trim(),
+          customerVehicle: vehicleStr,
+          serviceType: serviceType.trim(),
+          description: description.trim(),
+          photoUrl: photoUrl || null,
+          status: 'Requested',
+          trackerProgress: 10,
+          paymentStatus: 'Pending',
+          finalAmount: 0.0,
+        },
+      });
+
+      const formattedJob = formatJob(job);
+
+      // Broadcast immediately to Operations Control Room
+      io?.to('admin-room').emit('new-job', formattedJob);
+
+      await writeAuditLog({
+        userId: null,
+        userType: 'Non-Member Emergency',
+        action: 'Emergency Non-Member Request',
+        details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType} — "${description}"`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        newValue: { jobId: job.id, customerType: 'NON_MEMBER_EMERGENCY', name, phone, address },
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Emergency request registered. Dispatch control room notified.',
+        job: formattedJob,
+      });
+    } catch (error) {
+      console.error('[Jobs/EmergencyNonMember]', error);
+      return res.status(500).json({ error: 'Failed to submit emergency assistance request' });
+    }
+  });
+
+  // GET /api/jobs/emergency-non-member/:id — Public tracking endpoint for non-member emergency
+  router.get('/emergency-non-member/:id', async (req: any, res: Response) => {
+    try {
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
+          payments: { select: { id: true, amount: true, status: true, paymentMethod: true, date: true } },
+        },
+      });
+
+      if (!job || job.customerType !== 'NON_MEMBER_EMERGENCY') {
+        return res.status(404).json({ error: 'Emergency request not found' });
+      }
+
+      return res.json(formatJob(job));
+    } catch (error) {
+      console.error('[Jobs/GetEmergencyNonMember]', error);
+      return res.status(500).json({ error: 'Failed to retrieve emergency status' });
+    }
+  });
+
+  // PATCH /api/jobs/:id/service-amount — Staff/Contractor: determine final service amount & work performed
+  router.patch('/:id/service-amount', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher', 'Contractor'), async (req: AuthenticatedRequest, res: Response) => {
+    const { finalAmount, servicePerformed, status } = req.body;
+
+    const amountNum = parseFloat(finalAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ error: 'Please provide a valid final service amount greater than zero.' });
+    }
+
+    try {
+      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+      if (!job) return res.status(404).json({ error: 'Job not found' });
+
+      const newStatus = status || 'Work Completed';
+
+      const updated = await prisma.job.update({
+        where: { id: req.params.id },
+        data: {
+          finalAmount: amountNum,
+          servicePerformed: servicePerformed || job.servicePerformed || 'Emergency Assistance Performed',
+          paymentStatus: job.paymentStatus === 'Paid' ? 'Paid' : 'Payment Due',
+          status: newStatus,
+          trackerProgress: 95,
+          completedAt: new Date(),
+        },
+        include: {
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          assignedContractor: { select: { id: true, name: true, phone: true } },
+        },
+      });
+
+      const formatted = formatJob(updated);
+
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit('job-updated', formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit('job-updated', formatted);
+      io?.to('admin-room').emit('job-updated', formatted);
+
+      await writeAuditLog({
+        userId: req.user!.id,
+        userType: req.user!.role,
+        action: 'Emergency Service Amount Set',
+        details: `Final amount of R${amountNum.toFixed(2)} set for Job ${job.id} (${job.customerType})`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        newValue: { finalAmount: amountNum, servicePerformed, status: newStatus },
+      });
+
+      return res.json(formatted);
+    } catch (error) {
+      console.error('[Jobs/SetServiceAmount]', error);
+      return res.status(500).json({ error: 'Failed to set service amount' });
+    }
+  });
+
+  // POST /api/jobs/emergency-non-member/:id/pay — One-time payment for emergency non-member service
+  router.post('/emergency-non-member/:id/pay', async (req: any, res: Response) => {
+    const { paymentMethod, cardLast4 } = req.body;
+
+    try {
+      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+      if (!job) return res.status(404).json({ error: 'Emergency request not found' });
+      if (job.customerType !== 'NON_MEMBER_EMERGENCY') {
+        return res.status(400).json({ error: 'This payment route is only for one-time emergency requests' });
+      }
+
+      const amountToPay = job.finalAmount && job.finalAmount > 0 ? job.finalAmount : 850.00;
+
+      // 1. Create independent one-time service payment record (NO monthly subscription created!)
+      const payment = await prisma.payment.create({
+        data: {
+          customerId: null,
+          customerName: job.nonMemberName || 'Emergency Non-Member Customer',
+          jobId: job.id,
+          type: 'Emergency Assistance Service - Non-Member',
+          amount: amountToPay,
+          status: 'Paid',
+          paymentMethod: paymentMethod || 'Card Online',
+          date: new Date().toISOString().slice(0, 10),
+        },
+      });
+
+      // 2. Mark Job as Paid and Completed
+      const updatedJob = await prisma.job.update({
+        where: { id: job.id },
+        data: {
+          paymentStatus: 'Paid',
+          status: 'Service Completed',
+          trackerProgress: 100,
+          completedAt: job.completedAt || new Date(),
+          closedAt: new Date(),
+        },
+        include: {
+          assignedContractor: { select: { id: true, name: true, phone: true } },
+        },
+      });
+
+      const formatted = formatJob(updatedJob);
+
+      // Emit live updates
+      io?.to(`emergency-job-${job.id}`).emit('job-updated', formatted);
+      io?.to('admin-room').emit('job-updated', formatted);
+
+      await writeAuditLog({
+        userId: null,
+        userType: 'Non-Member Emergency',
+        action: 'One-Time Emergency Payment Completed',
+        details: `Non-member ${job.nonMemberName} paid full service amount of R${amountToPay.toFixed(2)} for Job ${job.id} via ${paymentMethod || 'Card'} (Card: ****${cardLast4 || '4242'}). Request closed.`,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        newValue: { paymentId: payment.id, amount: amountToPay, status: 'Paid', customerType: 'NON_MEMBER_EMERGENCY' },
+      });
+
+      return res.json({
+        success: true,
+        message: 'Payment confirmed! Emergency service marked as completed and paid.',
+        payment,
+        job: formatted,
+      });
+    } catch (error) {
+      console.error('[Jobs/PayEmergency]', error);
+      return res.status(500).json({ error: 'Failed to process payment' });
     }
   });
 
@@ -137,7 +385,7 @@ export function createJobsRouter(io?: SocketServer) {
         make: 'Toyota',
         model: 'Hilux 4x4 Response Unit',
         licensePlate: 'SDA-01-GP',
-        color: 'White',
+        color: 'Tactical White',
       });
 
       const updated = await prisma.job.update({
@@ -154,7 +402,7 @@ export function createJobsRouter(io?: SocketServer) {
           distanceRemainingKm: 4.5,
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true } },
         },
       });
@@ -162,42 +410,56 @@ export function createJobsRouter(io?: SocketServer) {
       // Increment contractor workload
       await prisma.user.update({ where: { id: contractorId }, data: { workload: { increment: 1 } } });
 
-      // Notify contractor & customer
-      io.to(`contractor-${contractorId}`).emit('job-assigned', updated);
-      io.to(`customer-${job.customerId}`).emit('job-updated', updated);
+      const formatted = formatJob(updated);
+
+      // Notify contractor, customer (member or non-member socket) & admin
+      io?.to(`contractor-${contractorId}`).emit('job-assigned', formatted);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit('job-updated', formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit('job-updated', formatted);
+      io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
         userId: req.user!.id,
         userType: req.user!.role,
         action: 'Service Provider Assigned',
-        details: `Dispatched ${contractor.name} to Job ${req.params.id} for ${job.customer.name}`,
+        details: `Dispatched ${contractor.name} to Job ${req.params.id} for ${job.nonMemberName || job.customer?.name || 'Customer'}`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
         previousValue: { status: prevStatus },
         newValue: { status: 'Service Provider Assigned', contractorId, contractorName: contractor.name },
       });
 
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       console.error('[Jobs/Assign]', error);
       return res.status(500).json({ error: 'Failed to assign contractor' });
     }
   });
 
-  // PATCH /api/jobs/:id/status — Update 9-stage job workflow status
+  // PATCH /api/jobs/:id/status — Update job workflow status
   router.patch('/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const { status } = req.body;
     
     const progressMap: Record<string, number> = {
       'Request Received': 10,
+      'Requested': 10,
       'Request Under Review': 20,
+      'Accepted': 25,
       'Service Provider Assigned': 35,
       'Preparing for Dispatch': 45,
       'Dispatched': 60,
       'En Route': 75,
       'Arrived': 85,
-      'Service In Progress': 95,
+      'Service In Progress': 90,
+      'In Progress': 90,
+      'Work Completed': 95,
+      'Payment Pending': 98,
       'Service Completed': 100,
+      'Completed': 100,
+      'Paid': 100,
+      'Closed': 100,
     };
 
     if (progressMap[status] === undefined) {
@@ -213,17 +475,22 @@ export function createJobsRouter(io?: SocketServer) {
         data: {
           status,
           trackerProgress: progressMap[status],
-          completedAt: status === 'Service Completed' ? new Date() : job.completedAt,
+          completedAt: ['Service Completed', 'Completed', 'Work Completed'].includes(status) ? new Date() : job.completedAt,
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, lat: true, lng: true } },
         },
       });
 
-      // Broadcast live update to customer and admin room
-      io.to(`customer-${job.customerId}`).emit('job-updated', updated);
-      io.to('admin-room').emit('job-updated', updated);
+      const formatted = formatJob(updated);
+
+      // Broadcast live update
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit('job-updated', formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit('job-updated', formatted);
+      io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
         userId: req.user!.id,
@@ -236,13 +503,14 @@ export function createJobsRouter(io?: SocketServer) {
         newValue: { status },
       });
 
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
+      console.error('[Jobs/Status]', error);
       return res.status(500).json({ error: 'Failed to update job status' });
     }
   });
 
-  // PATCH /api/jobs/:id/location — Real-Time 3-Second GPS Stream & ETA Update
+  // PATCH /api/jobs/:id/location — Real-Time GPS Stream & ETA Update
   router.patch('/:id/location', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const { lat, lng, estimatedArrivalMinutes, distanceRemainingKm } = req.body;
     if (lat === undefined || lng === undefined) return res.status(400).json({ error: 'lat and lng are required' });
@@ -266,9 +534,11 @@ export function createJobsRouter(io?: SocketServer) {
         distanceRemainingKm: job.distanceRemainingKm,
       };
 
-      // Broadcast live position via Socket.IO
-      io.to(`customer-${job.customerId}`).emit('contractor-location', locationPayload);
-      io.to('admin-room').emit('contractor-location', locationPayload);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit('contractor-location', locationPayload);
+      }
+      io?.to(`emergency-job-${job.id}`).emit('contractor-location', locationPayload);
+      io?.to('admin-room').emit('contractor-location', locationPayload);
 
       return res.json({ success: true, location: locationPayload });
     } catch (error) {
@@ -284,16 +554,13 @@ export function createJobsRouter(io?: SocketServer) {
       const job = await prisma.job.findUnique({ where: { id: req.params.id }, include: { customer: true } });
       if (!job) return res.status(404).json({ error: 'Job not found' });
       if (job.assignedContractorId !== req.user!.id) return res.status(403).json({ error: 'Not authorized' });
-      if (!['Arrived', 'Repair In Progress', 'Quality Inspection'].includes(job.status)) {
-        return res.status(400).json({ error: `Cannot complete job in status: ${job.status}` });
-      }
 
       const [updated] = await prisma.$transaction([
         prisma.job.update({
           where: { id: req.params.id },
           data: {
-            status: 'Completed',
-            trackerProgress: 100,
+            status: 'Work Completed',
+            trackerProgress: 95,
             completedAt: new Date(),
             contractorNotes,
             contractorSignature,
@@ -304,27 +571,31 @@ export function createJobsRouter(io?: SocketServer) {
             assignedContractor: { select: { id: true, name: true } },
           },
         }),
-        // Decrement contractor workload
         prisma.user.update({
           where: { id: req.user!.id },
           data: { workload: { decrement: 1 } },
         }),
       ]);
 
-      io.to(`customer-${job.customerId}`).emit('job-updated', updated);
-      io.to('admin-room').emit('job-updated', updated);
+      const formatted = formatJob(updated);
+
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit('job-updated', formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit('job-updated', formatted);
+      io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
         userId: req.user!.id,
         userType: req.user!.role,
-        action: 'Job Completed',
-        details: `Contractor resolved Job ${req.params.id} for ${job.customer.name}. Digital signature and completion report uploaded.`,
+        action: 'Job Work Completed',
+        details: `Contractor completed work on Job ${req.params.id} for ${job.nonMemberName || job.customer?.name || 'Customer'}.`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
-        newValue: { status: 'Completed', hasSignature: !!contractorSignature },
+        newValue: { status: 'Work Completed', hasSignature: !!contractorSignature },
       });
 
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       console.error('[Jobs/Complete]', error);
       return res.status(500).json({ error: 'Failed to complete job' });
@@ -339,14 +610,12 @@ export function createJobsRouter(io?: SocketServer) {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: 'Job not found' });
       if (job.customerId !== req.user!.id) return res.status(403).json({ error: 'Not authorized' });
-      if (job.status !== 'Completed') return res.status(400).json({ error: 'Job must be Completed before rating' });
 
       const updated = await prisma.job.update({
         where: { id: req.params.id },
         data: { status: 'Closed', rating, ratingComment, closedAt: new Date() },
       });
 
-      // Update contractor average rating
       if (job.assignedContractorId) {
         const contractorJobs = await prisma.job.findMany({
           where: { assignedContractorId: job.assignedContractorId, rating: { not: null } },
@@ -359,7 +628,8 @@ export function createJobsRouter(io?: SocketServer) {
         });
       }
 
-      io.to('admin-room').emit('job-updated', updated);
+      const formatted = formatJob(updated);
+      io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
         userId: req.user!.id,
@@ -371,7 +641,7 @@ export function createJobsRouter(io?: SocketServer) {
         newValue: { rating, ratingComment, status: 'Closed' },
       });
 
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to rate job' });
     }
@@ -388,7 +658,8 @@ export function createJobsRouter(io?: SocketServer) {
         data: { status: 'Closed', closedAt: new Date() },
       });
 
-      io.to('admin-room').emit('job-updated', updated);
+      const formatted = formatJob(updated);
+      io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
         userId: req.user!.id,
@@ -401,7 +672,7 @@ export function createJobsRouter(io?: SocketServer) {
         newValue: { status: 'Closed' },
       });
 
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to close job' });
     }

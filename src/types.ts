@@ -286,12 +286,38 @@ export interface VehicleInfo {
   color: string;
 }
 
+export interface Vehicle {
+  id: string;
+  userId: string;
+  make: string;
+  model: string;
+  year: number;
+  licensePlate: string;
+  color: string;
+  vinNumber?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface Job {
   id: string;
-  customerId: string;
+  customerType?: 'MEMBER' | 'NON_MEMBER_EMERGENCY';
+  customerId?: string;
   customerName?: string;
   customerPhone?: string;
   customerAddress?: string;
+  nonMemberName?: string;
+  nonMemberPhone?: string;
+  nonMemberEmail?: string;
+  nonMemberAddress?: string;
+  customerVehicle?: {
+    make: string;
+    model: string;
+    year: number | string;
+    licensePlate: string;
+    color: string;
+  } | string;
   serviceType: ServiceCategory | string;
   description: string;
   photoUrl?: string;
@@ -306,6 +332,9 @@ export interface Job {
   };
   status: JobStatus | string;
   trackerProgress: number; // 0 to 100
+  finalAmount?: number;
+  paymentStatus?: 'Pending' | 'Paid' | 'Failed';
+  servicePerformed?: string;
   vehicleInfo?: VehicleInfo;
   currentLat?: number;
   currentLng?: number;
@@ -341,11 +370,13 @@ export interface AuditLog {
 
 export interface Payment {
   id: string;
-  customerId: string;
+  customerId?: string;
   customerName: string;
-  type: 'Onboarding Fee' | 'Monthly Premium' | 'Assistance Co-pay';
+  jobId?: string;
+  type: 'Onboarding Fee' | 'Monthly Premium' | 'Assistance Co-pay' | 'Emergency Service - Non Member' | string;
   amount: number;
-  status: 'Paid' | 'Pending';
+  status: 'Paid' | 'Pending' | 'Failed';
+  paymentMethod?: string;
   date: string;
 }
 
@@ -434,6 +465,7 @@ export interface AppState {
   customers: Customer[];
   contractors: Contractor[];
   jobs: Job[];
+  vehicles?: Vehicle[];
   payments: Payment[];
   auditLogs: AuditLog[];
   selectedRole: UserRole;

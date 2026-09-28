@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import CustomerHome from './customer/CustomerHome';
@@ -9,6 +9,7 @@ import CustomerActiveJob from './customer/CustomerActiveJob';
 import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
+import { VehicleManager } from './customer/VehicleManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
 import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
 import logoImg from '../assets/logo.png';
@@ -16,7 +17,7 @@ import logoImg from '../assets/logo.png';
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'locations' | 'contacts' | 'wallet'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'vehicles' | 'locations' | 'contacts' | 'wallet'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -85,6 +86,18 @@ export default function CustomerApp() {
           >
             <Wallet className="w-4 h-4 text-red" />
             <span>Digital Wallet</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveDeviceTab('vehicles')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'vehicles'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <Car className="w-4 h-4 text-slate-500" />
+            <span>MY VEHICLES</span>
           </button>
           <button
             type="button"
@@ -174,6 +187,9 @@ export default function CustomerApp() {
           )}
           {activeDeviceTab === 'wallet' && (
             <CustomerWalletView />
+          )}
+          {activeDeviceTab === 'vehicles' && (
+            <VehicleManager />
           )}
           {activeDeviceTab === 'locations' && (
             <SavedLocationsManager />

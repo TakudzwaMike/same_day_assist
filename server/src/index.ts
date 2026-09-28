@@ -106,7 +106,7 @@ app.use((req: any, res, next) => {
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check endpoint
-app.get('/health', async (req, res) => {
+const healthHandler = async (req: any, res: any) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return res.json({
@@ -118,12 +118,15 @@ app.get('/health', async (req, res) => {
   } catch (error) {
     return res.status(503).json({ status: 'unhealthy', database: 'disconnected' });
   }
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 import verificationRouter from './routes/verification';
 import ratingsRouter from './routes/ratings';
 import messagesRouter from './routes/messages';
 import walletRouter from './routes/wallet';
+import vehiclesRouter from './routes/vehicles';
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -137,6 +140,7 @@ app.use('/api/files', filesRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/contacts', contactsRouter);
+app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/profile-requests', profileRequestsRouter);
 app.use('/api/verification', verificationRouter);
 app.use('/api/ratings', ratingsRouter);

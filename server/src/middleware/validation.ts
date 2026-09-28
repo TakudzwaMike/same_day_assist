@@ -64,8 +64,10 @@ export const quotationSchema = z.object({
 });
 
 export const jobCreateSchema = z.object({
-  serviceType: z.enum(['Security', 'Electrical', 'Plumbing', 'Construction']),
-  description: z.string().min(10, 'Please describe the emergency in detail').max(2000),
+  serviceType: z.string().min(1, 'Service type is required'),
+  description: z.string().min(5, 'Please describe the emergency in detail').max(2000),
+  vehicle: z.any().optional(),
+  customerAddress: z.string().optional(),
   photoUrl: z.string().optional(),
   videoUrl: z.string().optional(),
 });

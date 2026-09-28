@@ -17,7 +17,12 @@ interface AppStateContextType {
   createQuotation: (payload: { enquiryId: string; lineItems: { description: string; cost: number }[] }) => Promise<void>;
   approveQuotation: (quotationId: string) => Promise<void>;
   declineQuotation: (quotationId: string) => Promise<void>;
-  createJob: (payload: { serviceType: any; description: string; photoUrl?: string }) => Promise<void>;
+  createJob: (payload: { serviceType: any; description: string; photoUrl?: string; vehicle?: any }) => Promise<void>;
+  createEmergencyNonMemberJob: (payload: any) => Promise<any>;
+  payEmergencyService: (jobId: string, payload: any) => Promise<any>;
+  addVehicle: (data: any) => Promise<any>;
+  updateVehicle: (id: string, data: any) => Promise<any>;
+  deleteVehicle: (id: string) => Promise<void>;
   assignContractor: (jobId: string, contractorId: string) => Promise<void>;
   updateJobStatus: (jobId: string, status: string) => Promise<void>;
   updateContractorLocation: (jobId: string, lat: number, lng: number) => Promise<void>;
@@ -62,6 +67,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       customers: INITIAL_CUSTOMERS,
       contractors: INITIAL_CONTRACTORS,
       jobs: [],
+      vehicles: [],
       payments: [],
       auditLogs: [],
       selectedRole: 'Customer',
@@ -100,10 +106,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     });
   }, [state.selectedRole]);
 
-  // Unified data refresher from APIs
-  const refreshData = useCallback(async () => {
+  // Unified data refresher from APIs (stabilized: no flickering, no aggressive continuous polling)
+  const refreshData = useCallback(async (isInitial = false) => {
     if (!isAuthenticated) return;
-    setIsLoading(true);
+    if (isInitial) setIsLoading(true);
     try {
       // Parallel fetches for standard user resources
       const promises: Promise<any>[] = [];
@@ -117,11 +123,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         promises.push(api.getMyQuotations().catch(() => []));
         promises.push(api.getMyAssessments().catch(() => []));
         promises.push(api.getMyPayments().catch(() => []));
+        promises.push(api.getVehicles().catch(() => []));
       } else if (isAdmin) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getEnquiries().catch(() => []));
         promises.push(api.getAllQuotations().catch(() => []));
         promises.push(api.getAllPayments().catch(() => []));
+        promises.push(api.getVehicles().catch(() => []));
         if (user?.role === 'Super Administrator') {
           promises.push(api.getAuditLogs({ limit: 100 }).catch(() => ({ logs: [] })));
         } else {
@@ -140,8 +148,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       
       const normalizeJob = (j: any) => ({
         ...j,
-        customerName: j.customerName || j.customer?.name || 'Valued Member',
-        customerAddress: j.customerAddress || j.customer?.address || 'Sandton, Johannesburg',
+        customerName: j.customerName || j.customer?.name || (j.customerType === 'NON_MEMBER_EMERGENCY' ? j.nonMemberName : 'Valued Member'),
+        customerAddress: j.customerAddress || j.customer?.address || (j.customerType === 'NON_MEMBER_EMERGENCY' ? j.nonMemberAddress : 'Sandton, Johannesburg'),
         status: (j.status === 'Request Received' ? 'Requested' : j.status) || 'Requested',
       });
 
@@ -154,11 +162,13 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.quotations = results[idx++] || [];
           updated.assessments = results[idx++] || [];
           updated.payments = results[idx++] || [];
+          updated.vehicles = results[idx++] || [];
         } else if (isAdmin) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
           updated.payments = results[idx++] || [];
+          updated.vehicles = results[idx++] || [];
           updated.auditLogs = results[idx++]?.logs || [];
         } else if (isDispatcher) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
@@ -172,8 +182,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         updated.selectedRole = user?.role as any;
         updated.currentUserId = user?.id || '';
 
-        // Derive currentStep from records
-        if (isClient) {
+        // Derive currentStep from records ONLY on initial load or if not explicitly navigating
+        if (isClient && (!prev.currentStep || prev.currentStep === 'PROSPECT')) {
           const clientPayments = updated.payments;
           const activeJob = updated.jobs.find(j => j.status !== 'Closed' && j.status !== 'Rated');
           const hasApprovedQuote = updated.quotations.some(q => q.status === 'Approved');
@@ -182,9 +192,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           
           if (activeJob) {
             if (activeJob.status === 'Requested') updated.currentStep = 'REQUEST_ASSISTANCE';
-            else if (activeJob.status === 'Assigned') updated.currentStep = 'CONTRACTOR_ASSIGNED';
-            else if (activeJob.status === 'InRoute' || activeJob.status === 'Arrived') updated.currentStep = 'LIVE_JOB_UPDATES';
-            else if (activeJob.status === 'Completed') updated.currentStep = 'COMPLETION_REPORT';
+            else if (activeJob.status === 'Assigned' || activeJob.status === 'Service Provider Assigned') updated.currentStep = 'CONTRACTOR_ASSIGNED';
+            else if (activeJob.status === 'InRoute' || activeJob.status === 'Dispatched' || activeJob.status === 'En Route' || activeJob.status === 'Arrived') updated.currentStep = 'LIVE_JOB_UPDATES';
+            else if (activeJob.status === 'Completed' || activeJob.status === 'Work Completed') updated.currentStep = 'COMPLETION_REPORT';
           } else if (clientPayments.some(p => p.status === 'Paid')) {
             updated.currentStep = 'MEMBERSHIP_ACTIVATED';
           } else if (hasApprovedQuote) {
@@ -203,24 +213,21 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     } catch (err: any) {
       console.warn('[AppState] Fetch warning:', err.message);
     } finally {
-      setIsLoading(false);
+      if (isInitial) setIsLoading(false);
     }
   }, [isAuthenticated, user]);
 
-  // Trigger fetches on auth state & periodic real-time sync (polling every 4 seconds)
+  // Production-grade data synchronization: fetch once on auth, no artificial periodic polling timers
   useEffect(() => {
     if (isAuthenticated) {
-      refreshData();
-      const intervalId = setInterval(() => {
-        refreshData();
-      }, 4000);
-      return () => clearInterval(intervalId);
+      refreshData(true);
     } else {
       updateState({
         jobs: [],
         quotations: [],
         assessments: [],
         payments: [],
+        vehicles: [],
         auditLogs: [],
       });
     }
@@ -371,7 +378,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const createJob = async (payload: { serviceType: any; description: string; photoUrl?: string }) => {
+  const createJob = async (payload: { serviceType: any; description: string; photoUrl?: string; vehicle?: any }) => {
     setError(null);
     const activeCustomer = state.customers.find(c => c.id === user?.id);
     const status = activeCustomer?.status || activeCustomer?.onboardingStatus;
@@ -403,6 +410,65 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       setError(err.message || 'Failed to request assistance');
+      throw err;
+    }
+  };
+
+  const createEmergencyNonMemberJob = async (payload: any) => {
+    setError(null);
+    try {
+      const res = await api.createEmergencyNonMemberJob(payload);
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit emergency assistance request');
+      throw err;
+    }
+  };
+
+  const payEmergencyService = async (jobId: string, payload: any) => {
+    setError(null);
+    try {
+      const res = await api.payEmergencyService(jobId, payload);
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Failed to process payment');
+      throw err;
+    }
+  };
+
+  const addVehicle = async (vehicleData: any) => {
+    setError(null);
+    try {
+      const created = await api.addVehicle(vehicleData);
+      await refreshData();
+      return created;
+    } catch (err: any) {
+      setError(err.message || 'Failed to save vehicle');
+      throw err;
+    }
+  };
+
+  const updateVehicle = async (id: string, vehicleData: any) => {
+    setError(null);
+    try {
+      const updated = await api.updateVehicle(id, vehicleData);
+      await refreshData();
+      return updated;
+    } catch (err: any) {
+      setError(err.message || 'Failed to update vehicle');
+      throw err;
+    }
+  };
+
+  const deleteVehicle = async (id: string) => {
+    setError(null);
+    try {
+      await api.deleteVehicle(id);
+      await refreshData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to remove vehicle');
       throw err;
     }
   };
@@ -672,6 +738,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       approveQuotation,
       declineQuotation,
       createJob,
+      createEmergencyNonMemberJob,
+      payEmergencyService,
+      addVehicle,
+      updateVehicle,
+      deleteVehicle,
       assignContractor,
       updateJobStatus,
       updateContractorLocation,

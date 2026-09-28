@@ -80,6 +80,7 @@ model User {
   chatMessagesReceived ChatMessage[]          @relation("ReceivedMessages")
   wallet               Wallet?
   providerAwards       ProviderAward[]
+  vehicles             Vehicle[]
 }
 
 
@@ -105,6 +106,21 @@ model AuthorisedContact {
   position    String
   permissions String   @default("Full") // Full, Dispatch Only, Billing Only
   createdAt   DateTime @default(now())
+}
+
+model Vehicle {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  make         String
+  model        String
+  year         Int
+  licensePlate String
+  color        String
+  vinNumber    String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model ProfileUpdateRequest {
@@ -164,8 +180,14 @@ model Quotation {
 
 model Job {
   id                      String       @id @default(uuid())
-  customerId              String
-  customer                User         @relation("CustomerJobs", fields: [customerId], references: [id])
+  customerType            String       @default("MEMBER") // MEMBER, NON_MEMBER_EMERGENCY
+  customerId              String?
+  customer                User?        @relation("CustomerJobs", fields: [customerId], references: [id])
+  nonMemberName           String?
+  nonMemberPhone          String?
+  nonMemberEmail          String?
+  nonMemberAddress        String?
+  customerVehicle         String?      // JSON string of { make, model, year, licensePlate, color }
   serviceType             String       // Security, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
   description             String
   photoUrl                String?
@@ -174,6 +196,9 @@ model Job {
   assignedContractor      User?        @relation("ContractorJobs", fields: [assignedContractorId], references: [id])
   status                  String       @default("Request Received") // Request Received, Request Under Review, Service Provider Assigned, Preparing for Dispatch, Dispatched, En Route, Arrived, Service In Progress, Service Completed
   trackerProgress         Int          @default(0)
+  finalAmount             Float?       @default(0.0)
+  paymentStatus           String       @default("Pending") // Pending, Paid, Failed
+  servicePerformed        String?
   
   // Real-time tracking & vehicle details
   vehicleInfo             String?      // JSON: { make, model, licensePlate, color }
@@ -199,14 +224,15 @@ model Job {
   fileRecords             FileRecord[]
   jobRatings              JobRating[]
   chatMessages            ChatMessage[]
+  payments                Payment[]
 }
 
 model JobRating {
   id                  String   @id @default(uuid())
   jobId               String
   job                 Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  customerId          String
-  customer            User     @relation("CustomerRatings", fields: [customerId], references: [id])
+  customerId          String?
+  customer            User?    @relation("CustomerRatings", fields: [customerId], references: [id])
   contractorId        String
   contractor          User     @relation("ContractorRatings", fields: [contractorId], references: [id])
   
@@ -272,15 +298,18 @@ model ProviderAward {
 }
 
 model Payment {
-  id           String   @id @default(uuid())
-  customerId   String
-  customer     User     @relation(fields: [customerId], references: [id])
-  customerName String
-  type         String   // Onboarding Fee, Monthly Premium, Assistance Co-pay
-  amount       Float
-  status       String   @default("Pending") // Paid, Pending
-  date         String   // yyyy-mm-dd
-  createdAt    DateTime @default(now())
+  id            String   @id @default(uuid())
+  customerId    String?
+  customer      User?    @relation(fields: [customerId], references: [id])
+  customerName  String
+  jobId         String?
+  job           Job?     @relation(fields: [jobId], references: [id])
+  type          String   // Onboarding Fee, Monthly Premium, Assistance Co-pay, Emergency Service
+  amount        Float
+  status        String   @default("Pending") // Paid, Pending, Failed
+  paymentMethod String?  // Card, Cash, EFT
+  date          String   // yyyy-mm-dd
+  createdAt     DateTime @default(now())
 }
 
 model AuditLog {

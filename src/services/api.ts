@@ -268,11 +268,59 @@ class ApiClient {
     return this.request(`/quotations/${id}/decline`, { method: 'PATCH' });
   }
 
+  // Vehicles
+  async getVehicles() { return this.request<any[]>('/vehicles'); }
+  async addVehicle(data: { make: string; model: string; year?: number | string; licensePlate: string; color?: string; vinNumber?: string; notes?: string }) {
+    return this.request<any>('/vehicles', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateVehicle(id: string, data: any) {
+    return this.request<any>(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  }
+  async deleteVehicle(id: string) {
+    return this.request<{ success: boolean; message: string }>(`/vehicles/${id}`, { method: 'DELETE' });
+  }
+
   // Jobs
   async getMyJobs() { return this.request<any[]>('/jobs/my'); }
   async getAllJobs() { return this.request<any[]>('/jobs'); }
   async createJob(payload: any) {
     return this.request('/jobs', { method: 'POST', body: JSON.stringify(payload) });
+  }
+  async createEmergencyNonMemberJob(payload: {
+    name: string;
+    phone: string;
+    email?: string;
+    address: string;
+    serviceType: string;
+    description: string;
+    photoUrl?: string;
+    vehicle?: {
+      make: string;
+      model: string;
+      year?: number | string;
+      licensePlate: string;
+      color?: string;
+    };
+  }) {
+    return this.request<{ success: boolean; message: string; job: any }>('/jobs/emergency-non-member', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+  async getEmergencyNonMemberJob(id: string) {
+    return this.request<any>(`/jobs/emergency-non-member/${id}`);
+  }
+  async setJobServiceAmount(jobId: string, payload: { finalAmount: number; servicePerformed?: string; status?: string }) {
+    return this.request<any>(`/jobs/${jobId}/service-amount`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+  async payEmergencyService(jobId: string, payload: { paymentMethod?: string; cardLast4?: string }) {
+    return this.request<{ success: boolean; message: string; payment: any; job: any }>(`/jobs/emergency-non-member/${jobId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   }
   async assignContractor(jobId: string, contractorId: string) {
     return this.request(`/jobs/${jobId}/assign`, { method: 'PATCH', body: JSON.stringify({ contractorId }) });
