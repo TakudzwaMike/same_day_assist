@@ -10,6 +10,7 @@ import {
 import { validate, loginSchema, registerSchema } from '../middleware/validation';
 import { writeAuditLog } from '../middleware/auditLog';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { initializeMembershipWithSchedule } from '../services/paymentService';
 
 const router = Router();
 
@@ -340,29 +341,14 @@ router.post('/onboarding', async (req: any, res: Response) => {
       include: { savedLocations: true, notificationSettings: true },
     });
 
-    // Create Membership & opening transaction for the user
-    await prisma.membership.create({
-      data: {
-        userId: user.id,
-        planId: chosenPlan.id,
-        planName: chosenPlan.name,
-        monthlyPrice: chosenPlan.monthlyPrice,
-        annualBenefit: chosenPlan.annualBenefit,
-        benefitYearStart: now,
-        benefitYearEnd: oneYearLater,
-        status: 'Active',
-        benefitTransactions: {
-          create: {
-            userId: user.id,
-            reference: `OPENING-${now.getFullYear()}`,
-            description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
-            credit: chosenPlan.annualBenefit,
-            debit: 0,
-            balance: chosenPlan.annualBenefit,
-            date: now,
-          },
-        },
-      },
+    // Initialize Membership with 3-stage payment lifecycle (Initial 20% collected, Pending Activation status)
+    await initializeMembershipWithSchedule({
+      userId: user.id,
+      planId: chosenPlan.id,
+      billingDay: 25,
+      autoProcessInitial: true, // Stage 1 initial 20% collected on join
+      paymentMethod: 'Card',
+      startDate: now,
     });
 
     // Create linked Enquiry for initial onboarding record

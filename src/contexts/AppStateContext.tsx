@@ -39,7 +39,12 @@ interface AppStateContextType {
   claims: Claim[];
   invoices: Invoice[];
   benefitSummary?: BenefitSummary;
+  paymentTimeline?: import('../types').PaymentTimeline | null;
   refreshBenefitSummary: () => Promise<void>;
+  refreshPaymentTimeline: () => Promise<void>;
+  payActivationStage: (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) => Promise<any>;
+  retryPayment: (paymentId: string, paymentMethod?: string) => Promise<any>;
+  triggerAdminBilling: (customerId: string) => Promise<any>;
   createClaim: (payload: { serviceType: string; description: string; vehicleOrProperty?: string; contractorName?: string; amountClaimed: number; jobId?: string; supportingDocs?: any }) => Promise<any>;
   reviewClaim: (id: string, payload: any) => Promise<any>;
   payInvoice: (id: string, payload?: { paymentMethod?: string; cardLast4?: string } | string) => Promise<any>;
@@ -179,7 +184,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.quotations = results[idx++] || [];
           updated.assessments = results[idx++] || [];
-          updated.payments = results[idx++] || [];
+          const myPayRes = results[idx++];
+          updated.payments = Array.isArray(myPayRes) ? myPayRes : (myPayRes?.payments || []);
+          updated.paymentTimeline = myPayRes?.timeline || null;
           updated.vehicles = results[idx++] || [];
           updated.benefitSummary = results[idx++] || undefined;
           updated.claims = results[idx++] || [];
@@ -188,7 +195,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
-          updated.payments = results[idx++] || [];
+          const allPayRes = results[idx++];
+          updated.payments = Array.isArray(allPayRes) ? allPayRes : (allPayRes?.payments || []);
           updated.vehicles = results[idx++] || [];
           updated.auditLogs = results[idx++]?.logs || [];
           updated.claims = results[idx++] || [];
@@ -831,6 +839,57 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshData]);
 
+  const refreshPaymentTimeline = useCallback(async () => {
+    try {
+      const res = await api.getMyPayments();
+      if (res?.timeline) {
+        setState(prev => ({
+          ...prev,
+          payments: res.payments || prev.payments,
+          paymentTimeline: res.timeline,
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to refresh payment timeline', e);
+    }
+  }, []);
+
+  const payActivationStage = useCallback(async (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) => {
+    setError(null);
+    try {
+      const res = await api.payActivationStage(payload || {});
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Payment processing failed');
+      throw err;
+    }
+  }, [refreshData]);
+
+  const retryPayment = useCallback(async (paymentId: string, paymentMethod = 'Card') => {
+    setError(null);
+    try {
+      const res = await api.retryPayment(paymentId, paymentMethod);
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Payment retry failed');
+      throw err;
+    }
+  }, [refreshData]);
+
+  const triggerAdminBilling = useCallback(async (customerId: string) => {
+    setError(null);
+    try {
+      const res = await api.triggerAdminBilling({ customerId });
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Trigger billing failed');
+      throw err;
+    }
+  }, [refreshData]);
+
   return (
     <AppStateContext.Provider value={{
       state,
@@ -840,7 +899,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       claims: state.claims || [],
       invoices: state.invoices || [],
       benefitSummary: state.benefitSummary,
+      paymentTimeline: state.paymentTimeline,
       refreshBenefitSummary,
+      refreshPaymentTimeline,
+      payActivationStage,
+      retryPayment,
+      triggerAdminBilling,
       createClaim,
       reviewClaim,
       payInvoice,

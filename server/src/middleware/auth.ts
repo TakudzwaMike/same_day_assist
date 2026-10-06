@@ -22,12 +22,20 @@ export function requireAuth(req: AuthenticatedRequest, res: Response, next: Next
 }
 
 export function requireRoles(...allowedRoles: string[]) {
+  const normalizedAllowed = allowedRoles.map(r => r.toUpperCase());
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = (req.user.role || '').toUpperCase();
+    const isAllowed =
+      normalizedAllowed.includes(userRole) ||
+      (normalizedAllowed.includes('ADMIN') && (userRole === 'ADMINISTRATOR' || userRole === 'SUPER ADMINISTRATOR')) ||
+      (normalizedAllowed.includes('ADMINISTRATOR') && userRole === 'ADMIN') ||
+      (normalizedAllowed.includes('CUSTOMER') && (userRole === 'CLIENT' || userRole === 'MEMBER'));
+
+    if (!isAllowed) {
       return res.status(403).json({ error: `Access forbidden for role: ${req.user.role}` });
     }
 

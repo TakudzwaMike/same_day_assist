@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import CustomerHome from './customer/CustomerHome';
@@ -12,13 +12,14 @@ import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
 import { VehicleManager } from './customer/VehicleManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
+import { CustomerPayments } from './customer/CustomerPayments';
 import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
 import logoImg from '../assets/logo.png';
 
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -155,6 +156,18 @@ export default function CustomerApp() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveDeviceTab('payments')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'payments'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <CreditCard className="w-4 h-4 text-red" />
+            <span>Membership Billing</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveDeviceTab('profile')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeDeviceTab === 'profile'
@@ -223,6 +236,9 @@ export default function CustomerApp() {
           )}
           {activeDeviceTab === 'invoices' && (
             <CustomerInvoices activeCustomer={activeCustomer} onNavigateTab={setActiveDeviceTab} />
+          )}
+          {activeDeviceTab === 'payments' && (
+            <CustomerPayments onNavigateTab={setActiveDeviceTab} />
           )}
         </div>
       </div>

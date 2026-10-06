@@ -304,18 +304,30 @@ model ProviderAward {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  customerId    String?
-  customer      User?    @relation(fields: [customerId], references: [id])
-  customerName  String
-  jobId         String?
-  job           Job?     @relation(fields: [jobId], references: [id])
-  type          String   // Onboarding Fee, Monthly Premium, Assistance Co-pay, Emergency Service
-  amount        Float
-  status        String   @default("Pending") // Paid, Pending, Failed
-  paymentMethod String?  // Card, Cash, EFT
-  date          String   // yyyy-mm-dd
-  createdAt     DateTime @default(now())
+  id               String      @id @default(uuid())
+  customerId       String?
+  customer         User?       @relation(fields: [customerId], references: [id])
+  customerName     String
+  membershipId     String?
+  membership       Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  invoiceId        String?
+  invoice          Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  jobId            String?
+  job              Job?        @relation(fields: [jobId], references: [id])
+  paymentStage     String      @default("RECURRING_MONTHLY") // INITIAL_20, FIRST_BILLING_40, SECOND_BILLING_40, RECURRING_MONTHLY, SERVICE_COPAY
+  type             String      // Initial 20% Activation, First 40% Billing, Second 40% Activation Billing, Monthly Membership, Assistance Co-pay, Emergency Service
+  amount           Float
+  status           String      @default("Pending") // Pending, Processing, Successful, Failed, Cancelled, Refunded, Paid
+  paymentMethod    String?     // Card, Ozow, PayFast, EFT, Cash
+  date             String      // yyyy-mm-dd
+  dueDate          DateTime?
+  paidAt           DateTime?
+  transactionRef   String?     @unique // Gateway reference / idempotency key
+  gatewayReference String?
+  failureReason    String?
+  retryCount       Int         @default(0)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model AuditLog {
@@ -364,23 +376,36 @@ model NotificationPreference {
 }
 
 model Membership {
-  id                  String               @id @default(uuid())
-  userId              String
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId              String               // assist, assist_plus, assist_pro, assist_elite, residential_advanced, business_advanced
-  planName            String               // Assist, Assist Plus, Assist Pro, Assist Elite, Residential Advanced, Business Advanced
-  monthlyPrice        Float
-  annualBenefit       Float                // 0 for Assist, 15000, 40000, 60000, 80000, 150000
-  benefitYearStart    DateTime             @default(now())
-  benefitYearEnd      DateTime
-  status              String               @default("Active") // Active, Suspended, Cancelled, Expired
-  autoRenew           Boolean              @default(true)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id                      String               @id @default(uuid())
+  userId                  String
+  user                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                  String               // assist, assist_plus, assist_pro, assist_elite, residential_advanced, business_advanced
+  planName                String               // Assist, Assist Plus, Assist Pro, Assist Elite, Residential Advanced, Business Advanced
+  monthlyPrice            Float
+  annualBenefit           Float                // 0 for Assist, 15000, 40000, 60000, 80000, 150000
+  benefitYearStart        DateTime             @default(now())
+  benefitYearEnd          DateTime
+  status                  String               @default("Pending Activation") // Pending Activation, Active, Suspended, Cancelled, Expired, Payment Due
+  autoRenew               Boolean              @default(true)
+  
+  // 3-Stage Payment Lifecycle Tracking (Initial 20% -> 1st 40% -> 2nd 40% -> Active)
+  billingDayOfMonth       Int                  @default(25)
+  startDate               DateTime             @default(now())
+  firstBillingDate        DateTime?
+  secondBillingDate       DateTime?
+  nextBillingDate         DateTime?
+  activationDate          DateTime?
+  activationCycleComplete Boolean              @default(false)
+  totalActivationPaid     Float                @default(0.0) // sum of activation payments collected
+  activationPercentage    Float                @default(0.0) // 0%, 20%, 60%, 100%
 
-  benefitTransactions BenefitTransaction[]
-  claims              Claim[]
-  invoices            Invoice[]
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  benefitTransactions     BenefitTransaction[]
+  claims                  Claim[]
+  invoices                Invoice[]
+  payments                Payment[]
 }
 
 model BenefitTransaction {
@@ -469,6 +494,7 @@ model Invoice {
   updatedAt               DateTime             @updatedAt
 
   benefitTransactions     BenefitTransaction[]
+  payments                Payment[]
 }
 
 

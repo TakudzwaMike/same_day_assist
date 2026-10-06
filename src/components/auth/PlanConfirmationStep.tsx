@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Check, AlertCircle, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { getPlan } from '../../data/plans';
+import { calculatePaymentBreakdown } from '../../utils/paymentStructure';
 
 interface PlanConfirmationStepProps {
   selectedPlanId: string;
@@ -106,6 +107,95 @@ export function PlanConfirmationStep({
             </div>
           </div>
 
+          {/* YOUR PAYMENT SCHEDULE (Specification Section 9) */}
+          {(() => {
+            const bd = calculatePaymentBreakdown(plan.monthlyPrice);
+            return (
+              <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-red-500/40 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest block">
+                      ACTIVATION PAYMENT BREAKDOWN
+                    </span>
+                    <h3 className="text-base font-black text-white uppercase tracking-wider font-brand-header">
+                      YOUR PAYMENT SCHEDULE
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono bg-red-500/10 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full font-bold">
+                    3-Stage Structure
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Initial 20% */}
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                      Initial Payment — 20%
+                    </span>
+                    <div className="text-lg font-black font-mono text-white mt-1">
+                      R{bd.initialPayment.toFixed(2)}
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-mono mt-1 block">
+                      Due Today (Onboarding)
+                    </span>
+                  </div>
+
+                  {/* First Billing 40% */}
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                      First Billing — 40%
+                    </span>
+                    <div className="text-lg font-black font-mono text-white mt-1">
+                      R{bd.firstBillingPayment.toFixed(2)}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono mt-1 block">
+                      Scheduled (25th of month)
+                    </span>
+                  </div>
+
+                  {/* Second Billing 40% */}
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                      Second Billing — 40%
+                    </span>
+                    <div className="text-lg font-black font-mono text-white mt-1">
+                      R{bd.secondBillingPayment.toFixed(2)}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono mt-1 block">
+                      Scheduled (+1 month)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Total & Activation Milestone Warning */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-950 p-3.5 rounded-xl border border-slate-800 gap-2">
+                  <div className="text-xs text-slate-300">
+                    <span className="text-slate-400 font-mono">Total Activation Payments: </span>
+                    <span className="font-mono font-bold text-white text-sm">R{bd.total.toLocaleString()}</span>
+                    <span className="text-[10px] text-slate-400 font-mono ml-2">(20% + 40% + 40% = 100%)</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md">
+                    Activation Status: Pending Activation
+                  </span>
+                </div>
+
+                {/* Explicit Requirement Callout */}
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 flex items-start gap-3 text-xs text-red-200">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-bold text-white block">
+                      Crucial Membership Activation Notice:
+                    </span>
+                    <p className="leading-relaxed">
+                      <strong>Your membership becomes ACTIVE after the second billing payment is successfully completed.</strong>{' '}
+                      You will remain in <span className="font-mono text-amber-300">Pending Activation</span> status after paying the initial 20% and first 40%. Full plan assistance benefits and claims unlock exclusively once 100% of the activation structure is collected.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Benefits Included */}
           <div className="space-y-2">
             <h4 className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">
@@ -147,14 +237,11 @@ export function PlanConfirmationStep({
               />
               <div className="text-xs text-slate-300 leading-snug">
                 <span className="font-bold text-white block mb-0.5">
-                  I explicitly confirm that I understand this membership plan:
+                  I explicitly confirm that I understand this membership plan and payment schedule:
                 </span>
                 I acknowledge that the monthly subscription is{' '}
-                <strong>R{plan.monthlyPrice.toLocaleString()}/month</strong> and the annual assistance benefit allowance is{' '}
-                <strong className={isAssistZero ? 'text-amber-400' : 'text-emerald-400'}>
-                  {plan.partsBenefitDescription}
-                </strong>
-                .
+                <strong>R{plan.monthlyPrice.toLocaleString()}/month</strong>, the initial onboarding payment is{' '}
+                <strong>20% (R{calculatePaymentBreakdown(plan.monthlyPrice).initialPayment.toFixed(2)})</strong>, followed by two 40% billing cycles, and my membership becomes <strong>ACTIVE only after the second billing payment is successfully completed</strong>.
               </div>
             </label>
           </div>

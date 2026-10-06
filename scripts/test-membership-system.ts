@@ -68,6 +68,10 @@ async function runTests() {
   });
 
   const membership = await getOrCreateActiveMembership(testUser.id, 'assist_plus');
+  await prisma.membership.update({
+    where: { id: membership.id },
+    data: { status: 'Active', activationPercentage: 100, activationCycleComplete: true },
+  });
   assert(membership.planId === 'assist_plus', 'Membership created with assist_plus');
   assert(membership.annualBenefit === 15000, 'Annual benefit initialized to R15,000');
 

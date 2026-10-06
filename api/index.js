@@ -370,14 +370,708 @@ function requireAuth(req, res, next) {
   }
 }
 function requireRoles(...allowedRoles) {
+  const normalizedAllowed = allowedRoles.map((r) => r.toUpperCase());
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = (req.user.role || "").toUpperCase();
+    const isAllowed = normalizedAllowed.includes(userRole) || normalizedAllowed.includes("ADMIN") && (userRole === "ADMINISTRATOR" || userRole === "SUPER ADMINISTRATOR") || normalizedAllowed.includes("ADMINISTRATOR") && userRole === "ADMIN" || normalizedAllowed.includes("CUSTOMER") && (userRole === "CLIENT" || userRole === "MEMBER");
+    if (!isAllowed) {
       return res.status(403).json({ error: `Access forbidden for role: ${req.user.role}` });
     }
     next();
+  };
+}
+
+// server/src/services/paymentService.ts
+init_plans();
+function calculatePaymentBreakdown(monthlyPrice) {
+  const monthlyCents = Math.round(monthlyPrice * 100);
+  const initialCents = Math.round(monthlyCents * 0.2);
+  const firstBillingCents = Math.round(monthlyCents * 0.4);
+  const secondBillingCents = monthlyCents - initialCents - firstBillingCents;
+  const initialAmount = initialCents / 100;
+  const firstBillingAmount = firstBillingCents / 100;
+  const secondBillingAmount = secondBillingCents / 100;
+  return {
+    monthlyPrice,
+    initialAmount,
+    firstBillingAmount,
+    secondBillingAmount,
+    totalActivationAmount: Number((initialAmount + firstBillingAmount + secondBillingAmount).toFixed(2))
+  };
+}
+function calculateBillingDates(startDate = /* @__PURE__ */ new Date(), billingDay = 25) {
+  const start = new Date(startDate);
+  let firstYear = start.getFullYear();
+  let firstMonth = start.getMonth();
+  if (start.getDate() > 20) {
+    firstMonth += 1;
+    if (firstMonth > 11) {
+      firstMonth = 0;
+      firstYear += 1;
+    }
+  }
+  const daysInFirstMonth = new Date(Date.UTC(firstYear, firstMonth + 1, 0)).getUTCDate();
+  const clampedFirstDay = Math.min(billingDay, daysInFirstMonth);
+  const firstBillingDate = new Date(Date.UTC(firstYear, firstMonth, clampedFirstDay, 12, 0, 0, 0));
+  let secondYear = firstYear;
+  let secondMonth = firstMonth + 1;
+  if (secondMonth > 11) {
+    secondMonth = 0;
+    secondYear += 1;
+  }
+  const daysInSecondMonth = new Date(Date.UTC(secondYear, secondMonth + 1, 0)).getUTCDate();
+  const clampedSecondDay = Math.min(billingDay, daysInSecondMonth);
+  const secondBillingDate = new Date(Date.UTC(secondYear, secondMonth, clampedSecondDay, 12, 0, 0, 0));
+  let recurYear = secondYear;
+  let recurMonth = secondMonth + 1;
+  if (recurMonth > 11) {
+    recurMonth = 0;
+    recurYear += 1;
+  }
+  const daysInRecurMonth = new Date(Date.UTC(recurYear, recurMonth + 1, 0)).getUTCDate();
+  const clampedRecurDay = Math.min(billingDay, daysInRecurMonth);
+  const recurringBillingDate = new Date(Date.UTC(recurYear, recurMonth, clampedRecurDay, 12, 0, 0, 0));
+  return {
+    startDate: start,
+    firstBillingDate,
+    secondBillingDate,
+    recurringBillingDate
+  };
+}
+function getPaymentScheduleForPlan(planId, startDate, billingDay = 25) {
+  const plan = getPlanById(planId);
+  const breakdown = calculatePaymentBreakdown(plan.monthlyPrice);
+  const dates = calculateBillingDates(startDate || /* @__PURE__ */ new Date(), billingDay);
+  return {
+    planId: plan.id,
+    planName: plan.name,
+    monthlySubscription: plan.monthlyPrice,
+    annualAssistanceBenefit: plan.annualBenefit,
+    isPartsBenefitZero: plan.isPartsBenefitZero,
+    billingDay,
+    breakdown,
+    dates: {
+      startDate: dates.startDate.toISOString(),
+      firstBillingDate: dates.firstBillingDate.toISOString(),
+      secondBillingDate: dates.secondBillingDate.toISOString(),
+      recurringBillingDate: dates.recurringBillingDate.toISOString()
+    },
+    stages: [
+      {
+        stage: "INITIAL_20",
+        name: "Initial Activation Payment",
+        percentage: 20,
+        amount: breakdown.initialAmount,
+        dueDate: dates.startDate.toISOString(),
+        description: "Initial 20% activation fee collected upon onboarding. Membership enters Pending Activation status."
+      },
+      {
+        stage: "FIRST_BILLING_40",
+        name: "First Billing Payment",
+        percentage: 40,
+        amount: breakdown.firstBillingAmount,
+        dueDate: dates.firstBillingDate.toISOString(),
+        description: "First 40% billing payment (60% total collected). Membership remains Pending Activation."
+      },
+      {
+        stage: "SECOND_BILLING_40",
+        name: "Second Billing Payment (Activation)",
+        percentage: 40,
+        amount: breakdown.secondBillingAmount,
+        dueDate: dates.secondBillingDate.toISOString(),
+        description: "Second 40% billing payment (100% total collected). Membership transitions to ACTIVE upon successful receipt."
+      },
+      {
+        stage: "RECURRING_MONTHLY",
+        name: "Standard Monthly Subscription",
+        percentage: 100,
+        amount: plan.monthlyPrice,
+        dueDate: dates.recurringBillingDate.toISOString(),
+        description: "Regular recurring monthly subscription billed on scheduled monthly billing date."
+      }
+    ],
+    activationRule: "Your membership becomes ACTIVE after the second billing payment is successfully completed, bringing total activation payments to 100%. Annual assistance benefits unlock only once ACTIVE."
+  };
+}
+async function initializeMembershipWithSchedule(params) {
+  const {
+    userId,
+    planId,
+    billingDay = 25,
+    autoProcessInitial = true,
+    paymentMethod = "Card",
+    startDate = /* @__PURE__ */ new Date()
+  } = params;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+  const plan = getPlanById(planId);
+  const breakdown = calculatePaymentBreakdown(plan.monthlyPrice);
+  const dates = calculateBillingDates(startDate, billingDay);
+  const oneYearLater = new Date(startDate);
+  oneYearLater.setFullYear(startDate.getFullYear() + 1);
+  await prisma.membership.updateMany({
+    where: { userId, status: { in: ["Active", "Pending Activation"] } },
+    data: { status: "Superseded" }
+  });
+  const membership = await prisma.membership.create({
+    data: {
+      userId,
+      planId: plan.id,
+      planName: plan.name,
+      monthlyPrice: plan.monthlyPrice,
+      annualBenefit: plan.annualBenefit,
+      benefitYearStart: startDate,
+      benefitYearEnd: oneYearLater,
+      status: "Pending Activation",
+      // Requirement 1 & 4: MUST be Pending Activation initially
+      billingDayOfMonth: billingDay,
+      startDate,
+      firstBillingDate: dates.firstBillingDate,
+      secondBillingDate: dates.secondBillingDate,
+      nextBillingDate: dates.firstBillingDate,
+      activationCycleComplete: false,
+      totalActivationPaid: 0,
+      activationPercentage: 0,
+      benefitTransactions: {
+        create: {
+          userId,
+          reference: `OPENING-${startDate.getFullYear()}`,
+          description: `Annual Benefit Allocation (${plan.name}). Unlocks upon 100% activation payment.`,
+          credit: plan.annualBenefit,
+          debit: 0,
+          balance: plan.annualBenefit,
+          date: startDate
+        }
+      }
+    }
+  });
+  const initialPayment = await prisma.payment.create({
+    data: {
+      customerId: user.id,
+      customerName: user.name,
+      membershipId: membership.id,
+      paymentStage: "INITIAL_20",
+      type: `Initial 20% Activation Payment (${plan.name})`,
+      amount: breakdown.initialAmount,
+      status: "Pending",
+      paymentMethod,
+      date: startDate.toISOString().slice(0, 10),
+      dueDate: startDate,
+      transactionRef: `ACT-20-${membership.id.slice(0, 8)}-${Date.now()}`
+    }
+  });
+  const initialInvoice = await prisma.invoice.create({
+    data: {
+      invoiceNumber: `INV-ACT20-${Date.now().toString().slice(-6)}`,
+      userId: user.id,
+      membershipId: membership.id,
+      customerName: user.name,
+      customerEmail: user.email,
+      customerAddress: user.address || "Address on file",
+      membershipPlan: plan.name,
+      serviceRequested: `Membership Onboarding Initial 20% Activation Fee (${plan.name})`,
+      parts: 0,
+      labour: 0,
+      otherCharges: breakdown.initialAmount,
+      subtotal: breakdown.initialAmount,
+      taxVat: Number((breakdown.initialAmount * 0.15).toFixed(2)),
+      total: breakdown.initialAmount,
+      amountCoveredByBenefit: 0,
+      amountPayableByCustomer: breakdown.initialAmount,
+      paymentStatus: "Unpaid",
+      invoiceStatus: "Issued",
+      notes: "Initial 20% payment for membership activation cycle (Stage 1 of 3)"
+    }
+  });
+  await prisma.payment.update({
+    where: { id: initialPayment.id },
+    data: { invoiceId: initialInvoice.id }
+  });
+  let processedPayment = initialPayment;
+  if (autoProcessInitial) {
+    const processRes = await processPayment({
+      paymentId: initialPayment.id,
+      status: "Successful",
+      gatewayReference: `GW-PAYFAST-INIT-${Date.now()}`,
+      paymentMethod
+    });
+    processedPayment = processRes.payment;
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      package: plan.name,
+      status: "Onboarding"
+      // User is Onboarding until membership activation completes
+    }
+  });
+  await writeAuditLog({
+    userId,
+    userType: "Customer",
+    action: "Plan Selected (Pending Activation)",
+    details: `Customer ${user.name} selected ${plan.name} (R${plan.monthlyPrice}/mo). Initial 20% payment of R${breakdown.initialAmount} generated. Membership status: PENDING ACTIVATION.`,
+    newValue: {
+      membershipId: membership.id,
+      plan: plan.name,
+      status: "Pending Activation",
+      breakdown
+    }
+  });
+  return {
+    membership: await prisma.membership.findUnique({ where: { id: membership.id } }),
+    initialPayment: processedPayment,
+    initialInvoice,
+    schedule: getPaymentScheduleForPlan(planId, startDate, billingDay)
+  };
+}
+async function processPayment(params) {
+  const {
+    paymentId,
+    membershipId,
+    userId,
+    stage,
+    amount,
+    status = "Successful",
+    gatewayReference,
+    paymentMethod = "Card",
+    failureReason,
+    transactionRef,
+    paidAt,
+    actorId = "system",
+    actorRole = "System"
+  } = params;
+  let payment = null;
+  if (paymentId) {
+    payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { membership: true, invoice: true, customer: true }
+    });
+  } else if (transactionRef) {
+    payment = await prisma.payment.findUnique({
+      where: { transactionRef },
+      include: { membership: true, invoice: true, customer: true }
+    });
+  }
+  if (!payment && membershipId && stage) {
+    payment = await prisma.payment.findFirst({
+      where: { membershipId, paymentStage: stage },
+      include: { membership: true, invoice: true, customer: true }
+    });
+  }
+  if (!payment && membershipId && stage) {
+    const mem = await prisma.membership.findUnique({ where: { id: membershipId } });
+    if (!mem) throw new Error("Associated membership record not found");
+    const uId = userId || mem.userId;
+    const user = await prisma.user.findUnique({ where: { id: uId } });
+    const breakdown2 = calculatePaymentBreakdown(mem.monthlyPrice);
+    let stageAmount = amount;
+    if (!stageAmount) {
+      if (stage === "INITIAL_20") stageAmount = breakdown2.initialAmount;
+      else if (stage === "FIRST_BILLING_40") stageAmount = breakdown2.firstBillingAmount;
+      else if (stage === "SECOND_BILLING_40") stageAmount = breakdown2.secondBillingAmount;
+      else stageAmount = mem.monthlyPrice;
+    }
+    const typeDesc = stage === "INITIAL_20" ? "Initial 20% Membership Payment" : stage === "FIRST_BILLING_40" ? "First 40% Billing Payment" : stage === "SECOND_BILLING_40" ? "Second 40% Activation Payment" : "Monthly Membership Subscription";
+    const pDate = paidAt || /* @__PURE__ */ new Date();
+    payment = await prisma.payment.create({
+      data: {
+        userId: uId,
+        customerId: uId,
+        customerName: user?.name || "Customer",
+        membershipId,
+        paymentStage: stage,
+        type: typeDesc,
+        amount: stageAmount,
+        status: status === "Failed" ? "Failed" : "Pending",
+        transactionRef: transactionRef || `TXN-${stage}-${Date.now()}`,
+        paymentMethod,
+        date: pDate.toISOString().split("T")[0],
+        dueDate: pDate,
+        failureReason: status === "Failed" ? failureReason : null
+      },
+      include: { membership: true, invoice: true, customer: true }
+    });
+  }
+  if (!payment) throw new Error("Payment record not found");
+  if (payment.status === "Successful" || payment.status === "Paid") {
+    return {
+      success: true,
+      alreadyProcessed: true,
+      payment,
+      membership: payment.membership,
+      message: "Payment has already been successfully processed (idempotent)"
+    };
+  }
+  const membership = payment.membership;
+  if (!membership) throw new Error("Associated membership record not found");
+  const now = paidAt || /* @__PURE__ */ new Date();
+  const plan = getPlanById(membership.planId);
+  const breakdown = calculatePaymentBreakdown(membership.monthlyPrice);
+  if (status === "Failed") {
+    const updatedPayment2 = await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "Failed",
+        failureReason: failureReason || "Gateway transaction declined",
+        retryCount: (payment.retryCount || 0) + 1
+      }
+    });
+    if (membership.status !== "Active") {
+      await prisma.membership.update({
+        where: { id: membership.id },
+        data: { status: "Payment Due" }
+      });
+    }
+    await writeAuditLog({
+      userId: payment.customerId || actorId,
+      userType: actorRole,
+      action: "Payment Failed",
+      details: `Payment ${payment.type} (R${payment.amount}) failed. Reason: ${failureReason || "Declined"}. Retry count: ${updatedPayment2.retryCount}`,
+      newValue: { paymentId: payment.id, status: "Failed", failureReason }
+    });
+    return {
+      success: false,
+      alreadyProcessed: false,
+      payment: updatedPayment2,
+      membership: await prisma.membership.findUnique({ where: { id: membership.id } }),
+      message: `Payment failed: ${failureReason || "Declined"}`
+    };
+  }
+  const updatedPayment = await prisma.payment.update({
+    where: { id: payment.id },
+    data: {
+      status: "Successful",
+      paidAt: now,
+      paymentMethod,
+      gatewayReference: gatewayReference || `GW-${Date.now()}`,
+      transactionRef: transactionRef || payment.transactionRef || `TXN-${Date.now()}`
+    }
+  });
+  if (payment.invoiceId) {
+    await prisma.invoice.update({
+      where: { id: payment.invoiceId },
+      data: {
+        paymentStatus: "Paid",
+        invoiceStatus: "Settled",
+        paidAt: now,
+        paymentMethod
+      }
+    });
+  }
+  let newStatus = membership.status;
+  let newPercentage = membership.activationPercentage;
+  let newTotalPaid = membership.totalActivationPaid;
+  let nextBilling = membership.nextBillingDate;
+  let isActivationComplete = membership.activationCycleComplete;
+  let activationDate = membership.activationDate;
+  if (payment.paymentStage === "INITIAL_20") {
+    newTotalPaid = breakdown.initialAmount;
+    newPercentage = 20;
+    newStatus = "Pending Activation";
+    nextBilling = membership.firstBillingDate;
+    const existingNext = await prisma.payment.findFirst({
+      where: { membershipId: membership.id, paymentStage: "FIRST_BILLING_40" }
+    });
+    if (!existingNext && membership.firstBillingDate) {
+      await prisma.payment.create({
+        data: {
+          customerId: payment.customerId,
+          customerName: payment.customerName,
+          membershipId: membership.id,
+          paymentStage: "FIRST_BILLING_40",
+          type: `First 40% Billing Payment (${membership.planName})`,
+          amount: breakdown.firstBillingAmount,
+          status: "Pending",
+          date: membership.firstBillingDate.toISOString().slice(0, 10),
+          dueDate: membership.firstBillingDate,
+          transactionRef: `ACT-40A-${membership.id.slice(0, 8)}-${Date.now()}`
+        }
+      });
+    }
+    await writeAuditLog({
+      userId: payment.customerId || actorId,
+      userType: actorRole,
+      action: "Initial 20% Payment Successful",
+      details: `Collected R${payment.amount} (20% of monthly subscription). Total collected: R${newTotalPaid}. Status: PENDING ACTIVATION.`,
+      newValue: { paymentId, status: newStatus, activationPercentage: newPercentage }
+    });
+  } else if (payment.paymentStage === "FIRST_BILLING_40") {
+    newTotalPaid = Number((membership.totalActivationPaid + payment.amount).toFixed(2));
+    newPercentage = 60;
+    newStatus = "Pending Activation";
+    nextBilling = membership.secondBillingDate;
+    const existingNext = await prisma.payment.findFirst({
+      where: { membershipId: membership.id, paymentStage: "SECOND_BILLING_40" }
+    });
+    if (!existingNext && membership.secondBillingDate) {
+      await prisma.payment.create({
+        data: {
+          customerId: payment.customerId,
+          customerName: payment.customerName,
+          membershipId: membership.id,
+          paymentStage: "SECOND_BILLING_40",
+          type: `Second 40% Activation Billing Payment (${membership.planName})`,
+          amount: breakdown.secondBillingAmount,
+          status: "Pending",
+          date: membership.secondBillingDate.toISOString().slice(0, 10),
+          dueDate: membership.secondBillingDate,
+          transactionRef: `ACT-40B-${membership.id.slice(0, 8)}-${Date.now()}`
+        }
+      });
+    }
+    await writeAuditLog({
+      userId: payment.customerId || actorId,
+      userType: actorRole,
+      action: "First 40% Billing Payment Successful",
+      details: `Collected R${payment.amount} (40% first billing). Total collected: R${newTotalPaid} (60%). Status: PENDING ACTIVATION.`,
+      newValue: { paymentId, status: newStatus, activationPercentage: newPercentage }
+    });
+  } else if (payment.paymentStage === "SECOND_BILLING_40") {
+    newTotalPaid = Number((membership.totalActivationPaid + payment.amount).toFixed(2));
+    newPercentage = 100;
+    newStatus = "Active";
+    isActivationComplete = true;
+    activationDate = now;
+    const dates = calculateBillingDates(membership.secondBillingDate || now, membership.billingDayOfMonth);
+    nextBilling = dates.recurringBillingDate;
+    if (payment.customerId) {
+      await prisma.user.update({
+        where: { id: payment.customerId },
+        data: {
+          status: "Active Member",
+          memberSince: now.toISOString().slice(0, 10),
+          totalPaid: { increment: payment.amount }
+        }
+      });
+    }
+    await prisma.payment.create({
+      data: {
+        customerId: payment.customerId,
+        customerName: payment.customerName,
+        membershipId: membership.id,
+        paymentStage: "RECURRING_MONTHLY",
+        type: `Monthly Membership Subscription (${membership.planName})`,
+        amount: membership.monthlyPrice,
+        status: "Pending",
+        date: nextBilling.toISOString().slice(0, 10),
+        dueDate: nextBilling,
+        transactionRef: `REC-${membership.id.slice(0, 8)}-${Date.now()}`
+      }
+    });
+    await writeAuditLog({
+      userId: payment.customerId || actorId,
+      userType: actorRole,
+      action: "Membership Activated",
+      details: `Second 40% payment of R${payment.amount} successful. Total activation payments collected: R${newTotalPaid} (100%). Membership is now ACTIVE.`,
+      newValue: {
+        membershipId: membership.id,
+        status: "Active",
+        activationDate: now,
+        activationPercentage: 100
+      }
+    });
+  } else if (payment.paymentStage === "RECURRING_MONTHLY") {
+    newStatus = "Active";
+    const dates = calculateBillingDates(payment.dueDate || now, membership.billingDayOfMonth);
+    nextBilling = dates.recurringBillingDate;
+    if (payment.customerId) {
+      await prisma.user.update({
+        where: { id: payment.customerId },
+        data: { totalPaid: { increment: payment.amount } }
+      });
+    }
+    await prisma.payment.create({
+      data: {
+        customerId: payment.customerId,
+        customerName: payment.customerName,
+        membershipId: membership.id,
+        paymentStage: "RECURRING_MONTHLY",
+        type: `Monthly Membership Subscription (${membership.planName})`,
+        amount: membership.monthlyPrice,
+        status: "Pending",
+        date: nextBilling.toISOString().slice(0, 10),
+        dueDate: nextBilling,
+        transactionRef: `REC-${membership.id.slice(0, 8)}-${Date.now()}`
+      }
+    });
+    await writeAuditLog({
+      userId: payment.customerId || actorId,
+      userType: actorRole,
+      action: "Monthly Subscription Payment Successful",
+      details: `Collected normal monthly subscription of R${payment.amount} for ${membership.planName}. Next billing date: ${nextBilling.toISOString().slice(0, 10)}.`,
+      newValue: { paymentId, nextBillingDate: nextBilling }
+    });
+  }
+  const updatedMembership = await prisma.membership.update({
+    where: { id: membership.id },
+    data: {
+      status: newStatus,
+      activationPercentage: newPercentage,
+      totalActivationPaid: newTotalPaid,
+      nextBillingDate: nextBilling,
+      activationCycleComplete: isActivationComplete,
+      activationDate
+    }
+  });
+  return {
+    success: true,
+    alreadyProcessed: false,
+    payment: updatedPayment,
+    membership: updatedMembership,
+    message: newStatus === "Active" && membership.status !== "Active" ? "Membership successfully activated! All plan benefits are now available." : `Payment successful. Current status: ${newStatus} (${newPercentage}% collected)`
+  };
+}
+async function retryPayment(paymentId, gatewayReference, paymentMethod = "Card") {
+  return processPayment({
+    paymentId,
+    status: "Successful",
+    gatewayReference: gatewayReference || `GW-RETRY-${Date.now()}`,
+    paymentMethod,
+    transactionRef: `RETRY-${paymentId.slice(0, 8)}-${Date.now()}`
+  });
+}
+async function getMembershipPaymentTimeline(userId) {
+  const membership = await prisma.membership.findFirst({
+    where: { userId, status: { in: ["Active", "Pending Activation", "Payment Due"] } },
+    orderBy: { createdAt: "desc" },
+    include: {
+      payments: {
+        orderBy: { createdAt: "asc" },
+        include: { invoice: { select: { id: true, invoiceNumber: true } } }
+      }
+    }
+  });
+  if (!membership) {
+    return null;
+  }
+  const breakdown = calculatePaymentBreakdown(membership.monthlyPrice);
+  const plan = getPlanById(membership.planId);
+  const initial20 = membership.payments.find((p) => p.paymentStage === "INITIAL_20");
+  const firstBilling40 = membership.payments.find((p) => p.paymentStage === "FIRST_BILLING_40");
+  const secondBilling40 = membership.payments.find((p) => p.paymentStage === "SECOND_BILLING_40");
+  const recurringPayments = membership.payments.filter((p) => p.paymentStage === "RECURRING_MONTHLY");
+  const pendingPayment = membership.payments.find((p) => p.status === "Pending" || p.status === "Failed");
+  const isActive = membership.status === "Active";
+  const totalCollected = membership.totalActivationPaid;
+  const outstandingActivation = Math.max(0, Number((breakdown.totalActivationAmount - totalCollected).toFixed(2)));
+  return {
+    membershipId: membership.id,
+    planId: membership.planId,
+    planName: membership.planName,
+    monthlySubscription: membership.monthlyPrice,
+    monthlyPrice: membership.monthlyPrice,
+    annualAssistanceBenefit: membership.annualBenefit,
+    status: membership.status,
+    membershipStatus: membership.status,
+    isActive,
+    isEligibleForBenefits: isActive,
+    // Requirement 26: Benefits only available when ACTIVE
+    activationPercentage: membership.activationPercentage,
+    totalActivationPaid: membership.totalActivationPaid,
+    totalCollected: membership.totalActivationPaid,
+    outstandingActivation,
+    activationCycleComplete: membership.activationCycleComplete,
+    activationDate: membership.activationDate ? membership.activationDate.toISOString() : null,
+    billingDayOfMonth: membership.billingDayOfMonth,
+    dates: {
+      startDate: membership.startDate.toISOString(),
+      firstBillingDate: membership.firstBillingDate ? membership.firstBillingDate.toISOString() : null,
+      secondBillingDate: membership.secondBillingDate ? membership.secondBillingDate.toISOString() : null,
+      activationDate: membership.activationDate ? membership.activationDate.toISOString() : null,
+      nextBillingDate: membership.nextBillingDate ? membership.nextBillingDate.toISOString() : null
+    },
+    breakdown,
+    activationTimeline: [
+      {
+        stage: "INITIAL_20",
+        title: "Initial Payment",
+        percentage: "20%",
+        amount: breakdown.initialAmount,
+        dueDate: membership.startDate.toISOString().slice(0, 10),
+        status: initial20 ? initial20.status : "Pending",
+        paidAt: initial20?.paidAt ? initial20.paidAt.toISOString() : null,
+        paymentId: initial20?.id || null,
+        invoiceNumber: initial20?.invoice?.invoiceNumber || null,
+        isCompleted: initial20?.status === "Successful" || initial20?.status === "Paid"
+      },
+      {
+        stage: "FIRST_BILLING_40",
+        title: "First Billing",
+        percentage: "40%",
+        amount: breakdown.firstBillingAmount,
+        dueDate: membership.firstBillingDate ? membership.firstBillingDate.toISOString().slice(0, 10) : "Pending Date",
+        status: firstBilling40 ? firstBilling40.status : "Scheduled",
+        paidAt: firstBilling40?.paidAt ? firstBilling40.paidAt.toISOString() : null,
+        paymentId: firstBilling40?.id || null,
+        invoiceNumber: firstBilling40?.invoice?.invoiceNumber || null,
+        isCompleted: firstBilling40?.status === "Successful" || firstBilling40?.status === "Paid"
+      },
+      {
+        stage: "SECOND_BILLING_40",
+        title: "Second Billing (Activation)",
+        percentage: "40%",
+        amount: breakdown.secondBillingAmount,
+        dueDate: membership.secondBillingDate ? membership.secondBillingDate.toISOString().slice(0, 10) : "Pending Date",
+        status: secondBilling40 ? secondBilling40.status : "Scheduled",
+        paidAt: secondBilling40?.paidAt ? secondBilling40.paidAt.toISOString() : null,
+        paymentId: secondBilling40?.id || null,
+        invoiceNumber: secondBilling40?.invoice?.invoiceNumber || null,
+        isCompleted: secondBilling40?.status === "Successful" || secondBilling40?.status === "Paid"
+      }
+    ],
+    timelineSteps: [
+      {
+        stage: "INITIAL_20",
+        description: "Initial Payment",
+        percentage: 20,
+        amount: breakdown.initialAmount,
+        date: membership.startDate ? membership.startDate.toISOString() : null,
+        status: initial20 ? initial20.status : "Pending",
+        isPaid: initial20?.status === "Successful" || initial20?.status === "Paid"
+      },
+      {
+        stage: "FIRST_BILLING_40",
+        description: "First Billing",
+        percentage: 40,
+        amount: breakdown.firstBillingAmount,
+        date: membership.firstBillingDate ? membership.firstBillingDate.toISOString() : null,
+        status: firstBilling40 ? firstBilling40.status : "Scheduled",
+        isPaid: firstBilling40?.status === "Successful" || firstBilling40?.status === "Paid"
+      },
+      {
+        stage: "SECOND_BILLING_40",
+        description: "Second Billing (Activation)",
+        percentage: 40,
+        amount: breakdown.secondBillingAmount,
+        date: membership.secondBillingDate ? membership.secondBillingDate.toISOString() : null,
+        status: secondBilling40 ? secondBilling40.status : "Scheduled",
+        isPaid: secondBilling40?.status === "Successful" || secondBilling40?.status === "Paid"
+      }
+    ],
+    nextPayment: pendingPayment ? {
+      id: pendingPayment.id,
+      stage: pendingPayment.paymentStage,
+      description: pendingPayment.type,
+      amount: pendingPayment.amount,
+      dueDate: pendingPayment.dueDate ? pendingPayment.dueDate.toISOString().slice(0, 10) : pendingPayment.date,
+      status: pendingPayment.status,
+      failureReason: pendingPayment.failureReason
+    } : null,
+    nextScheduledPayment: pendingPayment ? {
+      id: pendingPayment.id,
+      stage: pendingPayment.paymentStage,
+      type: pendingPayment.type,
+      amount: pendingPayment.amount,
+      dueDate: pendingPayment.dueDate ? pendingPayment.dueDate.toISOString().slice(0, 10) : pendingPayment.date,
+      status: pendingPayment.status,
+      failureReason: pendingPayment.failureReason
+    } : null,
+    payments: membership.payments,
+    allPayments: membership.payments,
+    recurringPayments
   };
 }
 
@@ -686,28 +1380,14 @@ router.post("/onboarding", async (req, res) => {
       data: userData,
       include: { savedLocations: true, notificationSettings: true }
     });
-    await prisma.membership.create({
-      data: {
-        userId: user.id,
-        planId: chosenPlan.id,
-        planName: chosenPlan.name,
-        monthlyPrice: chosenPlan.monthlyPrice,
-        annualBenefit: chosenPlan.annualBenefit,
-        benefitYearStart: now,
-        benefitYearEnd: oneYearLater,
-        status: "Active",
-        benefitTransactions: {
-          create: {
-            userId: user.id,
-            reference: `OPENING-${now.getFullYear()}`,
-            description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
-            credit: chosenPlan.annualBenefit,
-            debit: 0,
-            balance: chosenPlan.annualBenefit,
-            date: now
-          }
-        }
-      }
+    await initializeMembershipWithSchedule({
+      userId: user.id,
+      planId: chosenPlan.id,
+      billingDay: 25,
+      autoProcessInitial: true,
+      // Stage 1 initial 20% collected on join
+      paymentMethod: "Card",
+      startDate: now
     });
     await prisma.enquiry.create({
       data: {
@@ -1324,31 +2004,116 @@ var PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID || "SANDBOX_MERCHANT_I
 var PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY || "SANDBOX_MERCHANT_KEY";
 var PAYFAST_PASSPHRASE = process.env.PAYFAST_PASSPHRASE || "";
 var APP_URL = process.env.APP_URL || "http://localhost:3000";
-router5.get("/", requireAuth, requireRoles("Administrator", "Super Administrator"), async (req, res) => {
+router5.get("/schedule/:planId", async (req, res) => {
   try {
-    const payments = await prisma.payment.findMany({
-      include: { customer: { select: { id: true, name: true, email: true } } },
-      orderBy: { createdAt: "desc" }
-    });
-    return res.json(payments);
+    const { planId } = req.params;
+    const { startDate, billingDay } = req.query;
+    const start = startDate ? new Date(startDate) : /* @__PURE__ */ new Date();
+    const day = billingDay ? parseInt(billingDay, 10) : 25;
+    const schedule = getPaymentScheduleForPlan(planId, start, day);
+    return res.json(schedule);
   } catch (error) {
-    return res.status(500).json({ error: "Failed to retrieve payments" });
+    return res.status(400).json({ error: error.message || "Failed to calculate payment schedule" });
   }
 });
-router5.get("/my", requireAuth, requireRoles("Customer"), async (req, res) => {
+router5.get("/my", requireAuth, async (req, res) => {
   try {
+    const userId = req.user.id;
+    const timeline = await getMembershipPaymentTimeline(userId);
     const payments = await prisma.payment.findMany({
-      where: { customerId: req.user.id },
-      orderBy: { createdAt: "desc" }
+      where: { customerId: userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        invoice: {
+          select: { id: true, invoiceNumber: true, total: true, paymentStatus: true }
+        }
+      }
     });
-    return res.json(payments);
+    return res.json({
+      payments,
+      timeline
+    });
   } catch (error) {
-    return res.status(500).json({ error: "Failed to retrieve payments" });
+    console.error("[Payments/My]", error);
+    return res.status(500).json({ error: "Failed to retrieve payment history" });
   }
 });
-router5.post("/initiate", requireAuth, requireRoles("Customer"), async (req, res) => {
-  const { type, amount } = req.body;
-  if (!type || !amount) return res.status(400).json({ error: "type and amount are required" });
+router5.get("/timeline/:userId?", requireAuth, async (req, res) => {
+  try {
+    let targetUserId = req.user.id;
+    if (req.params.userId) {
+      if (req.user.role !== "ADMIN" && req.user.role !== "Administrator" && req.user.role !== "Super Administrator") {
+        return res.status(403).json({ error: "Unauthorized to view other customer payment timelines" });
+      }
+      targetUserId = req.params.userId;
+    }
+    const timeline = await getMembershipPaymentTimeline(targetUserId);
+    if (!timeline) {
+      return res.status(404).json({ error: "No membership or payment schedule found for this customer" });
+    }
+    return res.json(timeline);
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Failed to retrieve payment timeline" });
+  }
+});
+router5.post("/pay-activation", requireAuth, async (req, res) => {
+  try {
+    const { paymentId, paymentMethod = "Card", simulateFailure = false } = req.body;
+    let targetPaymentId = paymentId;
+    if (!targetPaymentId) {
+      const pendingPayment = await prisma.payment.findFirst({
+        where: {
+          customerId: req.user.id,
+          status: { in: ["Pending", "Failed"] }
+        },
+        orderBy: { createdAt: "asc" }
+      });
+      if (!pendingPayment) {
+        return res.status(400).json({ error: "No pending payment found to process" });
+      }
+      targetPaymentId = pendingPayment.id;
+    }
+    const paymentRecord = await prisma.payment.findUnique({ where: { id: targetPaymentId } });
+    if (!paymentRecord) return res.status(404).json({ error: "Payment not found" });
+    if (paymentRecord.customerId !== req.user.id && req.user.role !== "ADMIN" && req.user.role !== "Administrator" && req.user.role !== "Super Administrator") {
+      return res.status(403).json({ error: "Unauthorized to process this payment" });
+    }
+    const result = await processPayment({
+      paymentId: targetPaymentId,
+      status: simulateFailure ? "Failed" : "Successful",
+      gatewayReference: `GW-SDA-${Date.now()}`,
+      paymentMethod,
+      failureReason: simulateFailure ? "Bank decline: Insufficient balance / 3DS authentication rejected" : void 0,
+      actorId: req.user.id,
+      actorRole: req.user.role || "Customer"
+    });
+    const updatedTimeline = await getMembershipPaymentTimeline(paymentRecord.customerId || req.user.id);
+    return res.json({
+      ...result,
+      timeline: updatedTimeline
+    });
+  } catch (error) {
+    console.error("[Payments/PayActivation]", error);
+    return res.status(500).json({ error: error.message || "Payment processing failed" });
+  }
+});
+router5.post("/:id/retry", requireAuth, async (req, res) => {
+  try {
+    const payment = await prisma.payment.findUnique({ where: { id: req.params.id } });
+    if (!payment) return res.status(404).json({ error: "Payment not found" });
+    if (payment.customerId !== req.user.id && req.user.role !== "ADMIN" && req.user.role !== "Administrator" && req.user.role !== "Super Administrator") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    const { paymentMethod = "Card" } = req.body;
+    const result = await retryPayment(payment.id, `GW-RETRY-${Date.now()}`, paymentMethod);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Payment retry failed" });
+  }
+});
+router5.post("/initiate", requireAuth, async (req, res) => {
+  const { type, amount, membershipId, paymentStage } = req.body;
+  if (!amount) return res.status(400).json({ error: "amount is required" });
   try {
     const customer = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!customer) return res.status(404).json({ error: "Customer not found" });
@@ -1356,10 +2121,13 @@ router5.post("/initiate", requireAuth, requireRoles("Customer"), async (req, res
       data: {
         customerId: customer.id,
         customerName: customer.name,
-        type,
-        amount,
+        membershipId: membershipId || null,
+        paymentStage: paymentStage || "RECURRING_MONTHLY",
+        type: type || "Membership Payment",
+        amount: Number(amount),
         status: "Pending",
-        date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+        date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+        transactionRef: `PF-${Date.now()}-${Math.floor(Math.random() * 1e3)}`
       }
     });
     const pfData = {
@@ -1372,8 +2140,8 @@ router5.post("/initiate", requireAuth, requireRoles("Customer"), async (req, res
       name_last: customer.name.split(" ").slice(1).join(" ") || "Client",
       email_address: customer.email,
       m_payment_id: payment.id,
-      amount: amount.toFixed(2),
-      item_name: `Same Day Assist - ${type}`
+      amount: Number(amount).toFixed(2),
+      item_name: `Same Day Assist - ${type || "Membership"}`
     };
     if (PAYFAST_PASSPHRASE) pfData.passphrase = PAYFAST_PASSPHRASE;
     const pfString = Object.keys(pfData).filter((k) => k !== "passphrase" || PAYFAST_PASSPHRASE).map((k) => `${k}=${encodeURIComponent(pfData[k].trim())}`).join("&");
@@ -1397,37 +2165,86 @@ router5.post("/webhook", async (req, res) => {
     const pfData = req.body;
     const paymentId = pfData.m_payment_id;
     if (!paymentId) return res.status(400).send("Missing payment ID");
-    const pfParamString = Object.keys(pfData).filter((k) => k !== "signature").map((k) => `${k}=${encodeURIComponent(pfData[k].trim())}`).join("&");
-    const calculatedSignature = crypto.createHash("md5").update(pfParamString).digest("hex");
-    if (pfData.payment_status !== "COMPLETE" || calculatedSignature !== pfData.signature) {
-      console.warn("[Payments/Webhook] Signature mismatch or incomplete payment");
-      return res.status(400).send("Invalid payment");
+    if (PAYFAST_PASSPHRASE && pfData.signature) {
+      const pfParamString = Object.keys(pfData).filter((k) => k !== "signature").map((k) => `${k}=${encodeURIComponent(pfData[k].trim())}`).join("&");
+      const calculatedSignature = crypto.createHash("md5").update(pfParamString).digest("hex");
+      if (calculatedSignature !== pfData.signature) {
+        console.warn("[Payments/Webhook] Signature mismatch");
+        return res.status(400).send("Invalid signature");
+      }
     }
-    const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
-    if (!payment) return res.status(404).send("Payment not found");
-    await prisma.payment.update({ where: { id: paymentId }, data: { status: "Paid" } });
-    const customer = await prisma.user.findUnique({ where: { id: payment.customerId } });
-    if (customer && payment.type === "Onboarding Fee") {
-      await prisma.user.update({
-        where: { id: payment.customerId },
-        data: {
-          status: "Active Member",
-          memberSince: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
-          totalPaid: { increment: payment.amount }
-        }
-      });
-      await writeAuditLog({
-        userId: payment.customerId,
-        userType: "Customer",
-        action: "Membership Activated",
-        details: `Customer ${customer.name} completed onboarding payment of R${payment.amount}. Membership is now ACTIVE.`,
-        newValue: { status: "Active Member", paymentId }
-      });
-    }
+    const isComplete = pfData.payment_status === "COMPLETE" || pfData.status === "COMPLETE" || pfData.status === "Successful";
+    const result = await processPayment({
+      paymentId,
+      status: isComplete ? "Successful" : "Failed",
+      gatewayReference: pfData.pf_payment_id || `PF-GW-${Date.now()}`,
+      paymentMethod: pfData.payment_method || "PayFast",
+      failureReason: !isComplete ? pfData.reason || "Payment uncompleted at gateway" : void 0
+    });
+    console.log(`[Payments/Webhook] Processed payment ${paymentId}: ${result.message}`);
     return res.status(200).send("OK");
   } catch (error) {
     console.error("[Payments/Webhook]", error);
     return res.status(500).send("Server error");
+  }
+});
+router5.get("/admin/all", requireAuth, requireRoles("Administrator", "Super Administrator", "Admin", "ADMIN"), async (req, res) => {
+  try {
+    const { status, stage, customerId } = req.query;
+    const where = {};
+    if (status && status !== "ALL") where.status = status;
+    if (stage && stage !== "ALL") where.paymentStage = stage;
+    if (customerId) where.customerId = customerId;
+    const payments = await prisma.payment.findMany({
+      where,
+      include: {
+        customer: { select: { id: true, name: true, email: true, phone: true } },
+        membership: { select: { id: true, planName: true, status: true, monthlyPrice: true } },
+        invoice: { select: { id: true, invoiceNumber: true } }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    return res.json(payments);
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to retrieve payments" });
+  }
+});
+router5.post("/admin/trigger-billing", requireAuth, requireRoles("Administrator", "Super Administrator", "Admin", "ADMIN"), async (req, res) => {
+  try {
+    const { customerId, membershipId } = req.body;
+    let targetMembershipId = membershipId;
+    if (!targetMembershipId && customerId) {
+      const activeMem = await prisma.membership.findFirst({
+        where: { userId: customerId, status: { in: ["Active", "Pending Activation", "Payment Due"] } },
+        orderBy: { createdAt: "desc" }
+      });
+      if (!activeMem) return res.status(404).json({ error: "No membership found for customer" });
+      targetMembershipId = activeMem.id;
+    }
+    const nextPayment = await prisma.payment.findFirst({
+      where: { membershipId: targetMembershipId, status: { in: ["Pending", "Failed"] } },
+      orderBy: { createdAt: "asc" }
+    });
+    if (!nextPayment) {
+      return res.status(400).json({ error: "No pending payment scheduled for this membership" });
+    }
+    const processRes = await processPayment({
+      paymentId: nextPayment.id,
+      status: "Successful",
+      gatewayReference: `ADMIN-TRIGGER-${Date.now()}`,
+      paymentMethod: "Debit Order / Direct Charge",
+      actorId: req.user.id,
+      actorRole: "Admin"
+    });
+    const timeline = await getMembershipPaymentTimeline(nextPayment.customerId);
+    return res.json({
+      success: true,
+      message: `Triggered payment for ${nextPayment.type}. ${processRes.message}`,
+      payment: processRes.payment,
+      timeline
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Billing trigger failed" });
   }
 });
 var payments_default = router5;
@@ -1904,7 +2721,7 @@ import { Router as Router12 } from "express";
 init_plans();
 async function getOrCreateActiveMembership(userId, requestedPlanId) {
   let membership = await prisma.membership.findFirst({
-    where: { userId, status: "Active" },
+    where: { userId },
     orderBy: { createdAt: "desc" },
     include: {
       benefitTransactions: {
@@ -1929,7 +2746,9 @@ async function getOrCreateActiveMembership(userId, requestedPlanId) {
         annualBenefit: plan.annualBenefit,
         benefitYearStart: now,
         benefitYearEnd: oneYearLater,
-        status: "Active",
+        status: "Pending Activation",
+        activationPercentage: 20,
+        activationCycleComplete: false,
         benefitTransactions: {
           create: {
             userId,
@@ -1984,6 +2803,9 @@ async function getMemberBenefitSummary(userId) {
     prisma.invoice.count({ where: { userId } })
   ]);
   const plan = getPlanById(membership.planId);
+  const isEligibleForBenefits = membership.status === "Active";
+  const activationPercentage = membership.activationPercentage ?? (membership.status === "Active" ? 100 : 20);
+  const totalActivationPaid = membership.totalActivationPaid ?? 0;
   return {
     membershipId: membership.id,
     planId: membership.planId,
@@ -1999,6 +2821,9 @@ async function getMemberBenefitSummary(userId) {
     benefitYearStart: membership.benefitYearStart.toISOString(),
     benefitYearEnd: membership.benefitYearEnd.toISOString(),
     status: membership.status,
+    isEligibleForBenefits,
+    activationPercentage,
+    totalActivationPaid,
     claimsCount,
     invoicesCount,
     transactions
@@ -2021,6 +2846,22 @@ async function calculateBenefitCoverage(arg1, arg2, arg3) {
     labourAmount = Number(arg3?.labourAmount ?? 0);
   }
   const summary = await getMemberBenefitSummary(userId);
+  if (!summary.isEligibleForBenefits) {
+    return {
+      annualBenefit: summary.annualBenefit,
+      availableBenefit: 0,
+      usedBenefit: summary.usedBenefit,
+      isPartsBenefitZero: summary.isPartsBenefitZero,
+      isPendingActivation: true,
+      coveredAmount: 0,
+      amountCoveredByBenefit: 0,
+      customerPayable: totalServiceAmount,
+      amountPayableByCustomer: totalServiceAmount,
+      exceededBy: totalServiceAmount,
+      exceedsBenefit: true,
+      explanation: `Membership status is ${summary.status} (${summary.activationPercentage}% activation paid). Annual assistance benefits unlock once the 3-stage activation payments are 100% completed.`
+    };
+  }
   if (summary.isPartsBenefitZero) {
     const coveredLabour = labourAmount > 0 ? labourAmount : 0;
     const customerPayable = partsAmount > 0 ? partsAmount : totalServiceAmount;
@@ -2079,6 +2920,11 @@ async function deductFromBenefit(params) {
   }
   const membership = await getOrCreateActiveMembership(userId);
   const summary = await getMemberBenefitSummary(userId);
+  if (!summary.isEligibleForBenefits && !adminOverride) {
+    throw new Error(
+      `Cannot deduct assistance benefits. Membership is ${summary.status} (${summary.activationPercentage}% collected). Annual assistance benefits unlock after completing the 100% activation payments, unless authorized by administrative override.`
+    );
+  }
   if (summary.isPartsBenefitZero && !adminOverride) {
     throw new Error("Assist plan has R0 parts benefit. Cannot deduct benefit allowance unless authorised by administrative override.");
   }

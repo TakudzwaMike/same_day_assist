@@ -8,6 +8,7 @@ import logoImg from '../../assets/logo.png';
 import { PlanSelectionStep } from './PlanSelectionStep';
 import { PlanConfirmationStep } from './PlanConfirmationStep';
 import { getPlan } from '../../data/plans';
+import { calculatePaymentBreakdown } from '../../utils/paymentStructure';
 
 interface OnboardingWizardProps {
   onComplete: (data: any) => Promise<void>;
@@ -658,28 +659,56 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             </div>
 
             {/* Selected Plan Spotlight Box */}
-            <div className="bg-gradient-to-r from-slate-900 to-slate-950 border border-red-500/60 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-red-400 font-bold tracking-widest block">
-                  CHOSEN MEMBERSHIP PLAN
-                </span>
-                <h4 className="text-xl font-black text-white font-brand-header tracking-wide mt-0.5">
-                  {chosenPlan.name}
-                </h4>
-                <p className="text-xs text-slate-400 mt-1">
-                  Monthly Subscription: <strong className="text-white font-mono">R{chosenPlan.monthlyPrice.toLocaleString()}/month</strong>
-                </p>
-              </div>
+            {(() => {
+              const bd = calculatePaymentBreakdown(chosenPlan.monthlyPrice);
+              return (
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-slate-900 to-slate-950 border border-red-500/60 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-red-400 font-bold tracking-widest block">
+                        CHOSEN MEMBERSHIP PLAN
+                      </span>
+                      <h4 className="text-xl font-black text-white font-brand-header tracking-wide mt-0.5">
+                        {chosenPlan.name}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Monthly Subscription: <strong className="text-white font-mono">R{chosenPlan.monthlyPrice.toLocaleString()}/month</strong>
+                      </p>
+                    </div>
 
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-right shrink-0">
-                <span className="text-[9.5px] font-mono uppercase text-slate-400 block">
-                  Annual Assistance Benefit
-                </span>
-                <span className={`text-base font-black font-mono ${chosenPlan.annualBenefit === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                  {chosenPlan.partsBenefitDescription}
-                </span>
-              </div>
-            </div>
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-right shrink-0">
+                      <span className="text-[9.5px] font-mono uppercase text-slate-400 block">
+                        Annual Assistance Benefit
+                      </span>
+                      <span className={`text-base font-black font-mono ${chosenPlan.annualBenefit === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {chosenPlan.partsBenefitDescription}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Payment Activation Summary */}
+                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-slate-400 font-bold tracking-wider block">
+                        Today's Initial Payment (20%)
+                      </span>
+                      <div className="text-2xl font-black font-mono text-emerald-400">
+                        R{bd.initialPayment.toFixed(2)}
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Initial membership status: <strong className="text-amber-300 font-mono">Pending Activation</strong>
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-slate-400 text-left sm:text-right space-y-0.5">
+                      <div>1st Billing (40%): <strong className="text-white font-mono">R{bd.firstBillingPayment.toFixed(2)}</strong></div>
+                      <div>2nd Billing (40%): <strong className="text-white font-mono">R{bd.secondBillingPayment.toFixed(2)}</strong></div>
+                      <div className="text-[10px] text-red-400 font-medium">Active status granted upon 2nd billing completion</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-xs">
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
@@ -744,7 +773,9 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             onClick={handleSubmit}
             className="flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer"
           >
-            {isSubmitting ? 'Generating Profile & Activating...' : 'Confirm Subscription & Activate'}
+            {isSubmitting
+              ? 'Initializing Profile & Payment...'
+              : `Confirm & Pay Initial 20% (R${calculatePaymentBreakdown(chosenPlan.monthlyPrice).initialPayment.toFixed(2)})`}
           </button>
         )}
       </div>

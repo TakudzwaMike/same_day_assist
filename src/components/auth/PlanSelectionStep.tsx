@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Shield, AlertTriangle, ArrowRight, Zap, Star, Info, HelpCircle } from 'lucide-react';
 import { MEMBERSHIP_PLANS, MembershipPlan } from '../../data/plans';
+import { calculatePaymentBreakdown } from '../../utils/paymentStructure';
 
 interface PlanSelectionStepProps {
   selectedPlanId: string;
@@ -190,6 +191,39 @@ export function PlanSelectionStep({ selectedPlanId, onSelectPlan, accountType }:
                       : `Up to R${plan.annualBenefit.toLocaleString()} annual benefit for repairs & replacements.`}
                   </div>
                 </div>
+
+                {/* 3-Stage Payment Structure */}
+                {(() => {
+                  const bd = calculatePaymentBreakdown(plan.monthlyPrice);
+                  return (
+                    <div className="my-3 p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center text-[9.5px] font-mono font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-1.5">
+                        <span className="text-red-400 flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-red-400" /> Payment Structure
+                        </span>
+                        <span className="text-slate-400">3-Stage Activation</span>
+                      </div>
+                      <div className="space-y-1 text-[11px] font-mono">
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span className="text-slate-400">Today: 20%</span>
+                          <span className="font-bold text-white">R{bd.initialPayment.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span className="text-slate-400">First billing: 40%</span>
+                          <span className="font-bold text-white">R{bd.firstBillingPayment.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span className="text-slate-400">Second billing: 40%</span>
+                          <span className="font-bold text-white">R{bd.secondBillingPayment.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[10px] text-slate-400">
+                          <span>Total activation:</span>
+                          <span className="font-bold text-white">R{bd.total.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Included Benefits */}
                 <div className="space-y-2 mt-4 text-xs">

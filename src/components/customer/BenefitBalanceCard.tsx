@@ -51,9 +51,15 @@ export function BenefitBalanceCard({
               <span className="text-[10px] font-mono font-bold tracking-widest text-red-500 uppercase">
                 YOUR ASSISTANCE BENEFIT
               </span>
-              <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">
-                ● ACTIVE
-              </span>
+              {summary.isEligibleForBenefits !== false && summary.membershipStatus === 'Active' ? (
+                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">
+                  ● ACTIVE
+                </span>
+              ) : (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider font-mono">
+                  ● PENDING ACTIVATION ({summary.activationPercentage ?? 20}%)
+                </span>
+              )}
             </div>
             <div className="flex items-baseline gap-2.5 mt-1">
               <h3 className="text-2xl font-black italic tracking-wide uppercase font-brand-header text-white">
@@ -75,6 +81,21 @@ export function BenefitBalanceCard({
             </button>
           )}
         </div>
+
+        {/* Pending Activation Notice (Section 26 Requirements) */}
+        {(summary.isEligibleForBenefits === false || summary.membershipStatus === 'Pending Activation') && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-200">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-bold text-amber-300 block">
+                Benefit Coverage Locked — Pending Membership Activation ({summary.activationPercentage ?? 20}% collected)
+              </span>
+              <p className="text-slate-300 leading-relaxed text-[11px]">
+                Your annual assistance benefit of <strong>{fmt(summary.annualBenefit)}</strong> will unlock automatically once your membership activation cycle reaches 100% (after completing the second 40% billing payment). Claims filed prior to activation are billed directly to member account.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Core Benefit Allowance Numbers */}
         {isAssistZero ? (

@@ -27,7 +27,7 @@ export interface BenefitSummary {
  */
 export async function getOrCreateActiveMembership(userId: string, requestedPlanId?: string) {
   let membership = await prisma.membership.findFirst({
-    where: { userId, status: 'Active' },
+    where: { userId },
     orderBy: { createdAt: 'desc' },
     include: {
       benefitTransactions: {
@@ -56,7 +56,9 @@ export async function getOrCreateActiveMembership(userId: string, requestedPlanI
         annualBenefit: plan.annualBenefit,
         benefitYearStart: now,
         benefitYearEnd: oneYearLater,
-        status: 'Active',
+        status: 'Pending Activation',
+        activationPercentage: 20,
+        activationCycleComplete: false,
         benefitTransactions: {
           create: {
             userId,
@@ -130,6 +132,10 @@ export async function getMemberBenefitSummary(userId: string): Promise<BenefitSu
 
   const plan = getPlanById(membership.planId);
 
+  const isEligibleForBenefits = membership.status === 'Active';
+  const activationPercentage = (membership as any).activationPercentage ?? (membership.status === 'Active' ? 100 : 20);
+  const totalActivationPaid = (membership as any).totalActivationPaid ?? 0;
+
   return {
     membershipId: membership.id,
     planId: membership.planId,
@@ -145,6 +151,9 @@ export async function getMemberBenefitSummary(userId: string): Promise<BenefitSu
     benefitYearStart: membership.benefitYearStart.toISOString(),
     benefitYearEnd: membership.benefitYearEnd.toISOString(),
     status: membership.status,
+    isEligibleForBenefits,
+    activationPercentage,
+    totalActivationPaid,
     claimsCount,
     invoicesCount,
     transactions,
@@ -187,6 +196,24 @@ export async function calculateBenefitCoverage(
   }
 
   const summary = await getMemberBenefitSummary(userId);
+
+  // Requirement 26: Benefits only available when ACTIVE
+  if (!summary.isEligibleForBenefits) {
+    return {
+      annualBenefit: summary.annualBenefit,
+      availableBenefit: 0,
+      usedBenefit: summary.usedBenefit,
+      isPartsBenefitZero: summary.isPartsBenefitZero,
+      isPendingActivation: true,
+      coveredAmount: 0,
+      amountCoveredByBenefit: 0,
+      customerPayable: totalServiceAmount,
+      amountPayableByCustomer: totalServiceAmount,
+      exceededBy: totalServiceAmount,
+      exceedsBenefit: true,
+      explanation: `Membership status is ${summary.status} (${summary.activationPercentage}% activation paid). Annual assistance benefits unlock once the 3-stage activation payments are 100% completed.`,
+    };
+  }
 
   // Assist R799: R0 Parts benefit
   if (summary.isPartsBenefitZero) {
@@ -275,6 +302,13 @@ export async function deductFromBenefit(params: {
 
   const membership = await getOrCreateActiveMembership(userId);
   const summary = await getMemberBenefitSummary(userId);
+
+  // Requirement 26: Benefits only available when ACTIVE unless administrative override
+  if (!summary.isEligibleForBenefits && !adminOverride) {
+    throw new Error(
+      `Cannot deduct assistance benefits. Membership is ${summary.status} (${summary.activationPercentage}% collected). Annual assistance benefits unlock after completing the 100% activation payments, unless authorized by administrative override.`
+    );
+  }
 
   // Assist plan check
   if (summary.isPartsBenefitZero && !adminOverride) {

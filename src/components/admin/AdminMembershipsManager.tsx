@@ -211,9 +211,15 @@ export default function AdminMembershipsManager() {
                       </td>
 
                       <td className="p-3.5 text-center whitespace-nowrap">
-                        <span className="text-[8.5px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          ● {cust.status || 'Active'}
-                        </span>
+                        {summary?.membershipStatus === 'Pending Activation' ? (
+                          <span className="text-[8.5px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono bg-amber-100 text-amber-800 border border-amber-300">
+                            ● PENDING ({summary.activationPercentage ?? 20}%)
+                          </span>
+                        ) : (
+                          <span className="text-[8.5px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            ● {cust.status || 'Active'}
+                          </span>
+                        )}
                       </td>
 
                       <td className="p-3.5 text-right whitespace-nowrap">

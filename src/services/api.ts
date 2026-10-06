@@ -342,7 +342,6 @@ class ApiClient {
   }
 
   // Payments
-  async getMyPayments() { return this.request<any[]>('/payments/my'); }
   async getAllPayments() { return this.request<any[]>('/payments'); }
   async initiatePayment(type: string, amount: number) {
     return this.request<any>('/payments/initiate', { method: 'POST', body: JSON.stringify({ type, amount }) });
@@ -566,6 +565,52 @@ class ApiClient {
   async payInvoice(id: string, payload: { paymentMethod?: string; cardLast4?: string }) {
     return this.request<any>(`/invoices/${id}/pay`, {
       method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Payments & 3-Stage Membership Activation Lifecycle
+  async getPaymentSchedule(planId: string, startDate?: string, billingDay?: number) {
+    const qs = new URLSearchParams();
+    if (startDate) qs.set('startDate', startDate);
+    if (billingDay) qs.set('billingDay', billingDay.toString());
+    return this.request<any>(`/payments/schedule/${planId}?${qs}`);
+  }
+
+  async getMyPayments() {
+    return this.request<{ payments: any[]; timeline: any }>('/payments/my');
+  }
+
+  async getPaymentTimeline(userId?: string) {
+    const path = userId ? `/payments/timeline/${userId}` : '/payments/timeline';
+    return this.request<any>(path);
+  }
+
+  async payActivationStage(payload: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) {
+    return this.request<any>('/payments/pay-activation', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async retryPayment(paymentId: string, paymentMethod = 'Card') {
+    return this.request<any>(`/payments/${paymentId}/retry`, {
+      method: 'POST',
+      body: JSON.stringify({ paymentMethod }),
+    });
+  }
+
+  async getAllPaymentsAdmin(params?: { status?: string; stage?: string; customerId?: string }) {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.stage) qs.set('stage', params.stage);
+    if (params?.customerId) qs.set('customerId', params.customerId);
+    return this.request<any[]>(`/payments/admin/all?${qs}`);
+  }
+
+  async triggerAdminBilling(payload: { customerId?: string; membershipId?: string }) {
+    return this.request<any>('/payments/admin/trigger-billing', {
+      method: 'POST',
       body: JSON.stringify(payload),
     });
   }

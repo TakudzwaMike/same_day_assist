@@ -378,12 +378,23 @@ export interface Payment {
   id: string;
   customerId?: string;
   customerName: string;
+  membershipId?: string;
+  invoiceId?: string;
   jobId?: string;
-  type: 'Onboarding Fee' | 'Monthly Premium' | 'Assistance Co-pay' | 'Emergency Service - Non Member' | string;
+  paymentStage?: 'INITIAL_20' | 'FIRST_BILLING_40' | 'SECOND_BILLING_40' | 'RECURRING_MONTHLY' | string;
+  type: string;
   amount: number;
-  status: 'Paid' | 'Pending' | 'Failed';
+  status: 'Pending' | 'Processing' | 'Successful' | 'Failed' | 'Cancelled' | 'Refunded' | 'Paid' | string;
   paymentMethod?: string;
   date: string;
+  dueDate?: string;
+  paidAt?: string;
+  transactionRef?: string;
+  gatewayReference?: string;
+  failureReason?: string;
+  retryCount?: number;
+  invoice?: Partial<Invoice>;
+  customer?: Partial<Customer>;
 }
 
 export interface Enquiry {
@@ -467,6 +478,16 @@ export interface Membership {
   benefitYearEnd: string;
   status: string;
   autoRenew: boolean;
+  billingDayOfMonth?: number;
+  startDate?: string;
+  firstBillingDate?: string | null;
+  secondBillingDate?: string | null;
+  nextBillingDate?: string | null;
+  activationDate?: string | null;
+  activationCycleComplete?: boolean;
+  totalActivationPaid?: number;
+  activationPercentage?: number;
+  payments?: Payment[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -507,9 +528,65 @@ export interface BenefitSummary {
   periodStart?: string;
   periodEnd?: string;
   status?: string;
+  isEligibleForBenefits?: boolean;
+  activationPercentage?: number;
+  totalActivationPaid?: number;
   claimsCount?: number;
   invoicesCount?: number;
   transactions?: BenefitTransaction[];
+}
+
+export interface ActivationTimelineStep {
+  stage: 'INITIAL_20' | 'FIRST_BILLING_40' | 'SECOND_BILLING_40' | string;
+  title: string;
+  percentage: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+  paidAt?: string | null;
+  paymentId?: string | null;
+  invoiceNumber?: string | null;
+  isCompleted: boolean;
+}
+
+export interface PaymentTimeline {
+  membershipId: string;
+  planId: string;
+  planName: string;
+  monthlySubscription: number;
+  annualAssistanceBenefit: number;
+  status: string;
+  isActive: boolean;
+  isEligibleForBenefits: boolean;
+  activationPercentage: number;
+  totalActivationPaid: number;
+  outstandingActivation: number;
+  dates: {
+    startDate: string;
+    firstBillingDate: string | null;
+    secondBillingDate: string | null;
+    activationDate: string | null;
+    nextBillingDate: string | null;
+  };
+  breakdown: {
+    monthlyPrice: number;
+    initialAmount: number;
+    firstBillingAmount: number;
+    secondBillingAmount: number;
+    totalActivationAmount: number;
+  };
+  activationTimeline: ActivationTimelineStep[];
+  nextScheduledPayment: {
+    id: string;
+    stage: string;
+    type: string;
+    amount: number;
+    dueDate: string;
+    status: string;
+    failureReason?: string;
+  } | null;
+  allPayments: Payment[];
+  recurringPayments: Payment[];
 }
 
 export interface Claim {
@@ -613,6 +690,7 @@ export interface AppState {
   claims: Claim[];
   invoices: Invoice[];
   benefitSummary?: BenefitSummary;
+  paymentTimeline?: PaymentTimeline | null;
   selectedRole: UserRole;
   currentUserId: string;
   isLoggedIn?: boolean;
