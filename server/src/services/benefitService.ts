@@ -1,5 +1,6 @@
 import { prisma } from '../config/db';
 import { getPlanById, MEMBERSHIP_PLANS } from '../config/plans';
+// Core Benefit, Ledger & Membership Lifecycle Engine
 import { writeAuditLog } from '../middleware/auditLog';
 
 export interface BenefitSummary {

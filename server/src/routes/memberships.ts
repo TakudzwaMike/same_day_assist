@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../config/db';
 import { requireAuth, requireRoles, AuthenticatedRequest } from '../middleware/auth';
+// Membership Management and Subscription Lifecycle
 import { writeAuditLog } from '../middleware/auditLog';
 import { PLANS_LIST, getPlanById } from '../config/plans';
 import {
