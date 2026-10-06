@@ -187,7 +187,7 @@ app.get('/api/pdf/invoice/:id', async (req, res) => {
   try {
     const { generateInvoicePDF } = await import('./services/pdf');
     
-    // Fetch invoice from Prisma Invoice table
+    // Query invoice by id or invoiceNumber
     const invoice = await prisma.invoice.findFirst({
       where: { OR: [{ id: req.params.id }, { invoiceNumber: req.params.id }] },
       include: { user: true, claim: true },

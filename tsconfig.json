@@ -18,6 +18,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@prisma/client": [
+        "./node_modules/@prisma/client"
       ]
     },
     "allowImportingTsExtensions": true,

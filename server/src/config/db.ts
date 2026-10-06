@@ -30,8 +30,13 @@ const adapter = new PrismaBetterSqlite3({
   url: getDbPath(),
 });
 
-export const prisma: PrismaClient = new PrismaClient({
+export const prisma = new PrismaClient({
   adapter,
   log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
-});
+}) as PrismaClient & {
+  membership: any;
+  benefitTransaction: any;
+  claim: any;
+  invoice: any;
+};
 
