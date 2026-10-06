@@ -258,10 +258,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name *</label>
               <input
                 type="text"
+                autoComplete="name"
                 value={formData.name}
                 onChange={e => handleChange('name', e.target.value)}
                 placeholder="e.g. Takudzwa Mike"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
 
@@ -269,10 +270,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Email Address *</label>
               <input
                 type="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={e => handleChange('email', e.target.value)}
                 placeholder="mike@samedayassist.co.za"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
 
@@ -280,10 +282,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Phone Number *</label>
               <input
                 type="tel"
+                autoComplete="tel"
                 value={formData.phone}
                 onChange={e => handleChange('phone', e.target.value)}
                 placeholder="+27 82 555 1234"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
 
@@ -291,10 +294,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Secondary / Landline Phone</label>
               <input
                 type="tel"
+                autoComplete="tel"
                 value={formData.secondaryPhone}
                 onChange={e => handleChange('secondaryPhone', e.target.value)}
                 placeholder="+27 11 555 0192"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
 
@@ -302,10 +306,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">National ID / Passport Number</label>
               <input
                 type="text"
+                autoComplete="off"
                 value={formData.idNumber}
                 onChange={e => handleChange('idNumber', e.target.value)}
                 placeholder="e.g. 9001015009087"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
           </div>
@@ -358,7 +363,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.companyName}
                     onChange={e => handleChange('companyName', e.target.value)}
                     placeholder="e.g. Apex Security Solutions (Pty) Ltd"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
 
@@ -369,7 +374,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.companyRegNumber}
                     onChange={e => handleChange('companyRegNumber', e.target.value)}
                     placeholder="e.g. 2021/123456/07"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
 
@@ -380,7 +385,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.vatNumber}
                     onChange={e => handleChange('vatNumber', e.target.value)}
                     placeholder="e.g. 4010293847"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
 
@@ -391,7 +396,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.industry}
                     onChange={e => handleChange('industry', e.target.value)}
                     placeholder="e.g. Financial Services / Warehousing"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
               </div>
@@ -406,10 +411,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Physical Address *</label>
               <input
                 type="text"
+                autoComplete="street-address"
                 value={formData.primaryAddress}
                 onChange={e => handleChange('primaryAddress', e.target.value)}
                 placeholder="e.g. 88 Grayston Drive, Sandton, Johannesburg"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
               />
             </div>
 
@@ -419,7 +425,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                 <select
                   value={formData.primaryLabel}
                   onChange={e => handleChange('primaryLabel', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm font-medium"
                 >
                   <option value="Home">Home</option>
                   <option value="Office">Office</option>
@@ -437,7 +443,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                   value={formData.accessNotes}
                   onChange={e => handleChange('accessNotes', e.target.value)}
                   placeholder="e.g. Gate code #4092, Guard house check-in required"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                 />
               </div>
             </div>
@@ -555,7 +561,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.emergencyContactName}
                     onChange={e => handleChange('emergencyContactName', e.target.value)}
                     placeholder="e.g. Sindi Molefe"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
 
@@ -563,10 +569,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Phone</label>
                   <input
                     type="tel"
+                    autoComplete="tel"
                     value={formData.emergencyContactPhone}
                     onChange={e => handleChange('emergencyContactPhone', e.target.value)}
                     placeholder="+27 83 555 8888"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                 </div>
               </div>
@@ -583,10 +590,11 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
                     value={formData.password}
                     onChange={e => handleChange('password', e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
                   />
                   <button
                     type="button"

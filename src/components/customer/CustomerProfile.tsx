@@ -64,7 +64,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
               required
               value={profileName}
               onChange={e => setProfileName(e.target.value)}
-              className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+              className="text-xs p-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
             />
           </div>
 
@@ -76,7 +76,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
                 required
                 value={profileEmail}
                 onChange={e => setProfileEmail(e.target.value)}
-                className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                className="text-xs p-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -86,7 +86,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
                 required
                 value={profilePhone}
                 onChange={e => setProfilePhone(e.target.value)}
-                className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+                className="text-xs p-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
               />
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function CustomerProfile({ activeCustomer }: CustomerProfileProps
               required
               value={profileAddress}
               onChange={e => setProfileAddress(e.target.value)}
-              className="text-xs p-2.5 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
+              className="text-xs p-2.5 bg-white text-slate-900 border border-slate-200 rounded-xl focus:outline-none focus:border-navy"
             />
           </div>
 
