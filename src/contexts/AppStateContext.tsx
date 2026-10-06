@@ -42,7 +42,7 @@ interface AppStateContextType {
   paymentTimeline?: import('../types').PaymentTimeline | null;
   refreshBenefitSummary: () => Promise<void>;
   refreshPaymentTimeline: () => Promise<void>;
-  payActivationStage: (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) => Promise<any>;
+  payActivationStage: (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean } | string) => Promise<any>;
   retryPayment: (paymentId: string, paymentMethod?: string) => Promise<any>;
   triggerAdminBilling: (customerId: string) => Promise<any>;
   createClaim: (payload: { serviceType: string; description: string; vehicleOrProperty?: string; contractorName?: string; amountClaimed: number; jobId?: string; supportingDocs?: any }) => Promise<any>;
@@ -854,10 +854,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const payActivationStage = useCallback(async (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) => {
+  const payActivationStage = useCallback(async (payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean } | string) => {
     setError(null);
     try {
-      const res = await api.payActivationStage(payload || {});
+      const body = typeof payload === 'string' ? { paymentId: payload } : (payload || {});
+      const res = await api.payActivationStage(body);
       await refreshData();
       return res;
     } catch (err: any) {

@@ -678,7 +678,6 @@ async function processPayment(params) {
     const pDate = paidAt || /* @__PURE__ */ new Date();
     payment = await prisma.payment.create({
       data: {
-        userId: uId,
         customerId: uId,
         customerName: user?.name || "Customer",
         membershipId,
@@ -1302,8 +1301,8 @@ router.post("/onboarding", async (req, res) => {
     if (existing) {
       return res.status(409).json({ error: "An account with this email address already exists." });
     }
-    const { getPlanById: getPlanById2 } = await Promise.resolve().then(() => (init_plans(), plans_exports));
-    const chosenPlan = getPlanById2(selectedPlanId || "assist_plus");
+    const { getPlanById: getPlanById3 } = await Promise.resolve().then(() => (init_plans(), plans_exports));
+    const chosenPlan = getPlanById3(selectedPlanId || "assist_plus");
     const passwordHash = await hashPassword(password);
     const now = /* @__PURE__ */ new Date();
     const oneYearLater = new Date(now);
@@ -2966,6 +2965,82 @@ async function deductFromBenefit(params) {
     membership
   };
 }
+async function changeCustomerPlan(arg1, arg2, arg3, arg4, arg5) {
+  let userId;
+  let newPlanId;
+  let actorId = "system";
+  let actorRole = "System";
+  let reason = "";
+  if (typeof arg1 === "object") {
+    userId = arg1.userId;
+    newPlanId = arg1.newPlanId;
+    actorId = arg1.actorId || "system";
+    actorRole = arg1.actorRole || "System";
+    reason = arg1.reason || "";
+  } else {
+    userId = arg1;
+    newPlanId = arg2 || "assist_plus";
+    reason = arg3 || "";
+    actorId = arg4 || "system";
+    actorRole = arg5 || "System";
+  }
+  const newPlan = getPlanById(newPlanId);
+  const currentMembership = await prisma.membership.findFirst({
+    where: { userId, status: "Active" },
+    orderBy: { createdAt: "desc" }
+  });
+  const previousPlanName = currentMembership ? currentMembership.planName : "None";
+  if (currentMembership) {
+    await prisma.membership.update({
+      where: { id: currentMembership.id },
+      data: { status: "Superseded" }
+    });
+  }
+  const now = /* @__PURE__ */ new Date();
+  const oneYearLater = new Date(now);
+  oneYearLater.setFullYear(now.getFullYear() + 1);
+  const newMembership = await prisma.membership.create({
+    data: {
+      userId,
+      planId: newPlan.id,
+      planName: newPlan.name,
+      monthlyPrice: newPlan.monthlyPrice,
+      annualBenefit: newPlan.annualBenefit,
+      benefitYearStart: now,
+      benefitYearEnd: oneYearLater,
+      status: "Active",
+      benefitTransactions: {
+        create: {
+          userId,
+          reference: `PLAN-CHG-${now.getFullYear()}`,
+          description: `Plan Upgrade/Migration to ${newPlan.name}. Initial Annual Allowance R${newPlan.annualBenefit.toLocaleString()}`,
+          credit: newPlan.annualBenefit,
+          debit: 0,
+          balance: newPlan.annualBenefit,
+          date: now
+        }
+      }
+    },
+    include: {
+      benefitTransactions: true
+    }
+  });
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      package: newPlan.name
+    }
+  });
+  await writeAuditLog({
+    userId: actorId,
+    userType: actorRole,
+    action: "Plan Changed",
+    details: `Customer plan updated from ${previousPlanName} to ${newPlan.name} (R${newPlan.monthlyPrice}/mo, R${newPlan.annualBenefit.toLocaleString()} annual benefit). Reason: ${reason || "Customer/Admin plan update"}`,
+    previousValue: { plan: previousPlanName },
+    newValue: { plan: newPlan.name, monthlyPrice: newPlan.monthlyPrice, annualBenefit: newPlan.annualBenefit }
+  });
+  return newMembership;
+}
 
 // server/src/routes/jobs.ts
 var router12 = Router12();
@@ -4187,6 +4262,785 @@ router17.delete("/:id", requireAuth, async (req, res) => {
 });
 var vehicles_default = router17;
 
+// server/src/routes/memberships.ts
+import { Router as Router18 } from "express";
+init_plans();
+var router18 = Router18();
+router18.get("/plans", async (req, res) => {
+  return res.json(PLANS_LIST);
+});
+router18.get("/my", requireAuth, requireRoles("Customer"), async (req, res) => {
+  try {
+    const summary = await getMemberBenefitSummary(req.user.id);
+    return res.json(summary);
+  } catch (error) {
+    console.error("[Memberships/My]", error);
+    return res.status(500).json({ error: error.message || "Failed to retrieve membership benefit summary" });
+  }
+});
+router18.post("/change-plan", requireAuth, async (req, res) => {
+  const { planId, customerId, reason } = req.body;
+  if (!planId) return res.status(400).json({ error: "planId is required" });
+  const targetUserId = customerId && (req.user.role === "Administrator" || req.user.role === "Super Administrator") ? customerId : req.user.id;
+  try {
+    const newMembership = await changeCustomerPlan({
+      userId: targetUserId,
+      newPlanId: planId,
+      actorId: req.user.id,
+      actorRole: req.user.role,
+      reason
+    });
+    const summary = await getMemberBenefitSummary(targetUserId);
+    return res.json({
+      success: true,
+      message: `Plan successfully updated to ${newMembership.planName}`,
+      summary
+    });
+  } catch (error) {
+    console.error("[Memberships/ChangePlan]", error);
+    return res.status(500).json({ error: error.message || "Failed to change membership plan" });
+  }
+});
+router18.get(
+  "/customer/:userId",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator", "Dispatcher"),
+  async (req, res) => {
+    try {
+      const summary = await getMemberBenefitSummary(req.params.userId);
+      const user = await prisma.user.findUnique({
+        where: { id: req.params.userId },
+        select: { id: true, name: true, email: true, phone: true, address: true, status: true, package: true, memberSince: true }
+      });
+      return res.json({ customer: user, summary });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || "Failed to load customer benefit data" });
+    }
+  }
+);
+router18.post(
+  "/customer/:userId/override-deduction",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator"),
+  async (req, res) => {
+    const { amount, description, reference, reason } = req.body;
+    if (!amount || !description) {
+      return res.status(400).json({ error: "amount and description are required" });
+    }
+    try {
+      const transaction = await deductFromBenefit({
+        userId: req.params.userId,
+        amountToDeduct: parseFloat(amount),
+        description,
+        reference: reference || `ADMIN-ADJ-${Date.now().toString().slice(-4)}`,
+        adminOverride: true,
+        overrideReason: reason || "Administrative authorization",
+        actorId: req.user.id,
+        actorRole: req.user.role
+      });
+      const summary = await getMemberBenefitSummary(req.params.userId);
+      return res.json({ success: true, transaction, summary });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || "Override deduction failed" });
+    }
+  }
+);
+router18.post(
+  "/customer/:userId/reset-period",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator"),
+  async (req, res) => {
+    try {
+      const current = await prisma.membership.findFirst({
+        where: { userId: req.params.userId, status: "Active" },
+        orderBy: { createdAt: "desc" }
+      });
+      if (!current) return res.status(404).json({ error: "Active membership not found" });
+      await prisma.membership.update({
+        where: { id: current.id },
+        data: { status: "Expired" }
+      });
+      const now = /* @__PURE__ */ new Date();
+      const oneYearLater = new Date(now);
+      oneYearLater.setFullYear(now.getFullYear() + 1);
+      const newMembership = await prisma.membership.create({
+        data: {
+          userId: req.params.userId,
+          planId: current.planId,
+          planName: current.planName,
+          monthlyPrice: current.monthlyPrice,
+          annualBenefit: current.annualBenefit,
+          benefitYearStart: now,
+          benefitYearEnd: oneYearLater,
+          status: "Active",
+          benefitTransactions: {
+            create: {
+              userId: req.params.userId,
+              reference: `RENEWAL-${now.getFullYear()}`,
+              description: `Annual Benefit Period Renewal (${current.planName})`,
+              credit: current.annualBenefit,
+              debit: 0,
+              balance: current.annualBenefit,
+              date: now
+            }
+          }
+        }
+      });
+      await writeAuditLog({
+        userId: req.user.id,
+        userType: req.user.role,
+        action: "Benefit Period Reset",
+        details: `Reset annual benefit period for customer ${req.params.userId}. New period ends ${oneYearLater.toISOString().slice(0, 10)}. Initial allowance R${current.annualBenefit.toLocaleString()}`,
+        newValue: { membershipId: newMembership.id }
+      });
+      const summary = await getMemberBenefitSummary(req.params.userId);
+      return res.json({ success: true, message: "New benefit period established", summary });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || "Failed to reset benefit period" });
+    }
+  }
+);
+var memberships_default = router18;
+
+// server/src/routes/claims.ts
+import { Router as Router19 } from "express";
+var router19 = Router19();
+function generateClaimNumber2() {
+  const rand = Math.floor(1e5 + Math.random() * 9e5);
+  return `SDA-CLM-${rand}`;
+}
+function generateInvoiceNumber2() {
+  const rand = Math.floor(1e5 + Math.random() * 9e5);
+  return `SDA-INV-${rand}`;
+}
+router19.get("/my", requireAuth, requireRoles("Customer"), async (req, res) => {
+  try {
+    const claims = await prisma.claim.findMany({
+      where: { userId: req.user.id },
+      include: {
+        invoice: true,
+        membership: { select: { planName: true, planId: true, annualBenefit: true } },
+        job: { select: { id: true, status: true, serviceType: true, servicePerformed: true } }
+      },
+      orderBy: { submittedAt: "desc" }
+    });
+    return res.json(claims);
+  } catch (error) {
+    console.error("[Claims/My]", error);
+    return res.status(500).json({ error: "Failed to retrieve claims" });
+  }
+});
+router19.get(
+  "/",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator", "Dispatcher"),
+  async (req, res) => {
+    try {
+      const { status, search, plan, serviceType } = req.query;
+      const where = {};
+      if (status && status !== "all") {
+        where.status = String(status);
+      }
+      if (serviceType) {
+        where.serviceType = { contains: String(serviceType) };
+      }
+      if (search) {
+        const query = String(search).trim();
+        where.OR = [
+          { claimNumber: { contains: query } },
+          { description: { contains: query } },
+          { user: { name: { contains: query } } },
+          { user: { email: { contains: query } } }
+        ];
+      }
+      if (plan) {
+        where.membership = { planName: { contains: String(plan) } };
+      }
+      const claims = await prisma.claim.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true, package: true } },
+          membership: { select: { planName: true, planId: true, annualBenefit: true } },
+          invoice: true,
+          job: { select: { id: true, status: true, assignedContractor: { select: { name: true } } } }
+        },
+        orderBy: { submittedAt: "desc" }
+      });
+      return res.json(claims);
+    } catch (error) {
+      console.error("[Claims/All]", error);
+      return res.status(500).json({ error: "Failed to retrieve claims" });
+    }
+  }
+);
+router19.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const claim = await prisma.claim.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true, address: true, package: true } },
+        membership: true,
+        invoice: true,
+        benefitTransactions: { orderBy: { date: "desc" } },
+        job: true
+      }
+    });
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
+    if (req.user.role === "Customer" && claim.userId !== req.user.id) {
+      return res.status(403).json({ error: "Access denied. You can only view your own claims." });
+    }
+    return res.json(claim);
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to retrieve claim details" });
+  }
+});
+router19.post("/calculate-coverage", requireAuth, async (req, res) => {
+  const { userId, totalAmount, partsAmount, labourAmount } = req.body;
+  const targetUserId = userId && (req.user.role === "Administrator" || req.user.role === "Super Administrator") ? userId : req.user.id;
+  try {
+    const coverage = await calculateBenefitCoverage({
+      userId: targetUserId,
+      totalServiceAmount: parseFloat(totalAmount || 0),
+      partsAmount: parseFloat(partsAmount || 0),
+      labourAmount: parseFloat(labourAmount || 0)
+    });
+    return res.json(coverage);
+  } catch (error) {
+    return res.status(400).json({ error: error.message || "Calculation failed" });
+  }
+});
+router19.post("/", requireAuth, requireRoles("Customer"), async (req, res) => {
+  const { serviceType, description, vehicleOrProperty, contractorName, amountClaimed, jobId, supportingDocs } = req.body;
+  if (!serviceType || !description || amountClaimed === void 0) {
+    return res.status(400).json({ error: "serviceType, description, and amountClaimed are required." });
+  }
+  try {
+    const membership = await getOrCreateActiveMembership(req.user.id);
+    const claimNumber = generateClaimNumber2();
+    const claim = await prisma.claim.create({
+      data: {
+        claimNumber,
+        userId: req.user.id,
+        membershipId: membership.id,
+        jobId: jobId || null,
+        serviceType,
+        description,
+        vehicleOrProperty: vehicleOrProperty || null,
+        contractorName: contractorName || null,
+        amountClaimed: parseFloat(amountClaimed),
+        amountApproved: 0,
+        amountDeductedFromBenefit: 0,
+        customerResponsibility: parseFloat(amountClaimed),
+        status: "Submitted",
+        supportingDocs: supportingDocs ? JSON.stringify(supportingDocs) : null
+      },
+      include: {
+        membership: true
+      }
+    });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: "Claim Created",
+      details: `Submitted assistance claim ${claimNumber} for ${serviceType} (R${parseFloat(amountClaimed).toFixed(2)})`,
+      newValue: { claimNumber, amountClaimed, serviceType }
+    });
+    return res.status(201).json(claim);
+  } catch (error) {
+    console.error("[Claims/Create]", error);
+    return res.status(500).json({ error: error.message || "Failed to submit claim" });
+  }
+});
+router19.patch(
+  "/:id/review",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator"),
+  async (req, res) => {
+    const { status, amountApproved, partsAmount, labourAmount, rejectionReason, adminOverride, overrideReason } = req.body;
+    if (!status) return res.status(400).json({ error: "Status is required" });
+    try {
+      const claim = await prisma.claim.findUnique({
+        where: { id: req.params.id },
+        include: { user: true, membership: true, invoice: true }
+      });
+      if (!claim) return res.status(404).json({ error: "Claim not found" });
+      let approvedNum = amountApproved !== void 0 ? parseFloat(amountApproved) : claim.amountClaimed;
+      let partsNum = partsAmount !== void 0 ? parseFloat(partsAmount) : 0;
+      let labourNum = labourAmount !== void 0 ? parseFloat(labourAmount) : approvedNum - partsNum;
+      if (labourNum < 0) labourNum = 0;
+      let amountDeducted = 0;
+      let customerPayable = approvedNum;
+      let createdInvoice = claim.invoice;
+      if (status === "Approved") {
+        const coverage = await calculateBenefitCoverage({
+          userId: claim.userId,
+          totalServiceAmount: approvedNum,
+          partsAmount: partsNum,
+          labourAmount: labourNum
+        });
+        amountDeducted = coverage.amountCoveredByBenefit;
+        customerPayable = coverage.amountPayableByCustomer;
+        if (amountDeducted > 0) {
+          await deductFromBenefit({
+            userId: claim.userId,
+            amountToDeduct: amountDeducted,
+            description: `Claim ${claim.claimNumber} (${claim.serviceType}) Benefit Coverage`,
+            reference: claim.claimNumber,
+            claimId: claim.id,
+            adminOverride: Boolean(adminOverride),
+            overrideReason,
+            actorId: req.user.id,
+            actorRole: req.user.role
+          });
+        }
+        if (!createdInvoice) {
+          const invNumber = generateInvoiceNumber2();
+          const userObj = claim.user;
+          const membershipObj = claim.membership;
+          createdInvoice = await prisma.invoice.create({
+            data: {
+              invoiceNumber: invNumber,
+              userId: claim.userId,
+              membershipId: claim.membershipId,
+              claimId: claim.id,
+              jobId: claim.jobId,
+              customerName: userObj.name,
+              customerEmail: userObj.email,
+              customerAddress: userObj.address,
+              membershipPlan: membershipObj ? membershipObj.planName : userObj.package || "Assist Plus",
+              serviceRequested: claim.serviceType,
+              technicianName: claim.contractorName || "Same Day Assist Certified Responder",
+              parts: partsNum,
+              labour: labourNum,
+              otherCharges: 0,
+              subtotal: approvedNum,
+              taxVat: parseFloat((approvedNum * 0.15).toFixed(2)),
+              total: approvedNum,
+              amountCoveredByBenefit: amountDeducted,
+              amountPayableByCustomer: customerPayable,
+              paymentStatus: customerPayable === 0 ? "Paid" : "Unpaid",
+              invoiceStatus: "Issued",
+              paidAt: customerPayable === 0 ? /* @__PURE__ */ new Date() : null,
+              notes: coverage.explanation
+            }
+          });
+          await prisma.benefitTransaction.updateMany({
+            where: { claimId: claim.id },
+            data: { invoiceId: createdInvoice.id }
+          });
+        }
+      }
+      const updatedClaim = await prisma.claim.update({
+        where: { id: claim.id },
+        data: {
+          status,
+          amountApproved: status === "Approved" ? approvedNum : claim.amountApproved,
+          amountDeductedFromBenefit: status === "Approved" ? amountDeducted : claim.amountDeductedFromBenefit,
+          customerResponsibility: status === "Approved" ? customerPayable : claim.customerResponsibility,
+          rejectionReason: status === "Rejected" ? rejectionReason || "Claim declined by administrator" : null,
+          adminOverride: Boolean(adminOverride),
+          overrideReason: overrideReason || null,
+          reviewedAt: /* @__PURE__ */ new Date(),
+          completedAt: ["Completed", "Approved"].includes(status) ? /* @__PURE__ */ new Date() : null
+        },
+        include: {
+          invoice: true,
+          membership: true,
+          user: { select: { id: true, name: true, email: true, phone: true } }
+        }
+      });
+      await writeAuditLog({
+        userId: req.user.id,
+        userType: req.user.role,
+        action: status === "Approved" ? "Claim Approved" : status === "Rejected" ? "Claim Rejected" : "Claim Updated",
+        details: `Claim ${claim.claimNumber} updated to ${status}. Approved amount: R${approvedNum.toFixed(2)}, Deducted from annual benefit: R${amountDeducted.toFixed(2)}, Customer owes: R${customerPayable.toFixed(2)}`,
+        previousValue: { status: claim.status },
+        newValue: { status, amountApproved: approvedNum, amountDeducted, customerPayable }
+      });
+      return res.json(updatedClaim);
+    } catch (error) {
+      console.error("[Claims/Review]", error);
+      return res.status(400).json({ error: error.message || "Failed to review claim" });
+    }
+  }
+);
+var claims_default = router19;
+
+// server/src/routes/invoices.ts
+import { Router as Router20 } from "express";
+
+// server/src/services/pdf.ts
+import PDFDocument from "pdfkit";
+var BRAND_RED = "#CC322C";
+var BRAND_NAVY = "#091C3E";
+var BRAND_GREY = "#64748B";
+function drawHeader(doc, title) {
+  doc.rect(0, 0, doc.page.width, 90).fill(BRAND_NAVY);
+  doc.fillColor("white").fontSize(20).font("Helvetica-Bold").text("SAME DAY ASSIST", 40, 20, { align: "left" });
+  doc.fillColor(BRAND_RED).fontSize(8).font("Helvetica").text("EMERGENCY ASSIST NETWORK \u2022 PSIRA ASSURANCE \u2022 SOUTH AFRICA", 40, 46);
+  doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text(title, 40, 65, { align: "left" });
+  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica").text(`Generated: ${(/* @__PURE__ */ new Date()).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" })}`, 0, 68, { align: "right", width: doc.page.width - 40 });
+  doc.rect(0, 90, doc.page.width, 4).fill(BRAND_RED);
+}
+function drawFooter(doc) {
+  const y = doc.page.height - 50;
+  doc.rect(0, y, doc.page.width, 50).fill(BRAND_NAVY);
+  doc.fillColor("white").fontSize(7).font("Helvetica").text("\xA9 2026 Same Day Assist (Pty) Ltd \u2022 Soweto, Johannesburg, South Africa \u2022 SABS & PSIRA Assured \u2022 All rights reserved.", 0, y + 18, { align: "center", width: doc.page.width });
+}
+function sectionTitle(doc, text, y) {
+  const ty = y ?? doc.y;
+  doc.rect(40, ty, doc.page.width - 80, 20).fill("#F1F5F9");
+  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica-Bold").text(text, 48, ty + 5);
+  doc.moveDown(0.5);
+}
+function row(doc, label, value) {
+  doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`${label}:`, 48, doc.y, { continued: true, width: 140 });
+  doc.fillColor("#1E293B").font("Helvetica").text(value, { width: 350 });
+}
+async function generateInvoicePDF(data) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Tax Invoice ${data.invoiceNumber || data.id}`, Author: "Same Day Assist" } });
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+    drawHeader(doc, "OFFICIAL TAX INVOICE");
+    doc.moveDown(4);
+    const invNo = data.invoiceNumber || data.id;
+    const invDate = new Date(data.date).toLocaleDateString("en-ZA");
+    sectionTitle(doc, "INVOICE & MEMBER INFORMATION");
+    doc.moveDown(0.3);
+    row(doc, "Tax Invoice Number", invNo);
+    row(doc, "Date of Issue", invDate);
+    row(doc, "Member Name", data.customerName);
+    if (data.customerEmail) row(doc, "Member Email", data.customerEmail);
+    if (data.customerAddress) row(doc, "Service Address", data.customerAddress);
+    if (data.membershipPlan) row(doc, "Membership Plan", data.membershipPlan);
+    if (data.serviceReference) row(doc, "Service Request #", data.serviceReference);
+    if (data.claimNumber) row(doc, "Claim Reference #", data.claimNumber);
+    if (data.technicianName) row(doc, "Assigned Technician", data.technicianName);
+    row(doc, "Service Provided", data.serviceRequested || data.type || "On-Demand Emergency Assistance");
+    doc.moveDown(1);
+    sectionTitle(doc, "COST BREAKDOWN & FINANCIAL STATEMENT");
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#E2E8F0");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("Cost Category", 54, doc.y - 14, { width: 320, continued: true });
+    doc.text("Amount (ZAR)", { align: "right", width: 120 });
+    const partsCost = data.parts !== void 0 ? data.parts : 0;
+    const labourCost = data.labour !== void 0 ? data.labour : data.amount !== void 0 ? data.amount : 0;
+    const otherCost = data.otherCharges !== void 0 ? data.otherCharges : 0;
+    const grossTotal = data.total !== void 0 ? data.total : data.amount !== void 0 ? data.amount : partsCost + labourCost + otherCost;
+    const benefitCovered = data.amountCoveredByBenefit !== void 0 ? data.amountCoveredByBenefit : 0;
+    const customerPayable = data.amountPayableByCustomer !== void 0 ? data.amountPayableByCustomer : Math.max(0, grossTotal - benefitCovered);
+    const costItems = [
+      { desc: "Certified Labour & Diagnostics", cost: labourCost },
+      { desc: "Hardware Replacement & Parts", cost: partsCost }
+    ];
+    if (otherCost > 0) {
+      costItems.push({ desc: "Ancillary / Dispatch Charges", cost: otherCost });
+    }
+    costItems.forEach((item, i) => {
+      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#F8FAFC");
+      doc.fillColor("#334155").fontSize(8).font("Helvetica").text(item.desc, 54, doc.y - 12, { width: 320, continued: true });
+      doc.fillColor(BRAND_NAVY).font("Helvetica-Bold").text(`R ${item.cost.toFixed(2)}`, { align: "right", width: 120 });
+    });
+    doc.moveDown(0.4);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#F1F5F9");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("GROSS SERVICE TOTAL:", 54, doc.y - 14, { continued: true, width: 320 });
+    doc.text(`R ${grossTotal.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 20).fill("#DCFCE7");
+    doc.fillColor("#166534").fontSize(8.5).font("Helvetica-Bold").text("LESS: COVERED BY ANNUAL ASSISTANCE BENEFIT:", 54, doc.y - 15, { continued: true, width: 320 });
+    doc.text(`- R ${benefitCovered.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(0.4);
+    const payableColor = customerPayable > 0 ? BRAND_RED : BRAND_NAVY;
+    doc.rect(48, doc.y, doc.page.width - 96, 26).fill(payableColor);
+    doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text("NET AMOUNT PAYABLE BY CUSTOMER:", 54, doc.y - 19, { continued: true, width: 320 });
+    doc.text(`R ${customerPayable.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(1.5);
+    const paymentStatus = data.status || (customerPayable === 0 ? "Covered" : "Unpaid");
+    doc.rect(48, doc.y, doc.page.width - 96, 22).fill("#F8FAFC");
+    doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`Invoice Status: ${data.invoiceStatus || "Issued"}   \u2022   Payment Status: ${paymentStatus.toUpperCase()}`, 54, doc.y - 16, { align: "center", width: doc.page.width - 108 });
+    doc.moveDown(1.5);
+    doc.fillColor(BRAND_GREY).fontSize(7.5).font("Helvetica").text("All services are rendered according to Same Day Assist Membership Terms & Conditions. Assistance benefit deductions are recorded on your annual member benefit ledger.", 48, doc.y, { align: "center", width: doc.page.width - 96 });
+    drawFooter(doc);
+    doc.end();
+  });
+}
+
+// server/src/routes/invoices.ts
+var router20 = Router20();
+function generateInvoiceNumber3() {
+  const rand = Math.floor(1e5 + Math.random() * 9e5);
+  return `SDA-INV-${rand}`;
+}
+router20.get("/my", requireAuth, requireRoles("Customer"), async (req, res) => {
+  try {
+    const invoices = await prisma.invoice.findMany({
+      where: { userId: req.user.id },
+      include: {
+        claim: { select: { id: true, claimNumber: true, serviceType: true, status: true } },
+        job: { select: { id: true, status: true, serviceType: true } },
+        membership: { select: { planName: true, planId: true, annualBenefit: true } }
+      },
+      orderBy: { date: "desc" }
+    });
+    return res.json(invoices);
+  } catch (error) {
+    console.error("[Invoices/My]", error);
+    return res.status(500).json({ error: "Failed to retrieve invoices" });
+  }
+});
+router20.get(
+  "/",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator", "Dispatcher"),
+  async (req, res) => {
+    try {
+      const { search, paymentStatus, plan, dateFrom, dateTo } = req.query;
+      const where = {};
+      if (paymentStatus && paymentStatus !== "all") {
+        where.paymentStatus = String(paymentStatus);
+      }
+      if (plan) {
+        where.membershipPlan = { contains: String(plan) };
+      }
+      if (search) {
+        const query = String(search).trim();
+        where.OR = [
+          { invoiceNumber: { contains: query } },
+          { customerName: { contains: query } },
+          { serviceRequested: { contains: query } },
+          { claim: { claimNumber: { contains: query } } },
+          { user: { email: { contains: query } } },
+          { user: { id: { contains: query } } }
+        ];
+      }
+      if (dateFrom || dateTo) {
+        where.date = {};
+        if (dateFrom) where.date.gte = new Date(String(dateFrom));
+        if (dateTo) where.date.lte = new Date(String(dateTo));
+      }
+      const invoices = await prisma.invoice.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          claim: { select: { id: true, claimNumber: true, status: true } },
+          job: { select: { id: true, status: true } },
+          membership: { select: { planName: true, planId: true } }
+        },
+        orderBy: { date: "desc" }
+      });
+      return res.json(invoices);
+    } catch (error) {
+      console.error("[Invoices/All]", error);
+      return res.status(500).json({ error: "Failed to retrieve invoices" });
+    }
+  }
+);
+router20.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true, address: true } },
+        claim: true,
+        job: true,
+        membership: true,
+        benefitTransactions: true
+      }
+    });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
+      return res.status(403).json({ error: "Access denied. You can only view your own invoices." });
+    }
+    return res.json(invoice);
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to retrieve invoice" });
+  }
+});
+router20.get("/:id/pdf", requireAuth, async (req, res) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: true,
+        claim: true,
+        job: true,
+        membership: true
+      }
+    });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
+      return res.status(403).json({ error: "Access denied." });
+    }
+    const pdfBuffer = await generateInvoicePDF({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      customerName: invoice.customerName,
+      customerEmail: invoice.customerEmail || invoice.user?.email || "",
+      customerAddress: invoice.customerAddress || invoice.user?.address || "",
+      membershipPlan: invoice.membershipPlan,
+      serviceRequested: invoice.serviceRequested,
+      serviceReference: invoice.jobId || void 0,
+      claimNumber: invoice.claim?.claimNumber || void 0,
+      technicianName: invoice.technicianName || "Same Day Assist Responder",
+      parts: invoice.parts,
+      labour: invoice.labour,
+      otherCharges: invoice.otherCharges,
+      subtotal: invoice.subtotal,
+      taxVat: invoice.taxVat,
+      total: invoice.total,
+      amountCoveredByBenefit: invoice.amountCoveredByBenefit,
+      amountPayableByCustomer: invoice.amountPayableByCustomer,
+      date: invoice.date.toISOString(),
+      status: invoice.paymentStatus,
+      invoiceStatus: invoice.invoiceStatus
+    });
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${invoice.invoiceNumber}.pdf"`
+    });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("[Invoices/PDF]", error);
+    return res.status(500).json({ error: "Failed to generate invoice PDF" });
+  }
+});
+router20.post(
+  "/",
+  requireAuth,
+  requireRoles("Administrator", "Super Administrator"),
+  async (req, res) => {
+    const {
+      customerId,
+      claimId,
+      jobId,
+      serviceRequested,
+      technicianName,
+      parts,
+      labour,
+      otherCharges,
+      amountCoveredByBenefit,
+      amountPayableByCustomer,
+      paymentStatus,
+      notes
+    } = req.body;
+    if (!customerId || !serviceRequested) {
+      return res.status(400).json({ error: "customerId and serviceRequested are required" });
+    }
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: customerId },
+        include: {
+          memberships: { where: { status: "Active" }, take: 1 }
+        }
+      });
+      if (!user) return res.status(404).json({ error: "Customer not found" });
+      const activeMembership = user.memberships[0] || null;
+      const partsNum = parseFloat(parts || 0);
+      const labourNum = parseFloat(labour || 0);
+      const otherNum = parseFloat(otherCharges || 0);
+      const subtotalNum = partsNum + labourNum + otherNum;
+      const vatNum = parseFloat((subtotalNum * 0.15).toFixed(2));
+      const totalNum = subtotalNum;
+      const coveredNum = amountCoveredByBenefit !== void 0 ? parseFloat(amountCoveredByBenefit) : 0;
+      const payableNum = amountPayableByCustomer !== void 0 ? parseFloat(amountPayableByCustomer) : Math.max(0, totalNum - coveredNum);
+      const invoiceNumber = generateInvoiceNumber3();
+      const invoice = await prisma.invoice.create({
+        data: {
+          invoiceNumber,
+          userId: user.id,
+          membershipId: activeMembership?.id || null,
+          claimId: claimId || null,
+          jobId: jobId || null,
+          customerName: user.name,
+          customerEmail: user.email,
+          customerAddress: user.address,
+          membershipPlan: activeMembership?.planName || user.package || "Assist Plus",
+          serviceRequested,
+          technicianName: technicianName || "Same Day Assist Certified Responder",
+          parts: partsNum,
+          labour: labourNum,
+          otherCharges: otherNum,
+          subtotal: subtotalNum,
+          taxVat: vatNum,
+          total: totalNum,
+          amountCoveredByBenefit: coveredNum,
+          amountPayableByCustomer: payableNum,
+          paymentStatus: paymentStatus || (payableNum === 0 ? "Paid" : "Unpaid"),
+          invoiceStatus: "Issued",
+          paidAt: payableNum === 0 ? /* @__PURE__ */ new Date() : null,
+          notes
+        },
+        include: {
+          user: true,
+          claim: true
+        }
+      });
+      await writeAuditLog({
+        userId: req.user.id,
+        userType: req.user.role,
+        action: "Invoice Generated",
+        details: `Generated Tax Invoice ${invoiceNumber} for ${user.name}. Total: R${totalNum.toFixed(2)}, Covered by benefit: R${coveredNum.toFixed(2)}, Customer payable: R${payableNum.toFixed(2)}`,
+        newValue: { invoiceNumber, total: totalNum, covered: coveredNum, payable: payableNum }
+      });
+      return res.status(201).json(invoice);
+    } catch (error) {
+      console.error("[Invoices/Create]", error);
+      return res.status(500).json({ error: error.message || "Failed to generate invoice" });
+    }
+  }
+);
+router20.patch("/:id/pay", requireAuth, async (req, res) => {
+  const { paymentMethod, cardLast4 } = req.body;
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id },
+      include: { user: true }
+    });
+    if (!invoice) return res.status(404).json({ error: "Invoice not found" });
+    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
+      return res.status(403).json({ error: "Access denied." });
+    }
+    if (invoice.paymentStatus === "Paid") {
+      return res.status(400).json({ error: "Invoice is already paid in full." });
+    }
+    const updated = await prisma.invoice.update({
+      where: { id: invoice.id },
+      data: {
+        paymentStatus: "Paid",
+        invoiceStatus: "Settled",
+        paidAt: /* @__PURE__ */ new Date(),
+        paymentMethod: paymentMethod || "Card Online"
+      }
+    });
+    await prisma.payment.create({
+      data: {
+        customerId: invoice.userId,
+        customerName: invoice.customerName,
+        jobId: invoice.jobId,
+        type: `Invoice Payment (${invoice.invoiceNumber})`,
+        amount: invoice.amountPayableByCustomer,
+        status: "Paid",
+        paymentMethod: paymentMethod || "Card Online",
+        date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+      }
+    });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: "Invoice Paid",
+      details: `Settled customer-payable balance of R${invoice.amountPayableByCustomer.toFixed(2)} on Invoice ${invoice.invoiceNumber} via ${paymentMethod || "Card"}${cardLast4 ? ` (Card: ****${cardLast4})` : ""}`,
+      newValue: { invoiceNumber: invoice.invoiceNumber, amountPaid: invoice.amountPayableByCustomer }
+    });
+    return res.json({ success: true, message: "Invoice settled successfully!", invoice: updated });
+  } catch (error) {
+    return res.status(500).json({ error: error.message || "Payment processing failed" });
+  }
+});
+var invoices_default = router20;
+
 // server/src/vercel-handler.ts
 dotenv.config();
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "sda-access-secret-key-12345";
@@ -4248,6 +5102,9 @@ app.use("/api/verification", verification_default);
 app.use("/api/ratings", ratings_default);
 app.use("/api/messages", messages_default);
 app.use("/api/wallet", wallet_default);
+app.use("/api/memberships", memberships_default);
+app.use("/api/claims", claims_default);
+app.use("/api/invoices", invoices_default);
 var vercel_handler_default = app;
 export {
   vercel_handler_default as default

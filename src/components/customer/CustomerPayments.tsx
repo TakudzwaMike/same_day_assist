@@ -10,7 +10,7 @@ import { Payment, PaymentTimeline, ActivationTimelineStep } from '../../types';
 import { formatZAR } from '../../utils/paymentStructure';
 
 interface CustomerPaymentsProps {
-  onNavigateTab?: (tab: string) => void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {

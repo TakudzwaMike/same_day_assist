@@ -17,9 +17,13 @@ export interface BenefitSummary {
   benefitYearStart: string;
   benefitYearEnd: string;
   status: string;
+  isEligibleForBenefits?: boolean;
+  activationPercentage?: number;
+  totalActivationPaid?: number;
   claimsCount: number;
   invoicesCount: number;
   transactions: any[];
+  [key: string]: any;
 }
 
 /**

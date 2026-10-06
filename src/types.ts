@@ -389,12 +389,15 @@ export interface Payment {
   date: string;
   dueDate?: string;
   paidAt?: string;
+  createdAt?: string;
+  description?: string;
   transactionRef?: string;
   gatewayReference?: string;
   failureReason?: string;
   retryCount?: number;
   invoice?: Partial<Invoice>;
   customer?: Partial<Customer>;
+  [key: string]: any;
 }
 
 export interface Enquiry {
@@ -528,12 +531,14 @@ export interface BenefitSummary {
   periodStart?: string;
   periodEnd?: string;
   status?: string;
+  membershipStatus?: string;
   isEligibleForBenefits?: boolean;
   activationPercentage?: number;
   totalActivationPaid?: number;
   claimsCount?: number;
   invoicesCount?: number;
   transactions?: BenefitTransaction[];
+  [key: string]: any;
 }
 
 export interface ActivationTimelineStep {
@@ -547,6 +552,7 @@ export interface ActivationTimelineStep {
   paymentId?: string | null;
   invoiceNumber?: string | null;
   isCompleted: boolean;
+  [key: string]: any;
 }
 
 export interface PaymentTimeline {
@@ -554,13 +560,23 @@ export interface PaymentTimeline {
   planId: string;
   planName: string;
   monthlySubscription: number;
+  monthlyPrice?: number;
   annualAssistanceBenefit: number;
   status: string;
+  membershipStatus?: string;
   isActive: boolean;
   isEligibleForBenefits: boolean;
   activationPercentage: number;
   totalActivationPaid: number;
+  totalCollected?: number;
   outstandingActivation: number;
+  activationCycleComplete?: boolean;
+  activationDate?: string | null;
+  billingDayOfMonth?: number | null;
+  nextBillingDate?: string | null;
+  nextPayment?: any;
+  timelineSteps?: any[];
+  payments?: Payment[];
   dates: {
     startDate: string;
     firstBillingDate: string | null;
@@ -587,6 +603,7 @@ export interface PaymentTimeline {
   } | null;
   allPayments: Payment[];
   recurringPayments: Payment[];
+  [key: string]: any;
 }
 
 export interface Claim {

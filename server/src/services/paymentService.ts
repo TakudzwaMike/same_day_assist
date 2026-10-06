@@ -397,7 +397,6 @@ export async function processPayment(params: {
 
     payment = await prisma.payment.create({
       data: {
-        userId: uId,
         customerId: uId,
         customerName: user?.name || 'Customer',
         membershipId,

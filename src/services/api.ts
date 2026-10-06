@@ -586,10 +586,11 @@ class ApiClient {
     return this.request<any>(path);
   }
 
-  async payActivationStage(payload: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean }) {
+  async payActivationStage(payload?: { paymentId?: string; paymentMethod?: string; simulateFailure?: boolean } | string) {
+    const body = typeof payload === 'string' ? { paymentId: payload } : (payload || {});
     return this.request<any>('/payments/pay-activation', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   }
 
@@ -608,10 +609,11 @@ class ApiClient {
     return this.request<any[]>(`/payments/admin/all?${qs}`);
   }
 
-  async triggerAdminBilling(payload: { customerId?: string; membershipId?: string }) {
+  async triggerAdminBilling(payload: { customerId?: string; membershipId?: string } | string) {
+    const body = typeof payload === 'string' ? { customerId: payload } : payload;
     return this.request<any>('/payments/admin/trigger-billing', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   }
 

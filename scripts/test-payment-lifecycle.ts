@@ -130,7 +130,7 @@ async function runTests() {
   const initResult = await initializeMembershipWithSchedule({
     userId: testUser.id,
     planId: 'assist_plus', // 1,499 in standard plans, but let's test R1,000 using custom override or standard plan
-    billingDayOfMonth: 25,
+    billingDay: 25,
     startDate: joinDate,
     paymentMethod: 'Credit Card',
   });
@@ -321,7 +321,7 @@ async function runTests() {
   const failInit = await initializeMembershipWithSchedule({
     userId: failUser.id,
     planId: 'assist',
-    billingDayOfMonth: 25,
+    billingDay: 25,
     startDate: joinDate,
   });
 
