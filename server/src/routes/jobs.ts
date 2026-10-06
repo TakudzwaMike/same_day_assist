@@ -4,8 +4,23 @@ import { requireAuth, requireRoles, AuthenticatedRequest } from '../middleware/a
 import { validate, jobCreateSchema, completionSchema, ratingSchema } from '../middleware/validation';
 import { writeAuditLog } from '../middleware/auditLog';
 import { Server as SocketServer } from 'socket.io';
+import {
+  getOrCreateActiveMembership,
+  calculateBenefitCoverage,
+  deductFromBenefit,
+} from '../services/benefitService';
 
 const router = Router();
+
+function generateClaimNumber(): string {
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  return `SDA-CLM-${rand}`;
+}
+
+function generateInvoiceNumber(): string {
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  return `SDA-INV-${rand}`;
+}
 
 function formatJob(j: any) {
   const isNonMember = j.customerType === 'NON_MEMBER_EMERGENCY';
@@ -106,6 +121,9 @@ export function createJobsRouter(io?: SocketServer) {
         customerVehicleStr = typeof req.body.vehicle === 'string' ? req.body.vehicle : JSON.stringify(req.body.vehicle);
       }
 
+      const membership = await getOrCreateActiveMembership(req.user!.id);
+      const claimNumber = generateClaimNumber();
+
       const job = await prisma.job.create({
         data: {
           customerType: 'MEMBER',
@@ -116,9 +134,25 @@ export function createJobsRouter(io?: SocketServer) {
           customerVehicle: customerVehicleStr,
           status: 'Requested',
           trackerProgress: 10,
+          claim: {
+            create: {
+              claimNumber,
+              userId: req.user!.id,
+              membershipId: membership.id,
+              serviceType: req.body.serviceType,
+              description: req.body.description,
+              vehicleOrProperty: customerVehicleStr ? 'Vehicle on file' : (customer.address || 'Member Residence'),
+              amountClaimed: 0,
+              amountApproved: 0,
+              amountDeductedFromBenefit: 0,
+              customerResponsibility: 0,
+              status: 'Submitted',
+            },
+          },
         },
         include: {
           customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          claim: true,
         },
       });
 
@@ -131,10 +165,10 @@ export function createJobsRouter(io?: SocketServer) {
         userId: req.user!.id,
         userType: 'Customer',
         action: 'Member Service Requested',
-        details: `Member ${customer.name} requested service: ${req.body.serviceType} — "${req.body.description}"`,
+        details: `Member ${customer.name} requested service: ${req.body.serviceType} — "${req.body.description}". Linked claim ${claimNumber} created.`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
-        newValue: { jobId: job.id, serviceType: job.serviceType, customerType: 'MEMBER' },
+        newValue: { jobId: job.id, serviceType: job.serviceType, customerType: 'MEMBER', claimNumber },
       });
 
       return res.status(201).json(formattedJob);
@@ -251,17 +285,118 @@ export function createJobsRouter(io?: SocketServer) {
     }
 
     try {
-      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          customer: { include: { memberships: { where: { status: 'Active' }, take: 1 } } },
+          claim: true,
+          assignedContractor: true,
+        },
+      });
       if (!job) return res.status(404).json({ error: 'Job not found' });
 
       const newStatus = status || 'Work Completed';
+      let benefitCovered = 0;
+      let customerPayable = amountNum;
+      let paymentStatus = 'Payment Due';
+
+      // If customer is a member, calculate and deduct from annual assistance benefit automatically
+      if (job.customerId) {
+        const coverage = await calculateBenefitCoverage({
+          userId: job.customerId,
+          totalServiceAmount: amountNum,
+          partsAmount: req.body.partsAmount ? parseFloat(req.body.partsAmount) : 0,
+          labourAmount: req.body.labourAmount ? parseFloat(req.body.labourAmount) : amountNum,
+        });
+
+        benefitCovered = coverage.amountCoveredByBenefit;
+        customerPayable = coverage.amountPayableByCustomer;
+        paymentStatus = customerPayable === 0 ? 'Paid' : 'Payment Due';
+
+        let claimRecord = job.claim;
+        if (!claimRecord) {
+          claimRecord = await prisma.claim.create({
+            data: {
+              claimNumber: generateClaimNumber(),
+              userId: job.customerId,
+              membershipId: job.customer?.memberships[0]?.id || null,
+              jobId: job.id,
+              serviceType: job.serviceType,
+              description: job.description,
+              amountClaimed: amountNum,
+              amountApproved: amountNum,
+              amountDeductedFromBenefit: benefitCovered,
+              customerResponsibility: customerPayable,
+              status: 'Approved',
+            },
+          });
+        } else {
+          claimRecord = await prisma.claim.update({
+            where: { id: claimRecord.id },
+            data: {
+              amountClaimed: amountNum,
+              amountApproved: amountNum,
+              amountDeductedFromBenefit: benefitCovered,
+              customerResponsibility: customerPayable,
+              status: 'Approved',
+              completedAt: new Date(),
+            },
+          });
+        }
+
+        // Deduct from benefit if covered
+        if (benefitCovered > 0) {
+          await deductFromBenefit({
+            userId: job.customerId,
+            amountToDeduct: benefitCovered,
+            description: `Job ${job.id} (${job.serviceType}) Benefit Allowance`,
+            reference: claimRecord.claimNumber,
+            claimId: claimRecord.id,
+            adminOverride: Boolean(req.body.adminOverride),
+            overrideReason: req.body.overrideReason,
+            actorId: req.user!.id,
+            actorRole: req.user!.role,
+          });
+        }
+
+        // Generate / Update Invoice
+        const existingInvoice = await prisma.invoice.findFirst({ where: { jobId: job.id } });
+        if (!existingInvoice) {
+          await prisma.invoice.create({
+            data: {
+              invoiceNumber: generateInvoiceNumber(),
+              userId: job.customerId,
+              membershipId: job.customer?.memberships[0]?.id || null,
+              jobId: job.id,
+              claimId: claimRecord.id,
+              customerName: job.customer?.name || 'Member',
+              customerEmail: job.customer?.email || null,
+              customerAddress: job.customer?.address || null,
+              membershipPlan: job.customer?.memberships[0]?.planName || job.customer?.package || 'Assist Plus',
+              serviceRequested: job.serviceType,
+              technicianName: job.assignedContractor?.name || 'Same Day Assist Certified Responder',
+              parts: req.body.partsAmount ? parseFloat(req.body.partsAmount) : 0,
+              labour: req.body.labourAmount ? parseFloat(req.body.labourAmount) : amountNum,
+              subtotal: amountNum,
+              taxVat: parseFloat((amountNum * 0.15).toFixed(2)),
+              total: amountNum,
+              amountCoveredByBenefit: benefitCovered,
+              amountPayableByCustomer: customerPayable,
+              paymentStatus: customerPayable === 0 ? 'Paid' : 'Unpaid',
+              invoiceStatus: 'Issued',
+              paidAt: customerPayable === 0 ? new Date() : null,
+              notes: coverage.explanation,
+            },
+          });
+        }
+      }
 
       const updated = await prisma.job.update({
         where: { id: req.params.id },
         data: {
           finalAmount: amountNum,
           servicePerformed: servicePerformed || job.servicePerformed || 'Emergency Assistance Performed',
-          paymentStatus: job.paymentStatus === 'Paid' ? 'Paid' : 'Payment Due',
+          paymentStatus: job.paymentStatus === 'Paid' ? 'Paid' : paymentStatus,
           status: newStatus,
           trackerProgress: 95,
           completedAt: new Date(),

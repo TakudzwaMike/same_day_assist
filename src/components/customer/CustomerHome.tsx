@@ -2,20 +2,24 @@ import React, { useState } from 'react';
 import { 
   Shield, AlertTriangle, Phone, CreditCard, 
   Zap, Droplet, Hammer, Camera, Send, Info, CheckCircle,
-  FileText, Edit3 
+  FileText, Edit3, X, Check, ArrowRight, RefreshCw
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ServiceCategory } from '../../types';
 import { SERVICE_PACKAGES } from '../../data/staticData';
+import { PLANS } from '../../data/plans';
+import { api } from '../../services/api';
 import EmptyState from '../shared/EmptyState';
 import ConfirmDialog from '../shared/ConfirmDialog';
+import { BenefitBalanceCard } from './BenefitBalanceCard';
+import { BenefitHistoryModal } from './BenefitHistoryModal';
 
 interface CustomerHomeProps {
   activeCustomer: any;
   activeJob: any;
   assignedContractor: any;
-  onNavigateTab: (tab: 'home' | 'profile' | 'invoices') => void;
+  onNavigateTab: (tab: any) => void;
 }
 
 export default function CustomerHome({
@@ -45,6 +49,30 @@ export default function CustomerHome({
   const [isEmergencyArmed, setIsEmergencyArmed] = useState(false);
   const [isTriggeringEmergency, setIsTriggeringEmergency] = useState(false);
   const [isConfirmPanicOpen, setIsConfirmPanicOpen] = useState(false);
+
+  // Membership & Benefit State
+  const [isBenefitHistoryOpen, setIsBenefitHistoryOpen] = useState(false);
+  const [isChangePlanOpen, setIsChangePlanOpen] = useState(false);
+  const [selectedNewPlanId, setSelectedNewPlanId] = useState(state.benefitSummary?.planId || 'assist-plus');
+  const [isSubmittingPlanChange, setIsSubmittingPlanChange] = useState(false);
+
+  const { refreshData } = useAppState();
+
+  const handleChangePlan = async () => {
+    if (!selectedNewPlanId) return;
+    setIsSubmittingPlanChange(true);
+    try {
+      await api.changeMyPlan(selectedNewPlanId);
+      await refreshData();
+      addAuditLogLocal('Plan Changed', `Member switched plan to: ${selectedNewPlanId}`);
+      alert('Membership plan successfully updated!');
+      setIsChangePlanOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to change membership plan');
+    } finally {
+      setIsSubmittingPlanChange(false);
+    }
+  };
 
   // Photo Attachment helper
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -380,29 +408,15 @@ export default function CustomerHome({
       {/* 6. MEMBERSHIP ACTIVE: Panic Dispatch Panel & Active Customer Features */}
       {(isApprovedCustomer || state.currentStep === 'MEMBERSHIP_ACTIVATED' || state.currentStep === 'CUSTOMER_LOGIN') && !activeJob && (
         <div className="flex flex-col gap-5 animate-fadeIn">
-          {/* ACTIVE MEMBERSHIP PROFILE CARD */}
-          <div className="bg-slate-900 text-white p-5 rounded-3xl border border-slate-800 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-red/20 border border-red/40 flex items-center justify-center text-red font-bold shrink-0">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold tracking-wide text-white">{activeCustomer?.name || 'Active Member'}</h3>
-                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    ● ACTIVE & COVERED
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {activeCustomer?.package || 'Diamond Assist'} Plan • {activeCustomer?.accountType || 'Residential'} • {activeCustomer?.address || 'Sandton, JHB'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 bg-slate-950 px-3.5 py-2 rounded-xl border border-slate-800">
-              <Zap className="w-3.5 h-3.5 text-red animate-pulse" />
-              <span>SLA: 15-MIN ARMED RESPONSE</span>
-            </div>
-          </div>
+          {/* PROMINENT ANNUAL ASSISTANCE BENEFIT BALANCE CARD */}
+          <BenefitBalanceCard
+            summary={state.benefitSummary}
+            onViewClaims={() => onNavigateTab('claims')}
+            onViewInvoices={() => onNavigateTab('invoices')}
+            onViewBenefitHistory={() => setIsBenefitHistoryOpen(true)}
+            onChangePlan={() => setIsChangePlanOpen(true)}
+          />
+
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center flex flex-col items-center justify-center gap-3">
             <h3 className="text-xs font-bold text-navy uppercase tracking-wider">EMERGENCY CRITICAL ASSISTANCE</h3>
             <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
@@ -585,6 +599,133 @@ export default function CustomerHome({
           </div>
         </div>
       )}
+
+      {/* BENEFIT AUDIT LEDGER MODAL */}
+      <BenefitHistoryModal
+        isOpen={isBenefitHistoryOpen}
+        onClose={() => setIsBenefitHistoryOpen(false)}
+        transactions={state.benefitSummary?.transactions || []}
+        planName={state.benefitSummary?.planName || 'Assist Plus'}
+        annualBenefit={state.benefitSummary?.annualBenefit || 0}
+        totalRemaining={state.benefitSummary?.remainingBenefit || 0}
+      />
+
+      {/* PLAN CHANGE MODAL */}
+      {isChangePlanOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-scaleUp">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[10px] font-mono font-bold text-red-600 uppercase tracking-widest block">
+                  MEMBERSHIP MANAGEMENT
+                </span>
+                <h3 className="text-lg font-black font-brand-header text-navy mt-0.5">
+                  Change Membership Plan
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Upgrade or switch your annual assistance allowance. Changes take effect immediately.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChangePlanOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {PLANS.map(plan => {
+                const isCurrent = state.benefitSummary?.planId === plan.id;
+                const isSelected = selectedNewPlanId === plan.id;
+
+                return (
+                  <div
+                    key={plan.id}
+                    onClick={() => setSelectedNewPlanId(plan.id)}
+                    className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'border-navy bg-navy/5 shadow-xs'
+                        : isCurrent
+                        ? 'border-emerald-300 bg-emerald-50/40'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-bold text-xs text-navy uppercase font-brand-header">
+                          {plan.name}
+                        </span>
+                        {isCurrent ? (
+                          <span className="text-[8.5px] font-mono font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase">
+                            CURRENT
+                          </span>
+                        ) : isSelected ? (
+                          <span className="w-2.5 h-2.5 bg-red-600 rounded-full"></span>
+                        ) : null}
+                      </div>
+
+                      <div className="text-base font-black font-brand-header text-navy">
+                        R{plan.monthlyPrice.toLocaleString()}<span className="text-[10px] font-normal text-slate-500 font-sans"> / mo</span>
+                      </div>
+
+                      <div className="text-[11px] font-mono text-emerald-700 font-bold mt-1">
+                        Benefit: {plan.annualBenefit === 0 ? 'R0 Parts Benefit' : `R${plan.annualBenefit.toLocaleString()} / year`}
+                      </div>
+
+                      <ul className="text-[10px] text-slate-600 space-y-1 mt-2.5 pt-2 border-t border-slate-100">
+                        {(plan.benefits || []).slice(0, 2).map((b, idx) => (
+                          <li key={idx} className="flex items-center gap-1.5">
+                            <Check className="w-3 h-3 text-red-600 shrink-0" />
+                            <span>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
+              <span className="font-bold text-navy uppercase tracking-wider block text-[10px]">Important Note:</span>
+              <p>
+                When switching plans, your annual assistance allowance is adjusted in the benefit ledger. Unused benefits from approved claims remain auditable in your historical ledger.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsChangePlanOpen(false)}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingPlanChange || selectedNewPlanId === state.benefitSummary?.planId}
+                onClick={handleChangePlan}
+                className="px-5 py-2.5 bg-navy hover:bg-navy-light disabled:bg-slate-300 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                {isSubmittingPlanChange ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Updating Plan...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Confirm Plan Change</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

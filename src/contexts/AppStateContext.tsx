@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { api } from '../services/api';
 import { getSocket, onNewJob, onJobUpdated } from '../services/socket';
 import { useAuth } from './AuthContext';
-import { AppState, Enquiry, Assessment, Quotation, Customer, Contractor, Job, Payment, AuditLog, JourneyStep } from '../types';
+import { AppState, Enquiry, Assessment, Quotation, Customer, Contractor, Job, Payment, AuditLog, JourneyStep, Claim, Invoice, BenefitSummary, BenefitTransaction } from '../types';
 import { INITIAL_CONTRACTORS, INITIAL_ENQUIRIES, INITIAL_CUSTOMERS } from '../data/staticData';
 
 interface AppStateContextType {
@@ -36,6 +36,14 @@ interface AppStateContextType {
   adminReviewSurvey: (enquiryId: string, decision: 'APPROVE' | 'REQUEST_INFO' | 'REJECT', notes?: string) => Promise<void>;
   processInitialPayment: (customerId: string, amount: number, paymentMethod: string) => Promise<void>;
   activateCustomerAccount: (customerId: string) => Promise<void>;
+  claims: Claim[];
+  invoices: Invoice[];
+  benefitSummary?: BenefitSummary;
+  refreshBenefitSummary: () => Promise<void>;
+  createClaim: (payload: { serviceType: string; description: string; vehicleOrProperty?: string; contractorName?: string; amountClaimed: number; jobId?: string; supportingDocs?: any }) => Promise<any>;
+  reviewClaim: (id: string, payload: any) => Promise<any>;
+  payInvoice: (id: string, payload?: { paymentMethod?: string; cardLast4?: string } | string) => Promise<any>;
+  changePlan: (planId: string, customerId?: string, reason?: string) => Promise<any>;
   clearError: () => void;
   updateState: (newState: Partial<AppState>) => void;
   addAuditLogLocal: (action: string, details: string) => void;
@@ -70,6 +78,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       vehicles: [],
       payments: [],
       auditLogs: [],
+      claims: [],
+      invoices: [],
+      benefitSummary: undefined,
       selectedRole: 'Customer',
       currentUserId: '',
     };
@@ -124,6 +135,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         promises.push(api.getMyAssessments().catch(() => []));
         promises.push(api.getMyPayments().catch(() => []));
         promises.push(api.getVehicles().catch(() => []));
+        promises.push(api.getMyBenefitSummary().catch(() => null));
+        promises.push(api.getMyClaims().catch(() => []));
+        promises.push(api.getMyInvoices().catch(() => []));
       } else if (isAdmin) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getEnquiries().catch(() => []));
@@ -135,10 +149,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         } else {
           promises.push(Promise.resolve({ logs: [] }));
         }
+        promises.push(api.getAllClaims().catch(() => []));
+        promises.push(api.getAllInvoices().catch(() => []));
       } else if (isDispatcher) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getEnquiries().catch(() => []));
         promises.push(api.getAllQuotations().catch(() => []));
+        promises.push(api.getAllClaims().catch(() => []));
+        promises.push(api.getAllInvoices().catch(() => []));
       } else if (isContractor) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getMyAssessments().catch(() => []));
@@ -163,6 +181,9 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.assessments = results[idx++] || [];
           updated.payments = results[idx++] || [];
           updated.vehicles = results[idx++] || [];
+          updated.benefitSummary = results[idx++] || undefined;
+          updated.claims = results[idx++] || [];
+          updated.invoices = results[idx++] || [];
         } else if (isAdmin) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
@@ -170,10 +191,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.payments = results[idx++] || [];
           updated.vehicles = results[idx++] || [];
           updated.auditLogs = results[idx++]?.logs || [];
+          updated.claims = results[idx++] || [];
+          updated.invoices = results[idx++] || [];
         } else if (isDispatcher) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
+          updated.claims = results[idx++] || [];
+          updated.invoices = results[idx++] || [];
         } else if (isContractor) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.assessments = results[idx++] || [];
@@ -724,12 +749,102 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     addAuditLogLocal('Account Service Activated', `Customer account ${customerId} successfully activated for full Same Day Assist access.`);
   };
 
+  const refreshBenefitSummary = useCallback(async () => {
+    try {
+      const summary = await api.getMyBenefitSummary();
+      setState(prev => {
+        const updated = { ...prev, benefitSummary: summary };
+        localStorage.setItem('sda_app_state', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (e) {
+      console.warn('Failed to refresh benefit summary:', e);
+    }
+  }, []);
+
+  const createClaim = useCallback(async (payload: any) => {
+    try {
+      const claim = await api.createClaim(payload);
+      setState(prev => {
+        const updated = { ...prev, claims: [claim, ...(prev.claims || [])] };
+        localStorage.setItem('sda_app_state', JSON.stringify(updated));
+        return updated;
+      });
+      await refreshBenefitSummary();
+      return claim;
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit claim');
+      throw err;
+    }
+  }, [refreshBenefitSummary]);
+
+  const reviewClaim = useCallback(async (id: string, payload: any) => {
+    try {
+      const updatedClaim = await api.reviewClaim(id, payload);
+      setState(prev => {
+        const updatedClaims = (prev.claims || []).map(c => c.id === id ? updatedClaim : c);
+        const updated = { ...prev, claims: updatedClaims };
+        localStorage.setItem('sda_app_state', JSON.stringify(updated));
+        return updated;
+      });
+      await refreshData();
+      return updatedClaim;
+    } catch (err: any) {
+      setError(err.message || 'Failed to review claim');
+      throw err;
+    }
+  }, [refreshData]);
+
+  const payInvoice = useCallback(async (id: string, payload?: any) => {
+    try {
+      const body = typeof payload === 'string' ? { paymentMethod: payload } : payload || {};
+      const res = await api.payInvoice(id, body);
+      setState(prev => {
+        const updatedInvoices = (prev.invoices || []).map(inv => inv.id === id ? res.invoice : inv);
+        const updated = { ...prev, invoices: updatedInvoices };
+        localStorage.setItem('sda_app_state', JSON.stringify(updated));
+        return updated;
+      });
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Failed to pay invoice');
+      throw err;
+    }
+  }, [refreshData]);
+
+  const changePlan = useCallback(async (planId: string, customerId?: string, reason?: string) => {
+    try {
+      const res = await api.changeMembershipPlan(planId, customerId, reason);
+      if (res.summary) {
+        setState(prev => {
+          const updated = { ...prev, benefitSummary: res.summary };
+          localStorage.setItem('sda_app_state', JSON.stringify(updated));
+          return updated;
+        });
+      }
+      await refreshData();
+      return res;
+    } catch (err: any) {
+      setError(err.message || 'Failed to change plan');
+      throw err;
+    }
+  }, [refreshData]);
+
   return (
     <AppStateContext.Provider value={{
       state,
       isLoading,
       error,
       refreshData,
+      claims: state.claims || [],
+      invoices: state.invoices || [],
+      benefitSummary: state.benefitSummary,
+      refreshBenefitSummary,
+      createClaim,
+      reviewClaim,
+      payInvoice,
+      changePlan,
       createEnquiry,
       scheduleAssessment,
       startAssessment,

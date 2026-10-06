@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck, ShieldCheck } from 'lucide-react';
+import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck, ShieldCheck, ShieldAlert, Award, Receipt } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import AdminDashboard from './admin/AdminDashboard';
@@ -10,6 +10,9 @@ import AuditLogViewer from './admin/AuditLogViewer';
 import { AdminProfileRequests } from './admin/AdminProfileRequests';
 import { AdminVettingQueue } from './admin/AdminVettingQueue';
 import { AdminOnboardingCommand } from './admin/AdminOnboardingCommand';
+import AdminClaimsManager from './admin/AdminClaimsManager';
+import AdminInvoicesManager from './admin/AdminInvoicesManager';
+import AdminMembershipsManager from './admin/AdminMembershipsManager';
 import logoImg from '../assets/logo.png';
 
 export default function AdminPortal() {
@@ -17,13 +20,15 @@ export default function AdminPortal() {
   const { user, logout } = useAuth();
   const role = user?.role || 'Dispatcher';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'onboarding' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
-    return role === 'Dispatcher' ? 'jobs' : 'onboarding';
+  const [activeTab, setActiveTab] = useState<'overview' | 'onboarding' | 'memberships' | 'claims' | 'invoices' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
+    return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
 
   const pendingEnquiries = state.enquiries.filter(e => e.status === 'Pending').length;
   const onboardingRequestsCount = state.enquiries.filter(e => e.status === 'WAITING_FOR_SURVEY' || e.status === 'SURVEY_COMPLETED').length;
   const criticalAlarms = state.jobs.filter(j => j.status === 'Requested').length;
+  const pendingClaimsCount = (state.claims || []).filter(c => c.status === 'Submitted' || c.status === 'Under Review').length;
+  const unpaidInvoicesCount = (state.invoices || []).filter(i => i.paymentStatus === 'UNPAID' || i.paymentStatus === 'PARTIALLY_PAID').length;
   const totalRevenue = state.payments.reduce((sum, p) => p.status === 'Paid' ? sum + p.amount : sum, 0);
 
   // Dynamic tabs based on user role permissions
@@ -31,10 +36,14 @@ export default function AdminPortal() {
   if (role === 'Dispatcher') {
     tabs.push({ id: 'onboarding', label: 'Onboarding Surveys', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'claims', label: 'Service Claims', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
   } else if (role === 'Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
+    tabs.push({ id: 'memberships', label: 'Customer Benefits', icon: Award });
+    tabs.push({ id: 'claims', label: 'Claims Audit', icon: ShieldAlert, badge: pendingClaimsCount });
+    tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
     tabs.push({ id: 'onboarding', label: 'Onboarding Survey Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
@@ -43,6 +52,9 @@ export default function AdminPortal() {
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
   } else if (role === 'Super Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
+    tabs.push({ id: 'memberships', label: 'Customer Benefits', icon: Award });
+    tabs.push({ id: 'claims', label: 'Claims Audit', icon: ShieldAlert, badge: pendingClaimsCount });
+    tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
     tabs.push({ id: 'onboarding', label: 'Onboarding Survey Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
@@ -144,6 +156,9 @@ export default function AdminPortal() {
       {/* RENDER VIEWS */}
       <div className="flex-1 p-8 overflow-y-auto bg-slate-50/55">
         {activeTab === 'overview' && <AdminDashboard />}
+        {activeTab === 'memberships' && <AdminMembershipsManager />}
+        {activeTab === 'claims' && <AdminClaimsManager />}
+        {activeTab === 'invoices' && <AdminInvoicesManager />}
         {activeTab === 'onboarding' && <AdminOnboardingCommand />}
         {activeTab === 'vetting' && <AdminVettingQueue />}
         {activeTab === 'enquiries' && <EnquiriesManager />}

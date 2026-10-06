@@ -12,6 +12,10 @@ async function main() {
   console.log('Seeding database...');
 
   // Clear existing data
+  await prisma.benefitTransaction.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.claim.deleteMany();
+  await prisma.membership.deleteMany();
   await prisma.notificationPreference.deleteMany();
   await prisma.fileRecord.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -341,24 +345,331 @@ async function main() {
     },
   });
 
-  // Seed Audit Logs
-  await prisma.auditLog.createMany({
-    data: [
-      {
-        id: 'log-001',
-        timestamp: new Date('2026-07-07T08:30:00Z'),
-        userType: 'Customer',
-        action: 'Enquiry Created',
-        details: 'Customer Lerato Molefe submitted an online enquiry for Security assessment.',
-      },
-      {
-        id: 'log-002',
-        timestamp: new Date('2026-07-07T09:00:00Z'),
-        userType: 'Administrator',
-        action: 'Enquiry Received',
-        details: 'System registered and queued Lerato Molefe\'s enquiry for property assessment.',
-      },
-    ],
+  // Seed Memberships, Claims, Invoices, and Benefit Transactions
+  // 1. Bright: ASSIST PLUS (R1,499/mo, R15,000 annual benefit)
+  const brightMembership = await prisma.membership.create({
+    data: {
+      userId: bright.id,
+      planId: 'assist_plus',
+      planName: 'Assist Plus',
+      monthlyPrice: 1499,
+      annualBenefit: 15000,
+      benefitYearStart: new Date('2026-01-01T00:00:00Z'),
+      benefitYearEnd: new Date('2026-12-31T23:59:59Z'),
+      status: 'Active',
+    },
+  });
+
+  // Bright Opening Benefit Transaction
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: brightMembership.id,
+      userId: bright.id,
+      date: new Date('2026-01-01T08:00:00Z'),
+      reference: 'OPENING-2026',
+      description: 'Opening Annual Assistance Benefit Allocation',
+      credit: 15000,
+      debit: 0,
+      balance: 15000,
+    },
+  });
+
+  // Bright Claim 1: SDA-000124 (01 October 2026) — Vehicle / Gate Motor Repair
+  const brightClaim1 = await prisma.claim.create({
+    data: {
+      claimNumber: 'SDA-000124',
+      userId: bright.id,
+      membershipId: brightMembership.id,
+      serviceType: 'Security Services',
+      description: 'Vehicle perimeter barrier and automated gate motor actuator repair',
+      vehicleOrProperty: '77 Sunset Boulevard Main Driveway',
+      contractorName: 'Sipho Ndlovu (Apex CCTV & Security)',
+      amountClaimed: 2500,
+      amountApproved: 2500,
+      amountDeductedFromBenefit: 2500,
+      customerResponsibility: 0,
+      status: 'Completed',
+      submittedAt: new Date('2026-10-01T09:15:00Z'),
+      reviewedAt: new Date('2026-10-01T10:00:00Z'),
+      completedAt: new Date('2026-10-01T14:30:00Z'),
+    },
+  });
+
+  // Bright Invoice 1
+  const brightInv1 = await prisma.invoice.create({
+    data: {
+      invoiceNumber: 'SDA-INV-000124',
+      userId: bright.id,
+      membershipId: brightMembership.id,
+      claimId: brightClaim1.id,
+      customerName: bright.name,
+      customerEmail: bright.email,
+      customerAddress: bright.address,
+      membershipPlan: 'Assist Plus',
+      serviceRequested: 'Vehicle Gate Barrier & Actuator Repair',
+      technicianName: 'Sipho Ndlovu (Apex CCTV & Security)',
+      parts: 1500,
+      labour: 1000,
+      otherCharges: 0,
+      subtotal: 2500,
+      taxVat: 375,
+      total: 2500,
+      amountCoveredByBenefit: 2500,
+      amountPayableByCustomer: 0,
+      paymentStatus: 'Paid',
+      invoiceStatus: 'Settled',
+      paidAt: new Date('2026-10-01T14:30:00Z'),
+      date: new Date('2026-10-01T14:30:00Z'),
+      notes: '100% covered under member annual assistance benefit. Customer payable: R0.00',
+    },
+  });
+
+  // Bright Benefit Transaction 1 (Debit R2,500 -> Balance R12,500)
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: brightMembership.id,
+      userId: bright.id,
+      claimId: brightClaim1.id,
+      invoiceId: brightInv1.id,
+      date: new Date('2026-10-01T14:30:00Z'),
+      reference: 'SDA-000124',
+      description: 'Vehicle & Barrier Repair Claim #SDA-000124',
+      credit: 0,
+      debit: 2500,
+      balance: 12500,
+    },
+  });
+
+  // Bright Claim 2: SDA-000137 (15 October 2026) — Electrical Repair
+  const brightClaim2 = await prisma.claim.create({
+    data: {
+      claimNumber: 'SDA-000137',
+      userId: bright.id,
+      membershipId: brightMembership.id,
+      serviceType: 'Electrical Assistance',
+      description: 'High-voltage perimeter fence power supply unit diagnostic and fault finding',
+      vehicleOrProperty: '77 Sunset Boulevard North Perimeter',
+      contractorName: 'Jan de Klerk',
+      amountClaimed: 1000,
+      amountApproved: 1000,
+      amountDeductedFromBenefit: 1000,
+      customerResponsibility: 0,
+      status: 'Completed',
+      submittedAt: new Date('2026-10-15T11:00:00Z'),
+      reviewedAt: new Date('2026-10-15T11:30:00Z'),
+      completedAt: new Date('2026-10-15T15:00:00Z'),
+    },
+  });
+
+  // Bright Invoice 2
+  const brightInv2 = await prisma.invoice.create({
+    data: {
+      invoiceNumber: 'SDA-INV-000137',
+      userId: bright.id,
+      membershipId: brightMembership.id,
+      claimId: brightClaim2.id,
+      customerName: bright.name,
+      customerEmail: bright.email,
+      customerAddress: bright.address,
+      membershipPlan: 'Assist Plus',
+      serviceRequested: 'Perimeter Power Supply Diagnostic',
+      technicianName: 'Jan de Klerk',
+      parts: 0,
+      labour: 1000,
+      otherCharges: 0,
+      subtotal: 1000,
+      taxVat: 150,
+      total: 1000,
+      amountCoveredByBenefit: 1000,
+      amountPayableByCustomer: 0,
+      paymentStatus: 'Paid',
+      invoiceStatus: 'Settled',
+      paidAt: new Date('2026-10-15T15:00:00Z'),
+      date: new Date('2026-10-15T15:00:00Z'),
+      notes: '100% covered under member annual assistance benefit. Customer payable: R0.00',
+    },
+  });
+
+  // Bright Benefit Transaction 2 (Debit R1,000 -> Balance R11,500)
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: brightMembership.id,
+      userId: bright.id,
+      claimId: brightClaim2.id,
+      invoiceId: brightInv2.id,
+      date: new Date('2026-10-15T15:00:00Z'),
+      reference: 'SDA-000137',
+      description: 'Electrical Repair Claim #SDA-000137',
+      credit: 0,
+      debit: 1000,
+      balance: 11500,
+    },
+  });
+
+  // 2. Thabo Mokoena: ASSIST PRO (R2,999/mo, R40,000 annual benefit)
+  const thaboMembership = await prisma.membership.create({
+    data: {
+      userId: thabo.id,
+      planId: 'assist_pro',
+      planName: 'Assist Pro',
+      monthlyPrice: 2999,
+      annualBenefit: 40000,
+      benefitYearStart: new Date('2026-01-15T00:00:00Z'),
+      benefitYearEnd: new Date('2027-01-14T23:59:59Z'),
+      status: 'Active',
+    },
+  });
+
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: thaboMembership.id,
+      userId: thabo.id,
+      date: new Date('2026-01-15T08:00:00Z'),
+      reference: 'OPENING-2026',
+      description: 'Opening Annual Assistance Benefit Allocation (Assist Pro)',
+      credit: 40000,
+      debit: 0,
+      balance: 40000,
+    },
+  });
+
+  const thaboClaim = await prisma.claim.create({
+    data: {
+      claimNumber: 'SDA-CLM-000088',
+      userId: thabo.id,
+      membershipId: thaboMembership.id,
+      serviceType: 'Plumbing Assistance',
+      description: 'Main burst pipe emergency isolation and structural repair',
+      vehicleOrProperty: '88 Grayston Drive Commercial Complex',
+      contractorName: 'Sarah Naidoo',
+      amountClaimed: 4500,
+      amountApproved: 4500,
+      amountDeductedFromBenefit: 4500,
+      customerResponsibility: 0,
+      status: 'Completed',
+      submittedAt: new Date('2026-08-10T14:00:00Z'),
+      reviewedAt: new Date('2026-08-10T14:30:00Z'),
+      completedAt: new Date('2026-08-10T18:00:00Z'),
+    },
+  });
+
+  const thaboInv = await prisma.invoice.create({
+    data: {
+      invoiceNumber: 'SDA-INV-000088',
+      userId: thabo.id,
+      membershipId: thaboMembership.id,
+      claimId: thaboClaim.id,
+      customerName: thabo.name,
+      customerEmail: thabo.email,
+      customerAddress: thabo.address,
+      membershipPlan: 'Assist Pro',
+      serviceRequested: 'Burst Water Pipe Emergency Isolation',
+      technicianName: 'Sarah Naidoo',
+      parts: 2200,
+      labour: 2300,
+      otherCharges: 0,
+      subtotal: 4500,
+      taxVat: 675,
+      total: 4500,
+      amountCoveredByBenefit: 4500,
+      amountPayableByCustomer: 0,
+      paymentStatus: 'Paid',
+      invoiceStatus: 'Settled',
+      paidAt: new Date('2026-08-10T18:00:00Z'),
+      date: new Date('2026-08-10T18:00:00Z'),
+      notes: 'Fully covered under annual benefit. Customer payable: R0.00',
+    },
+  });
+
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: thaboMembership.id,
+      userId: thabo.id,
+      claimId: thaboClaim.id,
+      invoiceId: thaboInv.id,
+      date: new Date('2026-08-10T18:00:00Z'),
+      reference: 'SDA-CLM-000088',
+      description: 'Plumbing Repair Claim #SDA-CLM-000088',
+      credit: 0,
+      debit: 4500,
+      balance: 35500,
+    },
+  });
+
+  // 3. Lerato Molefe: ASSIST (R799/mo, R0 Parts Benefit)
+  const leratoMembership = await prisma.membership.create({
+    data: {
+      userId: lerato.id,
+      planId: 'assist',
+      planName: 'Assist',
+      monthlyPrice: 799,
+      annualBenefit: 0,
+      benefitYearStart: new Date('2026-01-10T00:00:00Z'),
+      benefitYearEnd: new Date('2027-01-09T23:59:59Z'),
+      status: 'Active',
+    },
+  });
+
+  await prisma.benefitTransaction.create({
+    data: {
+      membershipId: leratoMembership.id,
+      userId: lerato.id,
+      date: new Date('2026-01-10T08:00:00Z'),
+      reference: 'OPENING-2026',
+      description: 'Opening Annual Assistance Benefit Allocation (Assist - R0 Parts Benefit)',
+      credit: 0,
+      debit: 0,
+      balance: 0,
+    },
+  });
+
+  // Lerato Claim demonstrating R0 Parts Benefit: Labour is covered, parts are billed to member account
+  const leratoClaim = await prisma.claim.create({
+    data: {
+      claimNumber: 'SDA-CLM-000042',
+      userId: lerato.id,
+      membershipId: leratoMembership.id,
+      serviceType: 'Security Services',
+      description: 'Alarm panel diagnostics and sensor backup battery replacement',
+      vehicleOrProperty: '12 West Street Residence',
+      contractorName: 'Marcus Nkosi',
+      amountClaimed: 1350,
+      amountApproved: 1350,
+      amountDeductedFromBenefit: 0,
+      customerResponsibility: 650, // parts cost billed to member
+      status: 'Completed',
+      submittedAt: new Date('2026-09-05T10:00:00Z'),
+      reviewedAt: new Date('2026-09-05T10:30:00Z'),
+      completedAt: new Date('2026-09-05T13:00:00Z'),
+    },
+  });
+
+  const leratoInv = await prisma.invoice.create({
+    data: {
+      invoiceNumber: 'SDA-INV-000042',
+      userId: lerato.id,
+      membershipId: leratoMembership.id,
+      claimId: leratoClaim.id,
+      customerName: lerato.name,
+      customerEmail: lerato.email,
+      customerAddress: lerato.address,
+      membershipPlan: 'Assist',
+      serviceRequested: 'Alarm Panel Diagnostic & Battery Replacement',
+      technicianName: 'Marcus Nkosi',
+      parts: 650,
+      labour: 700,
+      otherCharges: 0,
+      subtotal: 1350,
+      taxVat: 202.5,
+      total: 1350,
+      amountCoveredByBenefit: 0,
+      amountPayableByCustomer: 650,
+      paymentStatus: 'Paid',
+      invoiceStatus: 'Settled',
+      paidAt: new Date('2026-09-05T13:00:00Z'),
+      date: new Date('2026-09-05T13:00:00Z'),
+      notes: 'Assist Plan: Labour & fault finding (R700) covered under plan. Replacement battery hardware (R650) billed to member account.',
+    },
   });
 
   console.log('Seeding complete successfully.');

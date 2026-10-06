@@ -52,9 +52,10 @@ export async function writeAuditLog(params: {
   newValue?: any;
 }) {
   try {
+    const validUserId = params.userId && params.userId !== 'system' ? params.userId : null;
     await prisma.auditLog.create({
       data: {
-        userId: params.userId || null,
+        userId: validUserId,
         userType: params.userType,
         action: params.action,
         result: params.result || 'Success',

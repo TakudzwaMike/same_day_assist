@@ -105,35 +105,116 @@ export async function generateQuotationPDF(data: {
 
 export async function generateInvoicePDF(data: {
   id: string;
+  invoiceNumber?: string;
   customerName: string;
-  customerEmail: string;
-  type: string;
-  amount: number;
+  customerEmail?: string;
+  customerAddress?: string;
+  membershipPlan?: string;
+  serviceRequested?: string;
+  serviceReference?: string;
+  claimNumber?: string;
+  technicianName?: string;
+  parts?: number;
+  labour?: number;
+  otherCharges?: number;
+  subtotal?: number;
+  taxVat?: number;
+  total?: number;
+  amountCoveredByBenefit?: number;
+  amountPayableByCustomer?: number;
+  type?: string;
+  amount?: number;
   date: string;
   status: string;
+  invoiceStatus?: string;
 }): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 40, info: { Title: `Invoice ${data.id}`, Author: 'Same Day Assist' } });
+    const doc = new PDFDocument({ size: 'A4', margin: 40, info: { Title: `Tax Invoice ${data.invoiceNumber || data.id}`, Author: 'Same Day Assist' } });
     const buffers: Buffer[] = [];
     doc.on('data', chunk => buffers.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(buffers)));
     doc.on('error', reject);
 
-    drawHeader(doc, 'TAX INVOICE');
+    drawHeader(doc, 'OFFICIAL TAX INVOICE');
     doc.moveDown(4);
 
-    sectionTitle(doc, 'INVOICE DETAILS');
+    const invNo = data.invoiceNumber || data.id;
+    const invDate = new Date(data.date).toLocaleDateString('en-ZA');
+
+    sectionTitle(doc, 'INVOICE & MEMBER INFORMATION');
     doc.moveDown(0.3);
-    row(doc, 'Invoice Reference', data.id);
-    row(doc, 'Client Name', data.customerName);
-    row(doc, 'Email', data.customerEmail);
-    row(doc, 'Service Type', data.type);
-    row(doc, 'Invoice Date', new Date(data.date).toLocaleDateString('en-ZA'));
-    row(doc, 'Status', data.status);
+    row(doc, 'Tax Invoice Number', invNo);
+    row(doc, 'Date of Issue', invDate);
+    row(doc, 'Member Name', data.customerName);
+    if (data.customerEmail) row(doc, 'Member Email', data.customerEmail);
+    if (data.customerAddress) row(doc, 'Service Address', data.customerAddress);
+    if (data.membershipPlan) row(doc, 'Membership Plan', data.membershipPlan);
+    if (data.serviceReference) row(doc, 'Service Request #', data.serviceReference);
+    if (data.claimNumber) row(doc, 'Claim Reference #', data.claimNumber);
+    if (data.technicianName) row(doc, 'Assigned Technician', data.technicianName);
+    row(doc, 'Service Provided', data.serviceRequested || data.type || 'On-Demand Emergency Assistance');
+
+    doc.moveDown(1);
+    sectionTitle(doc, 'COST BREAKDOWN & FINANCIAL STATEMENT');
+    doc.moveDown(0.3);
+
+    // Table header
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill('#E2E8F0');
+    doc.fillColor(BRAND_NAVY).fontSize(8).font('Helvetica-Bold').text('Cost Category', 54, doc.y - 14, { width: 320, continued: true });
+    doc.text('Amount (ZAR)', { align: 'right', width: 120 });
+
+    const partsCost = data.parts !== undefined ? data.parts : 0;
+    const labourCost = data.labour !== undefined ? data.labour : (data.amount !== undefined ? data.amount : 0);
+    const otherCost = data.otherCharges !== undefined ? data.otherCharges : 0;
+    const grossTotal = data.total !== undefined ? data.total : (data.amount !== undefined ? data.amount : partsCost + labourCost + otherCost);
+    const benefitCovered = data.amountCoveredByBenefit !== undefined ? data.amountCoveredByBenefit : 0;
+    const customerPayable = data.amountPayableByCustomer !== undefined ? data.amountPayableByCustomer : Math.max(0, grossTotal - benefitCovered);
+
+    const costItems = [
+      { desc: 'Certified Labour & Diagnostics', cost: labourCost },
+      { desc: 'Hardware Replacement & Parts', cost: partsCost },
+    ];
+    if (otherCost > 0) {
+      costItems.push({ desc: 'Ancillary / Dispatch Charges', cost: otherCost });
+    }
+
+    costItems.forEach((item, i) => {
+      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill('#F8FAFC');
+      doc.fillColor('#334155').fontSize(8).font('Helvetica').text(item.desc, 54, doc.y - 12, { width: 320, continued: true });
+      doc.fillColor(BRAND_NAVY).font('Helvetica-Bold').text(`R ${item.cost.toFixed(2)}`, { align: 'right', width: 120 });
+    });
+
+    // Subtotal & Gross Total
+    doc.moveDown(0.4);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill('#F1F5F9');
+    doc.fillColor(BRAND_NAVY).fontSize(8).font('Helvetica-Bold').text('GROSS SERVICE TOTAL:', 54, doc.y - 14, { continued: true, width: 320 });
+    doc.text(`R ${grossTotal.toFixed(2)}`, { align: 'right', width: 120 });
+
+    // Benefit allowance deduction
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 20).fill('#DCFCE7'); // light emerald
+    doc.fillColor('#166534').fontSize(8.5).font('Helvetica-Bold')
+      .text('LESS: COVERED BY ANNUAL ASSISTANCE BENEFIT:', 54, doc.y - 15, { continued: true, width: 320 });
+    doc.text(`- R ${benefitCovered.toFixed(2)}`, { align: 'right', width: 120 });
+
+    // Customer payable balance
+    doc.moveDown(0.4);
+    const payableColor = customerPayable > 0 ? BRAND_RED : BRAND_NAVY;
+    doc.rect(48, doc.y, doc.page.width - 96, 26).fill(payableColor);
+    doc.fillColor('white').fontSize(11).font('Helvetica-Bold')
+      .text('NET AMOUNT PAYABLE BY CUSTOMER:', 54, doc.y - 19, { continued: true, width: 320 });
+    doc.text(`R ${customerPayable.toFixed(2)}`, { align: 'right', width: 120 });
+
+    // Status strip
+    doc.moveDown(1.5);
+    const paymentStatus = data.status || (customerPayable === 0 ? 'Covered' : 'Unpaid');
+    doc.rect(48, doc.y, doc.page.width - 96, 22).fill('#F8FAFC');
+    doc.fillColor(BRAND_GREY).fontSize(8).font('Helvetica')
+      .text(`Invoice Status: ${data.invoiceStatus || 'Issued'}   •   Payment Status: ${paymentStatus.toUpperCase()}`, 54, doc.y - 16, { align: 'center', width: doc.page.width - 108 });
 
     doc.moveDown(1.5);
-    doc.rect(48, doc.y, doc.page.width - 96, 30).fill(BRAND_RED);
-    doc.fillColor('white').fontSize(14).font('Helvetica-Bold').text(`AMOUNT: R ${data.amount.toFixed(2)}`, 0, doc.y - 22, { align: 'center', width: doc.page.width });
+    doc.fillColor(BRAND_GREY).fontSize(7.5).font('Helvetica')
+      .text('All services are rendered according to Same Day Assist Membership Terms & Conditions. Assistance benefit deductions are recorded on your annual member benefit ledger.', 48, doc.y, { align: 'center', width: doc.page.width - 96 });
 
     drawFooter(doc);
     doc.end();

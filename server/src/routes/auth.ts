@@ -239,6 +239,7 @@ router.post('/onboarding', async (req: any, res: Response) => {
     companyName, companyRegNumber, vatNumber, industry, address,
     preferredContactMethod, emergencyContactName, emergencyContactPhone,
     preferredServices, communicationPreferences, password, savedLocations,
+    selectedPlanId,
   } = req.body;
 
   if (!email || !password || !name || !phone || !address) {
@@ -254,7 +255,14 @@ router.post('/onboarding', async (req: any, res: Response) => {
       return res.status(409).json({ error: 'An account with this email address already exists.' });
     }
 
+    const { getPlanById } = await import('../config/plans');
+    const chosenPlan = getPlanById(selectedPlanId || 'assist_plus');
+
     const passwordHash = await hashPassword(password);
+
+    const now = new Date();
+    const oneYearLater = new Date(now);
+    oneYearLater.setFullYear(now.getFullYear() + 1);
 
     const userData: any = {
       email: email.trim().toLowerCase(),
@@ -275,17 +283,39 @@ router.post('/onboarding', async (req: any, res: Response) => {
       industry: industry || null,
       communicationPreferences: communicationPreferences ? JSON.stringify(communicationPreferences) : null,
       status: 'Active',
-      package: 'Diamond',
-      memberSince: new Date().toISOString().split('T')[0],
+      package: chosenPlan.name,
+      memberSince: now.toISOString().split('T')[0],
       repairsCount: 0,
       totalPaid: 0.0,
-      lastProfileUpdateAt: new Date(),
+      lastProfileUpdateAt: now,
       notificationSettings: {
         create: {
           email: true,
           sms: true,
           push: true,
           inApp: true,
+        },
+      },
+      memberships: {
+        create: {
+          planId: chosenPlan.id,
+          planName: chosenPlan.name,
+          monthlyPrice: chosenPlan.monthlyPrice,
+          annualBenefit: chosenPlan.annualBenefit,
+          benefitYearStart: now,
+          benefitYearEnd: oneYearLater,
+          status: 'Active',
+          benefitTransactions: {
+            create: {
+              userId: '', // Will be set by Prisma nested connect/create
+              reference: `OPENING-${now.getFullYear()}`,
+              description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
+              credit: chosenPlan.annualBenefit,
+              debit: 0,
+              balance: chosenPlan.annualBenefit,
+              date: now,
+            },
+          },
         },
       },
     };
@@ -302,9 +332,37 @@ router.post('/onboarding', async (req: any, res: Response) => {
       };
     }
 
+    // Since nested BenefitTransaction references userId, we create user first then membership with transactions
+    delete userData.memberships;
+
     const user = await prisma.user.create({
       data: userData,
       include: { savedLocations: true, notificationSettings: true },
+    });
+
+    // Create Membership & opening transaction for the user
+    await prisma.membership.create({
+      data: {
+        userId: user.id,
+        planId: chosenPlan.id,
+        planName: chosenPlan.name,
+        monthlyPrice: chosenPlan.monthlyPrice,
+        annualBenefit: chosenPlan.annualBenefit,
+        benefitYearStart: now,
+        benefitYearEnd: oneYearLater,
+        status: 'Active',
+        benefitTransactions: {
+          create: {
+            userId: user.id,
+            reference: `OPENING-${now.getFullYear()}`,
+            description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
+            credit: chosenPlan.annualBenefit,
+            debit: 0,
+            balance: chosenPlan.annualBenefit,
+            date: now,
+          },
+        },
+      },
     });
 
     // Create linked Enquiry for initial onboarding record
@@ -315,7 +373,7 @@ router.post('/onboarding', async (req: any, res: Response) => {
         phone,
         address,
         serviceCategory: preferredServices && preferredServices.length > 0 ? preferredServices[0] : 'Security Services',
-        notes: `Completed comprehensive 7-step onboarding. Preferred services: ${preferredServices ? preferredServices.join(', ') : 'All On-Demand Services'}`,
+        notes: `Selected Plan: ${chosenPlan.name} (R${chosenPlan.monthlyPrice}/mo, R${chosenPlan.annualBenefit.toLocaleString()} annual benefit). Preferred services: ${preferredServices ? preferredServices.join(', ') : 'All On-Demand Services'}`,
         status: 'Approved',
       },
     });

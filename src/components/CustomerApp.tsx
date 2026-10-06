@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import CustomerHome from './customer/CustomerHome';
 import CustomerProfile from './customer/CustomerProfile';
 import CustomerInvoices from './customer/CustomerInvoices';
+import CustomerClaims from './customer/CustomerClaims';
 import CustomerActiveJob from './customer/CustomerActiveJob';
 import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
@@ -17,7 +18,7 @@ import logoImg from '../assets/logo.png';
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'vehicles' | 'locations' | 'contacts' | 'wallet'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -125,6 +126,23 @@ export default function CustomerApp() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveDeviceTab('claims')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'claims'
+                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
+                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-slate-500" />
+            <span>My Claims</span>
+            {state.claims && state.claims.length > 0 && (
+              <span className="bg-navy text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                {state.claims.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveDeviceTab('invoices')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
               activeDeviceTab === 'invoices'
@@ -200,8 +218,11 @@ export default function CustomerApp() {
           {activeDeviceTab === 'profile' && (
             <CustomerProfile activeCustomer={activeCustomer} />
           )}
+          {activeDeviceTab === 'claims' && (
+            <CustomerClaims onNavigateTab={setActiveDeviceTab} />
+          )}
           {activeDeviceTab === 'invoices' && (
-            <CustomerInvoices activeCustomer={activeCustomer} />
+            <CustomerInvoices activeCustomer={activeCustomer} onNavigateTab={setActiveDeviceTab} />
           )}
         </div>
       </div>

@@ -288,16 +288,19 @@ export interface VehicleInfo {
 
 export interface Vehicle {
   id: string;
-  userId: string;
+  userId?: string;
+  customerId?: string;
   make: string;
   model: string;
-  year: number;
+  year: number | string;
   licensePlate: string;
   color: string;
   vinNumber?: string;
+  vin?: string;
   notes?: string;
-  createdAt: string;
+  createdAt?: string;
   updatedAt?: string;
+  [key: string]: any;
 }
 
 export interface Job {
@@ -363,9 +366,12 @@ export interface Job {
 export interface AuditLog {
   id: string;
   timestamp: string;
-  userType: UserRole;
+  userType?: UserRole;
   action: string;
   details: string;
+  user?: string;
+  actor?: string;
+  [key: string]: any;
 }
 
 export interface Payment {
@@ -450,6 +456,142 @@ export type JourneyStep =
   | 'CUSTOMER_RATING'
   | 'JOB_CLOSED';
 
+export interface Membership {
+  id: string;
+  userId: string;
+  planId: string;
+  planName: string;
+  monthlyPrice: number;
+  annualBenefit: number;
+  benefitYearStart: string;
+  benefitYearEnd: string;
+  status: string;
+  autoRenew: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BenefitTransaction {
+  id: string;
+  membershipId?: string;
+  userId?: string;
+  claimId?: string;
+  invoiceId?: string;
+  date?: string;
+  reference: string;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  claim?: Partial<Claim>;
+  invoice?: Partial<Invoice>;
+  createdAt?: string;
+  notes?: string;
+}
+
+export interface BenefitSummary {
+  membershipId?: string;
+  userId?: string;
+  planId: string;
+  planName: string;
+  monthlyPrice: number;
+  annualBenefit: number;
+  isPartsBenefitZero: boolean;
+  partsBenefitDescription?: string;
+  usedBenefit: number;
+  remainingBenefit: number;
+  usagePercentage: number;
+  remainingPercentage: number;
+  benefitYearStart?: string;
+  benefitYearEnd?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  status?: string;
+  claimsCount?: number;
+  invoicesCount?: number;
+  transactions?: BenefitTransaction[];
+}
+
+export interface Claim {
+  id: string;
+  claimNumber: string;
+  userId?: string;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  membershipPlan?: string;
+  membershipId?: string;
+  jobId?: string;
+  serviceType: string;
+  description: string;
+  vehicleOrProperty?: string;
+  vehicleDetails?: string;
+  propertyAddress?: string;
+  contractorName?: string;
+  labourCost?: number;
+  partsCost?: number;
+  amountClaimed: number;
+  amountApproved: number;
+  amountDeductedFromBenefit: number;
+  customerResponsibility: number;
+  status: 'Submitted' | 'Under Review' | 'Approved' | 'Rejected' | 'In Progress' | 'Completed' | 'Cancelled' | string;
+  rejectionReason?: string;
+  adminNotes?: string;
+  supportingDocs?: string;
+  adminOverride?: boolean;
+  overrideReason?: string;
+  submittedAt?: string;
+  createdAt?: string;
+  reviewedAt?: string;
+  completedAt?: string;
+  invoice?: Invoice;
+  membership?: Partial<Membership>;
+  user?: Partial<Customer>;
+  job?: Partial<Job>;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  date?: string;
+  issueDate?: string;
+  userId?: string;
+  customerId?: string;
+  membershipId?: string;
+  claimId?: string;
+  jobId?: string;
+  customerName: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  membershipPlan: string;
+  serviceRequested?: string;
+  serviceType?: string;
+  serviceDescription?: string;
+  technicianName?: string;
+  contractorName?: string;
+  parts?: number;
+  partsCost?: number;
+  labour?: number;
+  labourCost?: number;
+  otherCharges?: number;
+  subtotal: number;
+  taxVat?: number;
+  taxAmount?: number;
+  total?: number;
+  totalAmount?: number;
+  amountCoveredByBenefit: number;
+  amountPayableByCustomer: number;
+  paymentStatus: 'Unpaid' | 'Paid' | 'Partially Paid' | 'Waived' | 'PAID' | 'UNPAID' | 'PARTIALLY_PAID' | string;
+  invoiceStatus: 'Issued' | 'Settled' | 'Cancelled' | 'Draft' | 'PAID' | 'ISSUED' | string;
+  paidAt?: string;
+  paymentMethod?: string;
+  notes?: string;
+  claim?: Partial<Claim>;
+  job?: Partial<Job>;
+  membership?: Partial<Membership>;
+  user?: Partial<Customer>;
+}
+
 export interface ServicePackage {
   id: string;
   name: string;
@@ -468,9 +610,13 @@ export interface AppState {
   vehicles?: Vehicle[];
   payments: Payment[];
   auditLogs: AuditLog[];
+  claims: Claim[];
+  invoices: Invoice[];
+  benefitSummary?: BenefitSummary;
   selectedRole: UserRole;
   currentUserId: string;
   isLoggedIn?: boolean;
 }
+
 
 

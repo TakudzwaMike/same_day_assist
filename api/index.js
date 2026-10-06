@@ -1,3 +1,180 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// server/src/config/plans.ts
+var plans_exports = {};
+__export(plans_exports, {
+  MEMBERSHIP_PLANS: () => MEMBERSHIP_PLANS,
+  PLANS: () => PLANS,
+  PLANS_LIST: () => PLANS_LIST,
+  getPlanById: () => getPlanById,
+  getPlanConfig: () => getPlanConfig,
+  isPartsBenefitZero: () => isPartsBenefitZero
+});
+function getPlanById(planId) {
+  const normalized = (planId || "").toLowerCase().replace(/[\s-]/g, "_");
+  return MEMBERSHIP_PLANS[normalized] || MEMBERSHIP_PLANS["assist_plus"];
+}
+function isPartsBenefitZero(planId) {
+  return getPlanById(planId).isPartsBenefitZero === true;
+}
+var MEMBERSHIP_PLANS, PLANS, PLANS_LIST, getPlanConfig;
+var init_plans = __esm({
+  "server/src/config/plans.ts"() {
+    MEMBERSHIP_PLANS = {
+      assist: {
+        id: "assist",
+        name: "Assist",
+        monthlyPrice: 799,
+        annualBenefit: 0,
+        partsBenefitDescription: "R0 Parts Benefit",
+        badge: "Essential Labour",
+        description: "Rapid emergency response, fault finding, and certified technician labour for cost-conscious members.",
+        benefits: [
+          "Same-day assistance",
+          "Labour & fault finding",
+          "Parts & replacements on member's account"
+        ],
+        limitations: [
+          "R0 Parts Benefit \u2014 all parts, spares, and hardware replacements are billed to the member account",
+          "Does not provide an annual monetary benefit allowance for hardware"
+        ],
+        whatYouReceive: [
+          "Immediate priority dispatch for emergency callouts",
+          "100% covered labor and diagnostics for fault finding",
+          "Itemised trade invoices for approved hardware replacements"
+        ],
+        isPartsBenefitZero: true
+      },
+      assist_plus: {
+        id: "assist_plus",
+        name: "Assist Plus",
+        monthlyPrice: 1499,
+        annualBenefit: 15e3,
+        partsBenefitDescription: "R15,000 / year",
+        badge: "Most Popular",
+        description: "Ideal for standard residential homes needing emergency coverage and parts allowance.",
+        benefits: [
+          "Same-day assistance",
+          "Repairs & replacements up to R15,000 per year",
+          "Electrical & plumbing when introduced"
+        ],
+        limitations: [
+          "Benefit capped at R15,000 per 12-month membership period",
+          "Costs exceeding R15,000 are the responsibility of the member"
+        ],
+        whatYouReceive: [
+          "Up to R15,000 annual assistance benefit for parts and repairs",
+          "Priority certified contractor dispatch",
+          "Zero co-pay on services covered within your annual benefit balance"
+        ]
+      },
+      assist_pro: {
+        id: "assist_pro",
+        name: "Assist Pro",
+        monthlyPrice: 2999,
+        annualBenefit: 4e4,
+        partsBenefitDescription: "R40,000 / year",
+        badge: "Comprehensive",
+        description: "Enhanced coverage for larger homes and complex residential security infrastructure.",
+        benefits: [
+          "Same-day assistance",
+          "Repairs & replacements up to R40,000 per year",
+          "Electrical & plumbing when introduced"
+        ],
+        limitations: [
+          "Benefit capped at R40,000 per 12-month membership period",
+          "Costs exceeding R40,000 are the responsibility of the member"
+        ],
+        whatYouReceive: [
+          "Up to R40,000 annual assistance benefit for repairs and components",
+          "Guaranteed same-day SLA response",
+          "Full electrical, plumbing & security system diagnostics"
+        ]
+      },
+      assist_elite: {
+        id: "assist_elite",
+        name: "Assist Elite",
+        monthlyPrice: 3499,
+        annualBenefit: 6e4,
+        partsBenefitDescription: "R60,000 / year",
+        badge: "Executive",
+        description: "Premium protection designed for high-value properties and multi-system installations.",
+        benefits: [
+          "Same-day assistance",
+          "Repairs & replacements up to R60,000 per year",
+          "Electrical & plumbing when introduced"
+        ],
+        limitations: [
+          "Benefit capped at R60,000 per 12-month membership period",
+          "Costs exceeding R60,000 are the responsibility of the member"
+        ],
+        whatYouReceive: [
+          "Up to R60,000 annual assistance benefit allowance",
+          "VIP dispatch routing and rapid response priority",
+          "Full coverage of replacement automation motors, boards, and sensors"
+        ]
+      },
+      residential_advanced: {
+        id: "residential_advanced",
+        name: "Residential Advanced",
+        monthlyPrice: 4999,
+        annualBenefit: 8e4,
+        partsBenefitDescription: "R80,000 / year",
+        badge: "Estate Living",
+        description: "Extensive annual allowance for luxury estates, multi-building residences, and farms.",
+        benefits: [
+          "Same-day assistance",
+          "Repairs & replacements up to R80,000 per year",
+          "Electrical & plumbing when introduced"
+        ],
+        limitations: [
+          "Benefit capped at R80,000 per 12-month membership period",
+          "Costs exceeding R80,000 are the responsibility of the member"
+        ],
+        whatYouReceive: [
+          "Up to R80,000 annual assistance benefit allowance",
+          "Multi-structure perimeter, CCTV, and electrical response",
+          "Dedicated operations management support"
+        ]
+      },
+      business_advanced: {
+        id: "business_advanced",
+        name: "Business Advanced",
+        monthlyPrice: 8999,
+        annualBenefit: 15e4,
+        partsBenefitDescription: "R150,000 / year",
+        badge: "Commercial Enterprise",
+        description: "Maximum coverage for commercial facilities, offices, retail centres, and industrial operations.",
+        benefits: [
+          "Same-day assistance",
+          "Repairs & replacements up to R150,000 per year",
+          "Electrical & plumbing when introduced"
+        ],
+        limitations: [
+          "Benefit capped at R150,000 per 12-month membership period",
+          "Costs exceeding R150,000 are the responsibility of the business"
+        ],
+        whatYouReceive: [
+          "Up to R150,000 annual assistance benefit allowance",
+          "Commercial access control, perimeter, and power assistance",
+          "Custom corporate billing and consolidated monthly reporting"
+        ]
+      }
+    };
+    PLANS = MEMBERSHIP_PLANS;
+    PLANS_LIST = Object.values(MEMBERSHIP_PLANS);
+    getPlanConfig = getPlanById;
+  }
+});
+
 // server/src/vercel-handler.ts
 import express from "express";
 import cors from "cors";
@@ -129,8 +306,10 @@ var quotationSchema = z.object({
   })).min(1, "At least one line item required")
 });
 var jobCreateSchema = z.object({
-  serviceType: z.enum(["Security", "Electrical", "Plumbing", "Construction"]),
-  description: z.string().min(10, "Please describe the emergency in detail").max(2e3),
+  serviceType: z.string().min(1, "Service type is required"),
+  description: z.string().min(5, "Please describe the emergency in detail").max(2e3),
+  vehicle: z.any().optional(),
+  customerAddress: z.string().optional(),
   photoUrl: z.string().optional(),
   videoUrl: z.string().optional()
 });
@@ -156,9 +335,10 @@ var notificationPrefSchema = z.object({
 // server/src/middleware/auditLog.ts
 async function writeAuditLog(params) {
   try {
+    const validUserId = params.userId && params.userId !== "system" ? params.userId : null;
     await prisma.auditLog.create({
       data: {
-        userId: params.userId || null,
+        userId: validUserId,
         userType: params.userType,
         action: params.action,
         result: params.result || "Success",
@@ -415,7 +595,8 @@ router.post("/onboarding", async (req, res) => {
     preferredServices,
     communicationPreferences,
     password,
-    savedLocations
+    savedLocations,
+    selectedPlanId
   } = req.body;
   if (!email || !password || !name || !phone || !address) {
     return res.status(400).json({ error: "Name, email, phone number, physical address, and password are required." });
@@ -427,7 +608,12 @@ router.post("/onboarding", async (req, res) => {
     if (existing) {
       return res.status(409).json({ error: "An account with this email address already exists." });
     }
+    const { getPlanById: getPlanById2 } = await Promise.resolve().then(() => (init_plans(), plans_exports));
+    const chosenPlan = getPlanById2(selectedPlanId || "assist_plus");
     const passwordHash = await hashPassword(password);
+    const now = /* @__PURE__ */ new Date();
+    const oneYearLater = new Date(now);
+    oneYearLater.setFullYear(now.getFullYear() + 1);
     const userData = {
       email: email.trim().toLowerCase(),
       passwordHash,
@@ -447,17 +633,40 @@ router.post("/onboarding", async (req, res) => {
       industry: industry || null,
       communicationPreferences: communicationPreferences ? JSON.stringify(communicationPreferences) : null,
       status: "Active",
-      package: "Diamond",
-      memberSince: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+      package: chosenPlan.name,
+      memberSince: now.toISOString().split("T")[0],
       repairsCount: 0,
       totalPaid: 0,
-      lastProfileUpdateAt: /* @__PURE__ */ new Date(),
+      lastProfileUpdateAt: now,
       notificationSettings: {
         create: {
           email: true,
           sms: true,
           push: true,
           inApp: true
+        }
+      },
+      memberships: {
+        create: {
+          planId: chosenPlan.id,
+          planName: chosenPlan.name,
+          monthlyPrice: chosenPlan.monthlyPrice,
+          annualBenefit: chosenPlan.annualBenefit,
+          benefitYearStart: now,
+          benefitYearEnd: oneYearLater,
+          status: "Active",
+          benefitTransactions: {
+            create: {
+              userId: "",
+              // Will be set by Prisma nested connect/create
+              reference: `OPENING-${now.getFullYear()}`,
+              description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
+              credit: chosenPlan.annualBenefit,
+              debit: 0,
+              balance: chosenPlan.annualBenefit,
+              date: now
+            }
+          }
         }
       }
     };
@@ -472,9 +681,33 @@ router.post("/onboarding", async (req, res) => {
         }))
       };
     }
+    delete userData.memberships;
     const user = await prisma.user.create({
       data: userData,
       include: { savedLocations: true, notificationSettings: true }
+    });
+    await prisma.membership.create({
+      data: {
+        userId: user.id,
+        planId: chosenPlan.id,
+        planName: chosenPlan.name,
+        monthlyPrice: chosenPlan.monthlyPrice,
+        annualBenefit: chosenPlan.annualBenefit,
+        benefitYearStart: now,
+        benefitYearEnd: oneYearLater,
+        status: "Active",
+        benefitTransactions: {
+          create: {
+            userId: user.id,
+            reference: `OPENING-${now.getFullYear()}`,
+            description: `Initial Annual Benefit Allocation (${chosenPlan.name})`,
+            credit: chosenPlan.annualBenefit,
+            debit: 0,
+            balance: chosenPlan.annualBenefit,
+            date: now
+          }
+        }
+      }
     });
     await prisma.enquiry.create({
       data: {
@@ -483,7 +716,7 @@ router.post("/onboarding", async (req, res) => {
         phone,
         address,
         serviceCategory: preferredServices && preferredServices.length > 0 ? preferredServices[0] : "Security Services",
-        notes: `Completed comprehensive 7-step onboarding. Preferred services: ${preferredServices ? preferredServices.join(", ") : "All On-Demand Services"}`,
+        notes: `Selected Plan: ${chosenPlan.name} (R${chosenPlan.monthlyPrice}/mo, R${chosenPlan.annualBenefit.toLocaleString()} annual benefit). Preferred services: ${preferredServices ? preferredServices.join(", ") : "All On-Demand Services"}`,
         status: "Approved"
       }
     });
@@ -1666,7 +1899,270 @@ var profileRequests_default = router11;
 
 // server/src/routes/jobs.ts
 import { Router as Router12 } from "express";
+
+// server/src/services/benefitService.ts
+init_plans();
+async function getOrCreateActiveMembership(userId, requestedPlanId) {
+  let membership = await prisma.membership.findFirst({
+    where: { userId, status: "Active" },
+    orderBy: { createdAt: "desc" },
+    include: {
+      benefitTransactions: {
+        orderBy: { createdAt: "desc" }
+      }
+    }
+  });
+  if (!membership) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("User not found");
+    const planKey = requestedPlanId || (user.package ? user.package.toLowerCase().replace(/[\s-]/g, "_") : "assist_plus");
+    const plan = getPlanById(planKey);
+    const now = /* @__PURE__ */ new Date();
+    const oneYearLater = new Date(now);
+    oneYearLater.setFullYear(now.getFullYear() + 1);
+    membership = await prisma.membership.create({
+      data: {
+        userId,
+        planId: plan.id,
+        planName: plan.name,
+        monthlyPrice: plan.monthlyPrice,
+        annualBenefit: plan.annualBenefit,
+        benefitYearStart: now,
+        benefitYearEnd: oneYearLater,
+        status: "Active",
+        benefitTransactions: {
+          create: {
+            userId,
+            reference: "OPENING-" + now.getFullYear(),
+            description: `Annual Benefit Allocation (${plan.name})`,
+            credit: plan.annualBenefit,
+            debit: 0,
+            balance: plan.annualBenefit,
+            date: now
+          }
+        }
+      },
+      include: {
+        benefitTransactions: {
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+    await writeAuditLog({
+      userId,
+      userType: user.role,
+      action: "Membership Activated",
+      details: `Active membership for plan ${plan.name} initialized with annual benefit allowance of R${plan.annualBenefit.toLocaleString()}`,
+      newValue: {
+        membershipId: membership.id,
+        planId: plan.id,
+        annualBenefit: plan.annualBenefit
+      }
+    });
+  }
+  return membership;
+}
+async function getMemberBenefitSummary(userId) {
+  const membership = await getOrCreateActiveMembership(userId);
+  const transactions = await prisma.benefitTransaction.findMany({
+    where: { membershipId: membership.id },
+    orderBy: { date: "desc" },
+    include: {
+      claim: { select: { id: true, claimNumber: true, serviceType: true, status: true } },
+      invoice: { select: { id: true, invoiceNumber: true, total: true, paymentStatus: true } }
+    }
+  });
+  const totalDebits = transactions.reduce((acc, t) => acc + (t.debit || 0), 0);
+  const totalCredits = transactions.reduce((acc, t) => acc + (t.credit || 0), 0);
+  const annualAllowance = membership.annualBenefit;
+  const usedBenefit = totalDebits;
+  const remainingBenefit = Math.max(0, annualAllowance - usedBenefit);
+  const usagePercentage = annualAllowance > 0 ? Math.min(100, parseFloat((usedBenefit / annualAllowance * 100).toFixed(2))) : 0;
+  const remainingPercentage = annualAllowance > 0 ? Math.max(0, parseFloat((remainingBenefit / annualAllowance * 100).toFixed(2))) : 0;
+  const [claimsCount, invoicesCount] = await Promise.all([
+    prisma.claim.count({ where: { userId } }),
+    prisma.invoice.count({ where: { userId } })
+  ]);
+  const plan = getPlanById(membership.planId);
+  return {
+    membershipId: membership.id,
+    planId: membership.planId,
+    planName: membership.planName,
+    monthlyPrice: membership.monthlyPrice,
+    annualBenefit: membership.annualBenefit,
+    isPartsBenefitZero: membership.planId === "assist" || membership.annualBenefit === 0,
+    partsBenefitDescription: plan.partsBenefitDescription,
+    usedBenefit,
+    remainingBenefit,
+    usagePercentage,
+    remainingPercentage,
+    benefitYearStart: membership.benefitYearStart.toISOString(),
+    benefitYearEnd: membership.benefitYearEnd.toISOString(),
+    status: membership.status,
+    claimsCount,
+    invoicesCount,
+    transactions
+  };
+}
+async function calculateBenefitCoverage(arg1, arg2, arg3) {
+  let userId;
+  let totalServiceAmount = 0;
+  let partsAmount = 0;
+  let labourAmount = 0;
+  if (typeof arg1 === "object") {
+    userId = arg1.userId;
+    totalServiceAmount = Number(arg1.totalServiceAmount ?? arg1.amount ?? arg1.totalAmount ?? 0);
+    partsAmount = Number(arg1.partsAmount ?? 0);
+    labourAmount = Number(arg1.labourAmount ?? 0);
+  } else {
+    userId = arg1;
+    totalServiceAmount = Number(arg2 ?? 0);
+    partsAmount = Number(arg3?.partsAmount ?? 0);
+    labourAmount = Number(arg3?.labourAmount ?? 0);
+  }
+  const summary = await getMemberBenefitSummary(userId);
+  if (summary.isPartsBenefitZero) {
+    const coveredLabour = labourAmount > 0 ? labourAmount : 0;
+    const customerPayable = partsAmount > 0 ? partsAmount : totalServiceAmount;
+    const amountCoveredByBenefit2 = 0;
+    return {
+      annualBenefit: 0,
+      availableBenefit: 0,
+      usedBenefit: 0,
+      isPartsBenefitZero: true,
+      coveredAmount: amountCoveredByBenefit2,
+      amountCoveredByBenefit: amountCoveredByBenefit2,
+      customerPayable,
+      amountPayableByCustomer: customerPayable,
+      exceededBy: customerPayable,
+      coveredLabour,
+      partsCustomerPayable: partsAmount,
+      explanation: "Assist Plan: Labour & fault finding included. Parts & replacements billed directly to member account (R0 parts benefit)."
+    };
+  }
+  const availableBenefit = summary.remainingBenefit;
+  const amountCoveredByBenefit = Math.min(totalServiceAmount, availableBenefit);
+  const amountPayableByCustomer = Math.max(0, totalServiceAmount - amountCoveredByBenefit);
+  return {
+    annualBenefit: summary.annualBenefit,
+    availableBenefit,
+    usedBenefit: summary.usedBenefit,
+    isPartsBenefitZero: false,
+    coveredAmount: amountCoveredByBenefit,
+    amountCoveredByBenefit,
+    customerPayable: amountPayableByCustomer,
+    amountPayableByCustomer,
+    exceededBy: amountPayableByCustomer,
+    exceedsBenefit: amountPayableByCustomer > 0,
+    explanation: amountPayableByCustomer > 0 ? `Service total (R${totalServiceAmount.toFixed(2)}) exceeds available annual benefit (R${availableBenefit.toFixed(2)}). R${amountCoveredByBenefit.toFixed(2)} covered by assistance benefit, remaining R${amountPayableByCustomer.toFixed(2)} payable by member.` : `Service total of R${totalServiceAmount.toFixed(2)} is 100% covered by your available annual assistance benefit. Customer payable: R0.00.`
+  };
+}
+async function deductFromBenefit(params) {
+  const {
+    userId,
+    description,
+    reference,
+    claimId,
+    invoiceId,
+    overrideReason,
+    actorId,
+    actorRole = "System"
+  } = params;
+  const amountToDeduct = Number(params.amountToDeduct ?? params.amount ?? 0);
+  const adminOverride = Boolean(params.adminOverride ?? params.isOverride ?? false);
+  if (amountToDeduct <= 0) {
+    return {
+      remainingBenefit: 0,
+      usedBenefit: 0,
+      transaction: null
+    };
+  }
+  const membership = await getOrCreateActiveMembership(userId);
+  const summary = await getMemberBenefitSummary(userId);
+  if (summary.isPartsBenefitZero && !adminOverride) {
+    throw new Error("Assist plan has R0 parts benefit. Cannot deduct benefit allowance unless authorised by administrative override.");
+  }
+  if (amountToDeduct > summary.remainingBenefit && !adminOverride) {
+    throw new Error(
+      `Benefit limit exceeded. Requested deduction R${amountToDeduct.toFixed(2)} exceeds remaining annual allowance of R${summary.remainingBenefit.toFixed(2)}. Administrative override required.`
+    );
+  }
+  const previousBalance = summary.remainingBenefit;
+  const newBalance = Math.max(0, previousBalance - amountToDeduct);
+  const transaction = await prisma.benefitTransaction.create({
+    data: {
+      membershipId: membership.id,
+      userId,
+      claimId,
+      invoiceId,
+      date: /* @__PURE__ */ new Date(),
+      reference,
+      description: adminOverride ? `${description} [ADMIN OVERRIDE: ${overrideReason || "Approved"}]` : description,
+      debit: amountToDeduct,
+      credit: 0,
+      balance: newBalance
+    }
+  });
+  await writeAuditLog({
+    userId: actorId || userId,
+    userType: actorRole,
+    action: adminOverride ? "Benefit Deduction (Admin Override)" : "Benefit Deduction",
+    details: `Deducted R${amountToDeduct.toLocaleString()} from annual assistance benefit for ${reference}. Running balance: R${newBalance.toLocaleString()}. Reason: ${description}`,
+    newValue: { transactionId: transaction.id, remainingBenefit: newBalance, debit: amountToDeduct }
+  });
+  return {
+    transaction: {
+      ...transaction,
+      notes: overrideReason || description
+    },
+    remainingBenefit: newBalance,
+    usedBenefit: summary.usedBenefit + amountToDeduct,
+    membership
+  };
+}
+
+// server/src/routes/jobs.ts
 var router12 = Router12();
+function generateClaimNumber() {
+  const rand = Math.floor(1e5 + Math.random() * 9e5);
+  return `SDA-CLM-${rand}`;
+}
+function generateInvoiceNumber() {
+  const rand = Math.floor(1e5 + Math.random() * 9e5);
+  return `SDA-INV-${rand}`;
+}
+function formatJob(j) {
+  const isNonMember = j.customerType === "NON_MEMBER_EMERGENCY";
+  let parsedVehicle = null;
+  if (j.customerVehicle) {
+    try {
+      parsedVehicle = typeof j.customerVehicle === "string" ? JSON.parse(j.customerVehicle) : j.customerVehicle;
+    } catch {
+      parsedVehicle = j.customerVehicle;
+    }
+  }
+  let parsedResponderVehicle = null;
+  if (j.vehicleInfo) {
+    try {
+      parsedResponderVehicle = typeof j.vehicleInfo === "string" ? JSON.parse(j.vehicleInfo) : j.vehicleInfo;
+    } catch {
+      parsedResponderVehicle = j.vehicleInfo;
+    }
+  }
+  return {
+    ...j,
+    customerType: j.customerType || "MEMBER",
+    customerName: isNonMember ? j.nonMemberName || "Emergency Caller" : j.customer?.name || "Valued Member",
+    customerAddress: isNonMember ? j.nonMemberAddress || "On-Scene Location" : j.customer?.address || "Sandton, Johannesburg",
+    customerPhone: isNonMember ? j.nonMemberPhone || "" : j.customer?.phone || "",
+    customerEmail: isNonMember ? j.nonMemberEmail || "" : j.customer?.email || "",
+    customerVehicle: parsedVehicle,
+    vehicleInfo: parsedResponderVehicle,
+    finalAmount: j.finalAmount || 0,
+    paymentStatus: j.paymentStatus || "Pending",
+    servicePerformed: j.servicePerformed || null
+  };
+}
 function createJobsRouter(io) {
   router12.get("/", requireAuth, requireRoles("Administrator", "Super Administrator", "Contractor", "Dispatcher"), async (req, res) => {
     try {
@@ -1675,7 +2171,7 @@ function createJobsRouter(io) {
         jobs = await prisma.job.findMany({
           where: { assignedContractorId: req.user.id },
           include: {
-            customer: { select: { id: true, name: true, phone: true, address: true } },
+            customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
             assignedContractor: { select: { id: true, name: true, phone: true, specialty: true } }
           },
           orderBy: { createdAt: "desc" }
@@ -1683,20 +2179,15 @@ function createJobsRouter(io) {
       } else {
         jobs = await prisma.job.findMany({
           include: {
-            customer: { select: { id: true, name: true, phone: true, address: true } },
+            customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
             assignedContractor: { select: { id: true, name: true, phone: true, specialty: true } }
           },
           orderBy: { createdAt: "desc" }
         });
       }
-      const formatted = jobs.map((j) => ({
-        ...j,
-        customerName: j.customer?.name || "Valued Member",
-        customerAddress: j.customer?.address || "Sandton, Johannesburg",
-        customerPhone: j.customer?.phone || ""
-      }));
-      return res.json(formatted);
+      return res.json(jobs.map(formatJob));
     } catch (error) {
+      console.error("[Jobs/GET]", error);
       return res.status(500).json({ error: "Failed to retrieve jobs" });
     }
   });
@@ -1705,18 +2196,12 @@ function createJobsRouter(io) {
       const jobs = await prisma.job.findMany({
         where: { customerId: req.user.id },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } }
         },
         orderBy: { createdAt: "desc" }
       });
-      const formatted = jobs.map((j) => ({
-        ...j,
-        customerName: j.customer?.name || "Valued Member",
-        customerAddress: j.customer?.address || "Sandton, Johannesburg",
-        customerPhone: j.customer?.phone || ""
-      }));
-      return res.json(formatted);
+      return res.json(jobs.map(formatJob));
     } catch (error) {
       return res.status(500).json({ error: "Failed to retrieve jobs" });
     }
@@ -1729,39 +2214,333 @@ function createJobsRouter(io) {
       if (statusUpper !== "ACTIVE MEMBER" && statusUpper !== "ACTIVE") {
         return res.status(403).json({ error: "Your account is still undergoing onboarding." });
       }
+      let customerVehicleStr = null;
+      if (req.body.vehicle) {
+        customerVehicleStr = typeof req.body.vehicle === "string" ? req.body.vehicle : JSON.stringify(req.body.vehicle);
+      }
+      const membership = await getOrCreateActiveMembership(req.user.id);
+      const claimNumber = generateClaimNumber();
       const job = await prisma.job.create({
         data: {
+          customerType: "MEMBER",
           customerId: req.user.id,
           serviceType: req.body.serviceType,
           description: req.body.description,
           photoUrl: req.body.photoUrl,
+          customerVehicle: customerVehicleStr,
           status: "Requested",
-          trackerProgress: 10
+          trackerProgress: 10,
+          claim: {
+            create: {
+              claimNumber,
+              userId: req.user.id,
+              membershipId: membership.id,
+              serviceType: req.body.serviceType,
+              description: req.body.description,
+              vehicleOrProperty: customerVehicleStr ? "Vehicle on file" : customer.address || "Member Residence",
+              amountClaimed: 0,
+              amountApproved: 0,
+              amountDeductedFromBenefit: 0,
+              customerResponsibility: 0,
+              status: "Submitted"
+            }
+          }
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } }
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          claim: true
         }
       });
-      const formattedJob = {
-        ...job,
-        customerName: customer.name,
-        customerAddress: customer.address,
-        customerPhone: customer.phone
-      };
+      const formattedJob = formatJob(job);
       io?.to("admin-room").emit("new-job", formattedJob);
       await writeAuditLog({
         userId: req.user.id,
         userType: "Customer",
-        action: "On-Demand Service Requested",
-        details: `Customer ${customer.name} requested service: ${req.body.serviceType} \u2014 "${req.body.description}"`,
+        action: "Member Service Requested",
+        details: `Member ${customer.name} requested service: ${req.body.serviceType} \u2014 "${req.body.description}". Linked claim ${claimNumber} created.`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        newValue: { jobId: job.id, serviceType: job.serviceType }
+        newValue: { jobId: job.id, serviceType: job.serviceType, customerType: "MEMBER", claimNumber }
       });
       return res.status(201).json(formattedJob);
     } catch (error) {
       console.error("[Jobs/Create]", error);
       return res.status(500).json({ error: "Failed to create job request" });
+    }
+  });
+  router12.post("/emergency-non-member", async (req, res) => {
+    const { name, phone, email, address, serviceType, description, photoUrl, vehicle } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Customer name is required for emergency dispatch." });
+    }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ error: "Contact phone number is required so our response unit can reach you." });
+    }
+    if (!address || !address.trim()) {
+      return res.status(400).json({ error: "Emergency incident location or address is required." });
+    }
+    if (!serviceType || !serviceType.trim()) {
+      return res.status(400).json({ error: "Service category is required." });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: "Please describe the emergency incident." });
+    }
+    try {
+      let vehicleStr = null;
+      if (vehicle) {
+        vehicleStr = typeof vehicle === "string" ? vehicle : JSON.stringify(vehicle);
+      }
+      const job = await prisma.job.create({
+        data: {
+          customerType: "NON_MEMBER_EMERGENCY",
+          customerId: null,
+          nonMemberName: name.trim(),
+          nonMemberPhone: phone.trim(),
+          nonMemberEmail: email ? email.trim() : null,
+          nonMemberAddress: address.trim(),
+          customerVehicle: vehicleStr,
+          serviceType: serviceType.trim(),
+          description: description.trim(),
+          photoUrl: photoUrl || null,
+          status: "Requested",
+          trackerProgress: 10,
+          paymentStatus: "Pending",
+          finalAmount: 0
+        }
+      });
+      const formattedJob = formatJob(job);
+      io?.to("admin-room").emit("new-job", formattedJob);
+      await writeAuditLog({
+        userId: null,
+        userType: "Non-Member Emergency",
+        action: "Emergency Non-Member Request",
+        details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType} \u2014 "${description}"`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+        newValue: { jobId: job.id, customerType: "NON_MEMBER_EMERGENCY", name, phone, address }
+      });
+      return res.status(201).json({
+        success: true,
+        message: "Emergency request registered. Dispatch control room notified.",
+        job: formattedJob
+      });
+    } catch (error) {
+      console.error("[Jobs/EmergencyNonMember]", error);
+      return res.status(500).json({ error: "Failed to submit emergency assistance request" });
+    }
+  });
+  router12.get("/emergency-non-member/:id", async (req, res) => {
+    try {
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
+          payments: { select: { id: true, amount: true, status: true, paymentMethod: true, date: true } }
+        }
+      });
+      if (!job || job.customerType !== "NON_MEMBER_EMERGENCY") {
+        return res.status(404).json({ error: "Emergency request not found" });
+      }
+      return res.json(formatJob(job));
+    } catch (error) {
+      console.error("[Jobs/GetEmergencyNonMember]", error);
+      return res.status(500).json({ error: "Failed to retrieve emergency status" });
+    }
+  });
+  router12.patch("/:id/service-amount", requireAuth, requireRoles("Administrator", "Super Administrator", "Dispatcher", "Contractor"), async (req, res) => {
+    const { finalAmount, servicePerformed, status } = req.body;
+    const amountNum = parseFloat(finalAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      return res.status(400).json({ error: "Please provide a valid final service amount greater than zero." });
+    }
+    try {
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          customer: { include: { memberships: { where: { status: "Active" }, take: 1 } } },
+          claim: true,
+          assignedContractor: true
+        }
+      });
+      if (!job) return res.status(404).json({ error: "Job not found" });
+      const newStatus = status || "Work Completed";
+      let benefitCovered = 0;
+      let customerPayable = amountNum;
+      let paymentStatus = "Payment Due";
+      if (job.customerId) {
+        const coverage = await calculateBenefitCoverage({
+          userId: job.customerId,
+          totalServiceAmount: amountNum,
+          partsAmount: req.body.partsAmount ? parseFloat(req.body.partsAmount) : 0,
+          labourAmount: req.body.labourAmount ? parseFloat(req.body.labourAmount) : amountNum
+        });
+        benefitCovered = coverage.amountCoveredByBenefit;
+        customerPayable = coverage.amountPayableByCustomer;
+        paymentStatus = customerPayable === 0 ? "Paid" : "Payment Due";
+        let claimRecord = job.claim;
+        if (!claimRecord) {
+          claimRecord = await prisma.claim.create({
+            data: {
+              claimNumber: generateClaimNumber(),
+              userId: job.customerId,
+              membershipId: job.customer?.memberships[0]?.id || null,
+              jobId: job.id,
+              serviceType: job.serviceType,
+              description: job.description,
+              amountClaimed: amountNum,
+              amountApproved: amountNum,
+              amountDeductedFromBenefit: benefitCovered,
+              customerResponsibility: customerPayable,
+              status: "Approved"
+            }
+          });
+        } else {
+          claimRecord = await prisma.claim.update({
+            where: { id: claimRecord.id },
+            data: {
+              amountClaimed: amountNum,
+              amountApproved: amountNum,
+              amountDeductedFromBenefit: benefitCovered,
+              customerResponsibility: customerPayable,
+              status: "Approved",
+              completedAt: /* @__PURE__ */ new Date()
+            }
+          });
+        }
+        if (benefitCovered > 0) {
+          await deductFromBenefit({
+            userId: job.customerId,
+            amountToDeduct: benefitCovered,
+            description: `Job ${job.id} (${job.serviceType}) Benefit Allowance`,
+            reference: claimRecord.claimNumber,
+            claimId: claimRecord.id,
+            adminOverride: Boolean(req.body.adminOverride),
+            overrideReason: req.body.overrideReason,
+            actorId: req.user.id,
+            actorRole: req.user.role
+          });
+        }
+        const existingInvoice = await prisma.invoice.findFirst({ where: { jobId: job.id } });
+        if (!existingInvoice) {
+          await prisma.invoice.create({
+            data: {
+              invoiceNumber: generateInvoiceNumber(),
+              userId: job.customerId,
+              membershipId: job.customer?.memberships[0]?.id || null,
+              jobId: job.id,
+              claimId: claimRecord.id,
+              customerName: job.customer?.name || "Member",
+              customerEmail: job.customer?.email || null,
+              customerAddress: job.customer?.address || null,
+              membershipPlan: job.customer?.memberships[0]?.planName || job.customer?.package || "Assist Plus",
+              serviceRequested: job.serviceType,
+              technicianName: job.assignedContractor?.name || "Same Day Assist Certified Responder",
+              parts: req.body.partsAmount ? parseFloat(req.body.partsAmount) : 0,
+              labour: req.body.labourAmount ? parseFloat(req.body.labourAmount) : amountNum,
+              subtotal: amountNum,
+              taxVat: parseFloat((amountNum * 0.15).toFixed(2)),
+              total: amountNum,
+              amountCoveredByBenefit: benefitCovered,
+              amountPayableByCustomer: customerPayable,
+              paymentStatus: customerPayable === 0 ? "Paid" : "Unpaid",
+              invoiceStatus: "Issued",
+              paidAt: customerPayable === 0 ? /* @__PURE__ */ new Date() : null,
+              notes: coverage.explanation
+            }
+          });
+        }
+      }
+      const updated = await prisma.job.update({
+        where: { id: req.params.id },
+        data: {
+          finalAmount: amountNum,
+          servicePerformed: servicePerformed || job.servicePerformed || "Emergency Assistance Performed",
+          paymentStatus: job.paymentStatus === "Paid" ? "Paid" : paymentStatus,
+          status: newStatus,
+          trackerProgress: 95,
+          completedAt: /* @__PURE__ */ new Date()
+        },
+        include: {
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          assignedContractor: { select: { id: true, name: true, phone: true } }
+        }
+      });
+      const formatted = formatJob(updated);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit("job-updated", formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
+      io?.to("admin-room").emit("job-updated", formatted);
+      await writeAuditLog({
+        userId: req.user.id,
+        userType: req.user.role,
+        action: "Emergency Service Amount Set",
+        details: `Final amount of R${amountNum.toFixed(2)} set for Job ${job.id} (${job.customerType})`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+        newValue: { finalAmount: amountNum, servicePerformed, status: newStatus }
+      });
+      return res.json(formatted);
+    } catch (error) {
+      console.error("[Jobs/SetServiceAmount]", error);
+      return res.status(500).json({ error: "Failed to set service amount" });
+    }
+  });
+  router12.post("/emergency-non-member/:id/pay", async (req, res) => {
+    const { paymentMethod, cardLast4 } = req.body;
+    try {
+      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+      if (!job) return res.status(404).json({ error: "Emergency request not found" });
+      if (job.customerType !== "NON_MEMBER_EMERGENCY") {
+        return res.status(400).json({ error: "This payment route is only for one-time emergency requests" });
+      }
+      const amountToPay = job.finalAmount && job.finalAmount > 0 ? job.finalAmount : 850;
+      const payment = await prisma.payment.create({
+        data: {
+          customerId: null,
+          customerName: job.nonMemberName || "Emergency Non-Member Customer",
+          jobId: job.id,
+          type: "Emergency Assistance Service - Non-Member",
+          amount: amountToPay,
+          status: "Paid",
+          paymentMethod: paymentMethod || "Card Online",
+          date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+        }
+      });
+      const updatedJob = await prisma.job.update({
+        where: { id: job.id },
+        data: {
+          paymentStatus: "Paid",
+          status: "Service Completed",
+          trackerProgress: 100,
+          completedAt: job.completedAt || /* @__PURE__ */ new Date(),
+          closedAt: /* @__PURE__ */ new Date()
+        },
+        include: {
+          assignedContractor: { select: { id: true, name: true, phone: true } }
+        }
+      });
+      const formatted = formatJob(updatedJob);
+      io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
+      io?.to("admin-room").emit("job-updated", formatted);
+      await writeAuditLog({
+        userId: null,
+        userType: "Non-Member Emergency",
+        action: "One-Time Emergency Payment Completed",
+        details: `Non-member ${job.nonMemberName} paid full service amount of R${amountToPay.toFixed(2)} for Job ${job.id} via ${paymentMethod || "Card"} (Card: ****${cardLast4 || "4242"}). Request closed.`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+        newValue: { paymentId: payment.id, amount: amountToPay, status: "Paid", customerType: "NON_MEMBER_EMERGENCY" }
+      });
+      return res.json({
+        success: true,
+        message: "Payment confirmed! Emergency service marked as completed and paid.",
+        payment,
+        job: formatted
+      });
+    } catch (error) {
+      console.error("[Jobs/PayEmergency]", error);
+      return res.status(500).json({ error: "Failed to process payment" });
     }
   });
   router12.patch("/:id/assign", requireAuth, requireRoles("Administrator", "Super Administrator", "Dispatcher"), async (req, res) => {
@@ -1779,7 +2558,7 @@ function createJobsRouter(io) {
         make: "Toyota",
         model: "Hilux 4x4 Response Unit",
         licensePlate: "SDA-01-GP",
-        color: "White"
+        color: "Tactical White"
       });
       const updated = await prisma.job.update({
         where: { id: req.params.id },
@@ -1795,24 +2574,29 @@ function createJobsRouter(io) {
           distanceRemainingKm: 4.5
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true } }
         }
       });
       await prisma.user.update({ where: { id: contractorId }, data: { workload: { increment: 1 } } });
-      io.to(`contractor-${contractorId}`).emit("job-assigned", updated);
-      io.to(`customer-${job.customerId}`).emit("job-updated", updated);
+      const formatted = formatJob(updated);
+      io?.to(`contractor-${contractorId}`).emit("job-assigned", formatted);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit("job-updated", formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
+      io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
         userId: req.user.id,
         userType: req.user.role,
         action: "Service Provider Assigned",
-        details: `Dispatched ${contractor.name} to Job ${req.params.id} for ${job.customer.name}`,
+        details: `Dispatched ${contractor.name} to Job ${req.params.id} for ${job.nonMemberName || job.customer?.name || "Customer"}`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
         previousValue: { status: prevStatus },
         newValue: { status: "Service Provider Assigned", contractorId, contractorName: contractor.name }
       });
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       console.error("[Jobs/Assign]", error);
       return res.status(500).json({ error: "Failed to assign contractor" });
@@ -1822,14 +2606,22 @@ function createJobsRouter(io) {
     const { status } = req.body;
     const progressMap = {
       "Request Received": 10,
+      "Requested": 10,
       "Request Under Review": 20,
+      "Accepted": 25,
       "Service Provider Assigned": 35,
       "Preparing for Dispatch": 45,
       "Dispatched": 60,
       "En Route": 75,
       "Arrived": 85,
-      "Service In Progress": 95,
-      "Service Completed": 100
+      "Service In Progress": 90,
+      "In Progress": 90,
+      "Work Completed": 95,
+      "Payment Pending": 98,
+      "Service Completed": 100,
+      "Completed": 100,
+      "Paid": 100,
+      "Closed": 100
     };
     if (progressMap[status] === void 0) {
       return res.status(400).json({ error: `Invalid status: ${status}` });
@@ -1842,15 +2634,19 @@ function createJobsRouter(io) {
         data: {
           status,
           trackerProgress: progressMap[status],
-          completedAt: status === "Service Completed" ? /* @__PURE__ */ new Date() : job.completedAt
+          completedAt: ["Service Completed", "Completed", "Work Completed"].includes(status) ? /* @__PURE__ */ new Date() : job.completedAt
         },
         include: {
-          customer: { select: { id: true, name: true, phone: true, address: true } },
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
           assignedContractor: { select: { id: true, name: true, phone: true, lat: true, lng: true } }
         }
       });
-      io.to(`customer-${job.customerId}`).emit("job-updated", updated);
-      io.to("admin-room").emit("job-updated", updated);
+      const formatted = formatJob(updated);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit("job-updated", formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
+      io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
         userId: req.user.id,
         userType: req.user.role,
@@ -1861,8 +2657,9 @@ function createJobsRouter(io) {
         previousValue: { status: job.status },
         newValue: { status }
       });
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
+      console.error("[Jobs/Status]", error);
       return res.status(500).json({ error: "Failed to update job status" });
     }
   });
@@ -1886,8 +2683,11 @@ function createJobsRouter(io) {
         estimatedArrivalMinutes: job.estimatedArrivalMinutes,
         distanceRemainingKm: job.distanceRemainingKm
       };
-      io.to(`customer-${job.customerId}`).emit("contractor-location", locationPayload);
-      io.to("admin-room").emit("contractor-location", locationPayload);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit("contractor-location", locationPayload);
+      }
+      io?.to(`emergency-job-${job.id}`).emit("contractor-location", locationPayload);
+      io?.to("admin-room").emit("contractor-location", locationPayload);
       return res.json({ success: true, location: locationPayload });
     } catch (error) {
       return res.status(500).json({ error: "Failed to update live GPS location" });
@@ -1899,15 +2699,12 @@ function createJobsRouter(io) {
       const job = await prisma.job.findUnique({ where: { id: req.params.id }, include: { customer: true } });
       if (!job) return res.status(404).json({ error: "Job not found" });
       if (job.assignedContractorId !== req.user.id) return res.status(403).json({ error: "Not authorized" });
-      if (!["Arrived", "Repair In Progress", "Quality Inspection"].includes(job.status)) {
-        return res.status(400).json({ error: `Cannot complete job in status: ${job.status}` });
-      }
       const [updated] = await prisma.$transaction([
         prisma.job.update({
           where: { id: req.params.id },
           data: {
-            status: "Completed",
-            trackerProgress: 100,
+            status: "Work Completed",
+            trackerProgress: 95,
             completedAt: /* @__PURE__ */ new Date(),
             contractorNotes,
             contractorSignature,
@@ -1918,24 +2715,27 @@ function createJobsRouter(io) {
             assignedContractor: { select: { id: true, name: true } }
           }
         }),
-        // Decrement contractor workload
         prisma.user.update({
           where: { id: req.user.id },
           data: { workload: { decrement: 1 } }
         })
       ]);
-      io.to(`customer-${job.customerId}`).emit("job-updated", updated);
-      io.to("admin-room").emit("job-updated", updated);
+      const formatted = formatJob(updated);
+      if (job.customerId) {
+        io?.to(`customer-${job.customerId}`).emit("job-updated", formatted);
+      }
+      io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
+      io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
         userId: req.user.id,
         userType: req.user.role,
-        action: "Job Completed",
-        details: `Contractor resolved Job ${req.params.id} for ${job.customer.name}. Digital signature and completion report uploaded.`,
+        action: "Job Work Completed",
+        details: `Contractor completed work on Job ${req.params.id} for ${job.nonMemberName || job.customer?.name || "Customer"}.`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        newValue: { status: "Completed", hasSignature: !!contractorSignature }
+        newValue: { status: "Work Completed", hasSignature: !!contractorSignature }
       });
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       console.error("[Jobs/Complete]", error);
       return res.status(500).json({ error: "Failed to complete job" });
@@ -1947,7 +2747,6 @@ function createJobsRouter(io) {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: "Job not found" });
       if (job.customerId !== req.user.id) return res.status(403).json({ error: "Not authorized" });
-      if (job.status !== "Completed") return res.status(400).json({ error: "Job must be Completed before rating" });
       const updated = await prisma.job.update({
         where: { id: req.params.id },
         data: { status: "Closed", rating, ratingComment, closedAt: /* @__PURE__ */ new Date() }
@@ -1963,7 +2762,8 @@ function createJobsRouter(io) {
           data: { rating: Math.round(avgRating * 10) / 10 }
         });
       }
-      io.to("admin-room").emit("job-updated", updated);
+      const formatted = formatJob(updated);
+      io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
         userId: req.user.id,
         userType: "Customer",
@@ -1973,7 +2773,7 @@ function createJobsRouter(io) {
         userAgent: req.headers["user-agent"],
         newValue: { rating, ratingComment, status: "Closed" }
       });
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: "Failed to rate job" });
     }
@@ -1986,7 +2786,8 @@ function createJobsRouter(io) {
         where: { id: req.params.id },
         data: { status: "Closed", closedAt: /* @__PURE__ */ new Date() }
       });
-      io.to("admin-room").emit("job-updated", updated);
+      const formatted = formatJob(updated);
+      io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
         userId: req.user.id,
         userType: req.user.role,
@@ -1997,7 +2798,7 @@ function createJobsRouter(io) {
         previousValue: { status: job.status },
         newValue: { status: "Closed" }
       });
-      return res.json(updated);
+      return res.json(formatted);
     } catch (error) {
       return res.status(500).json({ error: "Failed to close job" });
     }
@@ -2433,6 +3234,113 @@ router16.post("/top-up", requireAuth, async (req, res) => {
 });
 var wallet_default = router16;
 
+// server/src/routes/vehicles.ts
+import { Router as Router17 } from "express";
+var router17 = Router17();
+router17.get("/", requireAuth, async (req, res) => {
+  try {
+    const isAdmin = req.user.role === "Administrator" || req.user.role === "Super Administrator";
+    const vehicles = await prisma.vehicle.findMany({
+      where: isAdmin ? {} : { userId: req.user.id },
+      include: isAdmin ? { user: { select: { id: true, name: true, email: true, phone: true } } } : void 0,
+      orderBy: { createdAt: "desc" }
+    });
+    return res.json(vehicles);
+  } catch (error) {
+    console.error("[Vehicles/GET]", error);
+    return res.status(500).json({ error: "Failed to fetch vehicles" });
+  }
+});
+router17.post("/", requireAuth, async (req, res) => {
+  const { make, model, year, licensePlate, color, vinNumber, notes } = req.body;
+  if (!make || !model || !licensePlate) {
+    return res.status(400).json({ error: "Vehicle make, model, and license plate are required." });
+  }
+  const parsedYear = year ? parseInt(year, 10) : (/* @__PURE__ */ new Date()).getFullYear();
+  if (isNaN(parsedYear) || parsedYear < 1900 || parsedYear > (/* @__PURE__ */ new Date()).getFullYear() + 2) {
+    return res.status(400).json({ error: "Please provide a valid manufacturing year." });
+  }
+  try {
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        userId: req.user.id,
+        make: make.trim(),
+        model: model.trim(),
+        year: parsedYear,
+        licensePlate: licensePlate.trim().toUpperCase(),
+        color: (color || "Unspecified").trim(),
+        vinNumber: vinNumber ? vinNumber.trim() : null,
+        notes: notes ? notes.trim() : null
+      }
+    });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: "Vehicle Registered",
+      details: `Registered vehicle ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
+      newValue: { vehicleId: vehicle.id, licensePlate: vehicle.licensePlate }
+    });
+    return res.status(201).json(vehicle);
+  } catch (error) {
+    console.error("[Vehicles/POST]", error);
+    return res.status(500).json({ error: "Failed to register vehicle" });
+  }
+});
+router17.put("/:id", requireAuth, async (req, res) => {
+  const { make, model, year, licensePlate, color, vinNumber, notes } = req.body;
+  try {
+    const existing = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Vehicle record not found" });
+    }
+    const isAdmin = req.user.role === "Administrator" || req.user.role === "Super Administrator";
+    if (!isAdmin && existing.userId !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized to modify this vehicle" });
+    }
+    const updated = await prisma.vehicle.update({
+      where: { id: req.params.id },
+      data: {
+        make: make ? make.trim() : existing.make,
+        model: model ? model.trim() : existing.model,
+        year: year ? parseInt(year, 10) : existing.year,
+        licensePlate: licensePlate ? licensePlate.trim().toUpperCase() : existing.licensePlate,
+        color: color ? color.trim() : existing.color,
+        vinNumber: vinNumber !== void 0 ? vinNumber ? vinNumber.trim() : null : existing.vinNumber,
+        notes: notes !== void 0 ? notes ? notes.trim() : null : existing.notes
+      }
+    });
+    return res.json(updated);
+  } catch (error) {
+    console.error("[Vehicles/PUT]", error);
+    return res.status(500).json({ error: "Failed to update vehicle" });
+  }
+});
+router17.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const existing = await prisma.vehicle.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      return res.status(404).json({ error: "Vehicle not found" });
+    }
+    const isAdmin = req.user.role === "Administrator" || req.user.role === "Super Administrator";
+    if (!isAdmin && existing.userId !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized to delete this vehicle" });
+    }
+    await prisma.vehicle.delete({ where: { id: req.params.id } });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: "Vehicle Removed",
+      details: `Removed vehicle ${existing.make} ${existing.model} (${existing.licensePlate})`,
+      previousValue: { vehicleId: existing.id, licensePlate: existing.licensePlate }
+    });
+    return res.json({ success: true, message: "Vehicle deleted successfully" });
+  } catch (error) {
+    console.error("[Vehicles/DELETE]", error);
+    return res.status(500).json({ error: "Failed to delete vehicle" });
+  }
+});
+var vehicles_default = router17;
+
 // server/src/vercel-handler.ts
 dotenv.config();
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "sda-access-secret-key-12345";
@@ -2488,6 +3396,7 @@ app.use("/api/files", files_default);
 app.use("/api/reports", reports_default);
 app.use("/api/locations", locations_default);
 app.use("/api/contacts", contacts_default);
+app.use("/api/vehicles", vehicles_default);
 app.use("/api/profile-requests", profileRequests_default);
 app.use("/api/verification", verification_default);
 app.use("/api/ratings", ratings_default);

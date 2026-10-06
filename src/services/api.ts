@@ -451,6 +451,125 @@ class ApiClient {
     });
   }
 
+  // Memberships & Benefits
+  async getMembershipPlans() {
+    return this.request<any[]>('/memberships/plans');
+  }
+  async getMyBenefitSummary() {
+    return this.request<any>('/memberships/my');
+  }
+  async changeMembershipPlan(planId: string, customerId?: string, reason?: string) {
+    return this.request<any>('/memberships/change-plan', {
+      method: 'POST',
+      body: JSON.stringify({ planId, customerId, reason }),
+    });
+  }
+  async getCustomerBenefitSummary(userId: string) {
+    return this.request<any>(`/memberships/customer/${userId}`);
+  }
+  async adminOverrideDeduction(userId: string, payload: { amount: number; description: string; reference?: string; reason?: string }) {
+    return this.request<any>(`/memberships/customer/${userId}/override-deduction`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+  async overrideCustomerDeduction(userId: string, payload: { amount: number; reason?: string; description?: string }) {
+    return this.adminOverrideDeduction(userId, {
+      amount: payload.amount,
+      description: payload.description || 'Administrative manual adjustment',
+      reason: payload.reason,
+    });
+  }
+  async adminResetBenefitPeriod(userId: string) {
+    return this.request<any>(`/memberships/customer/${userId}/reset-period`, {
+      method: 'POST',
+    });
+  }
+  async resetCustomerBenefitPeriod(userId: string) {
+    return this.adminResetBenefitPeriod(userId);
+  }
+  async changeMyPlan(planId: string) {
+    return this.changeMembershipPlan(planId);
+  }
+
+  // Claims
+  async getMyClaims() {
+    return this.request<any[]>('/claims/my');
+  }
+  async getAllClaims(params?: { status?: string; search?: string; plan?: string; serviceType?: string }) {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set('status', params.status);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.plan) qs.set('plan', params.plan);
+    if (params?.serviceType) qs.set('serviceType', params.serviceType);
+    return this.request<any[]>(`/claims?${qs}`);
+  }
+  async getClaim(id: string) {
+    return this.request<any>(`/claims/${id}`);
+  }
+  async createClaim(payload: {
+    serviceType: string;
+    description: string;
+    vehicleOrProperty?: string;
+    contractorName?: string;
+    amountClaimed: number;
+    jobId?: string;
+    supportingDocs?: any;
+  }) {
+    return this.request<any>('/claims', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+  async calculateCoverage(payload: { userId?: string; amount?: number; totalAmount?: number; partsAmount?: number; labourAmount?: number; serviceType?: string }) {
+    return this.request<any>('/claims/calculate-coverage', {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: payload.userId,
+        amount: payload.amount ?? payload.totalAmount ?? 0,
+        totalAmount: payload.amount ?? payload.totalAmount ?? 0,
+        partsAmount: payload.partsAmount,
+        labourAmount: payload.labourAmount,
+        serviceType: payload.serviceType,
+      }),
+    });
+  }
+  async reviewClaim(id: string, payload: any) {
+    return this.request<any>(`/claims/${id}/review`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Invoices
+  async getMyInvoices() {
+    return this.request<any[]>('/invoices/my');
+  }
+  async getAllInvoices(params?: { search?: string; paymentStatus?: string; plan?: string; dateFrom?: string; dateTo?: string }) {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set('search', params.search);
+    if (params?.paymentStatus) qs.set('paymentStatus', params.paymentStatus);
+    if (params?.plan) qs.set('plan', params.plan);
+    if (params?.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params?.dateTo) qs.set('dateTo', params.dateTo);
+    return this.request<any[]>(`/invoices?${qs}`);
+  }
+  async getInvoice(id: string) {
+    return this.request<any>(`/invoices/${id}`);
+  }
+  async createInvoice(payload: any) {
+    return this.request<any>('/invoices', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+  async payInvoice(id: string, payload: { paymentMethod?: string; cardLast4?: string }) {
+    return this.request<any>(`/invoices/${id}/pay`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async systemReseed(password: string) {
     return this.request<any>('/auth/system/reseed', {
       method: 'POST',

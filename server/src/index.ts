@@ -127,6 +127,9 @@ import ratingsRouter from './routes/ratings';
 import messagesRouter from './routes/messages';
 import walletRouter from './routes/wallet';
 import vehiclesRouter from './routes/vehicles';
+import membershipsRouter from './routes/memberships';
+import claimsRouter from './routes/claims';
+import invoicesRouter from './routes/invoices';
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -146,6 +149,9 @@ app.use('/api/verification', verificationRouter);
 app.use('/api/ratings', ratingsRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/wallet', walletRouter);
+app.use('/api/memberships', membershipsRouter);
+app.use('/api/claims', claimsRouter);
+app.use('/api/invoices', invoicesRouter);
 
 
 
@@ -180,15 +186,51 @@ app.get('/api/pdf/quotation/:id', async (req, res) => {
 app.get('/api/pdf/invoice/:id', async (req, res) => {
   try {
     const { generateInvoicePDF } = await import('./services/pdf');
+    
+    // First try finding in full Invoice table
+    const invoice = await prisma.invoice.findFirst({
+      where: { OR: [{ id: req.params.id }, { invoiceNumber: req.params.id }] },
+      include: { user: true, claim: true },
+    });
+
+    if (invoice) {
+      const pdfBuffer = await generateInvoicePDF({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customerName,
+        customerEmail: invoice.customerEmail || invoice.user?.email || '',
+        customerAddress: invoice.customerAddress || invoice.user?.address || '',
+        membershipPlan: invoice.membershipPlan,
+        serviceRequested: invoice.serviceRequested,
+        serviceReference: invoice.jobId || undefined,
+        claimNumber: invoice.claim?.claimNumber || undefined,
+        technicianName: invoice.technicianName || 'Same Day Assist Responder',
+        parts: invoice.parts,
+        labour: invoice.labour,
+        otherCharges: invoice.otherCharges,
+        subtotal: invoice.subtotal,
+        taxVat: invoice.taxVat,
+        total: invoice.total,
+        amountCoveredByBenefit: invoice.amountCoveredByBenefit,
+        amountPayableByCustomer: invoice.amountPayableByCustomer,
+        date: invoice.date.toISOString(),
+        status: invoice.paymentStatus,
+        invoiceStatus: invoice.invoiceStatus,
+      });
+      res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"` });
+      return res.send(pdfBuffer);
+    }
+
+    // Fallback: check Payment table
     const payment = await prisma.payment.findUnique({
       where: { id: req.params.id },
       include: { customer: true },
     });
-    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+    if (!payment) return res.status(404).json({ error: 'Invoice record not found' });
     const pdfBuffer = await generateInvoicePDF({
       id: payment.id,
       customerName: payment.customerName,
-      customerEmail: payment.customer.email,
+      customerEmail: payment.customer?.email,
       type: payment.type,
       amount: payment.amount,
       date: payment.date,
@@ -197,6 +239,7 @@ app.get('/api/pdf/invoice/:id', async (req, res) => {
     res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="SDA-Invoice-${payment.id}.pdf"` });
     return res.send(pdfBuffer);
   } catch (error) {
+    console.error('[PDF/Invoice]', error);
     return res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });

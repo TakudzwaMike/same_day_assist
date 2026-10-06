@@ -81,6 +81,10 @@ model User {
   wallet               Wallet?
   providerAwards       ProviderAward[]
   vehicles             Vehicle[]
+  memberships          Membership[]
+  claims               Claim[]
+  invoices             Invoice[]
+  benefitTransactions  BenefitTransaction[]
 }
 
 
@@ -225,6 +229,8 @@ model Job {
   jobRatings              JobRating[]
   chatMessages            ChatMessage[]
   payments                Payment[]
+  claim                   Claim?
+  invoice                 Invoice?
 }
 
 model JobRating {
@@ -356,5 +362,114 @@ model NotificationPreference {
   push      Boolean @default(true)
   inApp     Boolean @default(true)
 }
+
+model Membership {
+  id                  String               @id @default(uuid())
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId              String               // assist, assist_plus, assist_pro, assist_elite, residential_advanced, business_advanced
+  planName            String               // Assist, Assist Plus, Assist Pro, Assist Elite, Residential Advanced, Business Advanced
+  monthlyPrice        Float
+  annualBenefit       Float                // 0 for Assist, 15000, 40000, 60000, 80000, 150000
+  benefitYearStart    DateTime             @default(now())
+  benefitYearEnd      DateTime
+  status              String               @default("Active") // Active, Suspended, Cancelled, Expired
+  autoRenew           Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  benefitTransactions BenefitTransaction[]
+  claims              Claim[]
+  invoices            Invoice[]
+}
+
+model BenefitTransaction {
+  id           String      @id @default(uuid())
+  membershipId String
+  membership   Membership  @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claimId      String?
+  claim        Claim?      @relation(fields: [claimId], references: [id], onDelete: SetNull)
+  invoiceId    String?
+  invoice      Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  date         DateTime    @default(now())
+  reference    String      // e.g. OPENING-2026, SDA-000124, ADJ-001
+  description  String
+  debit        Float       @default(0.0) // Deducted from available benefit
+  credit       Float       @default(0.0) // Benefit credited (e.g. initial annual allowance)
+  balance      Float       // Running remaining balance
+  createdAt    DateTime    @default(now())
+}
+
+model Claim {
+  id                         String               @id @default(uuid())
+  claimNumber                String               @unique // e.g. SDA-CLM-000124
+  userId                     String
+  user                       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipId               String?
+  membership                 Membership?          @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  jobId                      String?              @unique
+  job                        Job?                 @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  serviceType                String
+  description                String
+  vehicleOrProperty          String?
+  contractorName             String?
+  amountClaimed              Float
+  amountApproved             Float                @default(0.0)
+  amountDeductedFromBenefit  Float                @default(0.0)
+  customerResponsibility     Float                @default(0.0)
+  status                     String               @default("Submitted") // Submitted, Under Review, Approved, Rejected, In Progress, Completed, Cancelled
+  rejectionReason            String?
+  supportingDocs             String?              // JSON array of file URLs or descriptions
+  adminOverride              Boolean              @default(false)
+  overrideReason             String?
+  submittedAt                DateTime             @default(now())
+  reviewedAt                 DateTime?
+  completedAt                DateTime?
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+
+  invoice                    Invoice?
+  benefitTransactions        BenefitTransaction[]
+}
+
+model Invoice {
+  id                      String               @id @default(uuid())
+  invoiceNumber           String               @unique // e.g. SDA-INV-000101
+  date                    DateTime             @default(now())
+  userId                  String
+  user                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipId            String?
+  membership              Membership?          @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  jobId                   String?              @unique
+  job                     Job?                 @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  claimId                 String?              @unique
+  claim                   Claim?               @relation(fields: [claimId], references: [id], onDelete: SetNull)
+  customerName            String
+  customerEmail           String?
+  customerAddress         String?
+  membershipPlan          String
+  serviceRequested        String
+  technicianName          String?
+  parts                   Float                @default(0.0)
+  labour                  Float                @default(0.0)
+  otherCharges            Float                @default(0.0)
+  subtotal                Float
+  taxVat                  Float                @default(0.0)
+  total                   Float
+  amountCoveredByBenefit  Float                @default(0.0)
+  amountPayableByCustomer Float                @default(0.0)
+  paymentStatus           String               @default("Unpaid") // Unpaid, Paid, Partially Paid, Waived
+  invoiceStatus           String               @default("Issued") // Issued, Settled, Cancelled, Draft
+  paidAt                  DateTime?
+  paymentMethod           String?
+  notes                   String?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+
+  benefitTransactions     BenefitTransaction[]
+}
+
 
 
