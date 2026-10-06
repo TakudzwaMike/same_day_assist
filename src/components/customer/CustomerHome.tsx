@@ -527,14 +527,6 @@ export default function CustomerHome({
                     </span>
                   )}
                 </div>
-
-                {/* LIVE CONFIRMATION PREVIEW */}
-                {assistDesc.trim().length > 0 && (
-                  <div className="bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs text-slate-800 animate-fadeIn">
-                    <span className="font-bold text-[10px] text-slate-500 uppercase block mb-0.5">Live Description Preview:</span>
-                    <p className="font-semibold text-black whitespace-pre-wrap leading-relaxed">{assistDesc}</p>
-                  </div>
-                )}
               </div>
 
               {/* PHOTO ATTACHMENT */}

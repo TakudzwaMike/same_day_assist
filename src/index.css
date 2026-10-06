@@ -61,6 +61,12 @@ body {
 /* Accessibility Focus & High Contrast Form Controls */
 
 /* 1. LIGHT CONTROLS: Inputs, Textareas, Selects on light backgrounds */
+input, textarea, select {
+  color: #0f172a;
+  -webkit-text-fill-color: #0f172a;
+  caret-color: #091C3E;
+}
+
 .bg-white input,
 .bg-white textarea,
 .bg-white select,
@@ -78,10 +84,12 @@ textarea.bg-slate-50,
 textarea.bg-slate-100,
 select.bg-white,
 select.bg-slate-50,
-select.bg-slate-100 {
-  color: #0f172a !important;
-  -webkit-text-fill-color: #0f172a !important;
-  caret-color: #091C3E !important;
+select.bg-slate-100,
+textarea:not([class*="bg-slate-800"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-zinc-800"]):not([class*="bg-zinc-900"]):not([class*="bg-zinc-950"]),
+input:not([class*="bg-slate-800"]):not([class*="bg-slate-900"]):not([class*="bg-slate-950"]):not([class*="bg-zinc-800"]):not([class*="bg-zinc-900"]):not([class*="bg-zinc-950"]) {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  caret-color: #000000 !important;
 }
 
 .bg-white input::placeholder,
@@ -99,35 +107,22 @@ textarea.bg-slate-50::placeholder {
   opacity: 1 !important;
 }
 
-/* 2. DARK CONTROLS: Inputs, Textareas, Selects on dark backgrounds */
-.bg-slate-950 input:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-950 textarea:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-950 select:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-900 input:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-900 textarea:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-900 select:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-800 input:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-800 textarea:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-slate-800 select:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-zinc-950 input:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-zinc-950 textarea:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-zinc-900 input:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
-.bg-zinc-900 textarea:not(.bg-white):not(.bg-slate-50):not(.bg-slate-100),
+/* 2. DARK CONTROLS: Inputs, Textareas, Selects strictly on dark backgrounds */
 input.bg-slate-800,
 input.bg-slate-900,
 input.bg-slate-950,
 input.bg-zinc-800,
 input.bg-zinc-900,
 input.bg-zinc-950,
-input.text-white,
 textarea.bg-slate-800,
 textarea.bg-slate-900,
 textarea.bg-slate-950,
-textarea.text-white,
+textarea.bg-zinc-800,
+textarea.bg-zinc-900,
+textarea.bg-zinc-950,
 select.bg-slate-800,
 select.bg-slate-900,
-select.bg-slate-950,
-select.text-white {
+select.bg-slate-950 {
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff !important;
