@@ -155,6 +155,21 @@ textarea.text-white::placeholder {
 
 /* 3. CRITICAL BROWSER AUTOFILL FIX FOR DARK CONTROLS */
 /* Prevents Chrome / Edge / Safari from overriding dark inputs with white/light-blue background */
+.bg-slate-950,
+.bg-slate-900,
+.bg-slate-800,
+.bg-zinc-950,
+.bg-zinc-900,
+input.bg-slate-800,
+input.bg-slate-900,
+input.bg-slate-950,
+input.text-white,
+textarea.bg-slate-800,
+textarea.bg-slate-900,
+select.bg-slate-800 {
+  color-scheme: dark;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus, 
@@ -166,6 +181,7 @@ select:-webkit-autofill {
   -webkit-text-fill-color: #ffffff !important;
   color: #ffffff !important;
   caret-color: #ffffff !important;
+  color-scheme: dark !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 

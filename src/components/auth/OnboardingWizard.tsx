@@ -197,7 +197,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
   const chosenPlan = getPlan(formData.selectedPlanId);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-5xl mx-auto shadow-2xl text-slate-100">
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-5xl mx-auto shadow-2xl text-slate-100" style={{ colorScheme: 'dark' }}>
       {/* Header */}
       <div className="flex justify-between items-center pb-6 border-b border-slate-800 mb-6">
         <div>
