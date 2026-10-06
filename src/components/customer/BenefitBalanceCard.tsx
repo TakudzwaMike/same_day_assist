@@ -206,7 +206,7 @@ export function BenefitBalanceCard({
             <div className="flex flex-wrap items-center justify-between text-[10px] font-mono text-slate-400 pt-2 border-t border-slate-800/80">
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Benefit Period: {new Date(summary.benefitYearStart).toLocaleDateString('en-ZA')} – {new Date(summary.benefitYearEnd).toLocaleDateString('en-ZA')}</span>
+                <span>Benefit Period: {summary.benefitYearStart ? new Date(summary.benefitYearStart).toLocaleDateString('en-ZA') : 'Current'} – {summary.benefitYearEnd ? new Date(summary.benefitYearEnd).toLocaleDateString('en-ZA') : 'Ongoing'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span>Claims Affecting Benefit: <strong className="text-white">{summary.claimsCount}</strong></span>

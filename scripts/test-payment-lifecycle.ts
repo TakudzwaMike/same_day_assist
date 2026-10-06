@@ -327,7 +327,7 @@ async function runTests() {
 
   // Record a payment failure
   const failedPaymentResult = await processPayment({
-    membershipId: failInit.membership.id,
+    membershipId: failInit.membership!.id,
     userId: failUser.id,
     stage: 'FIRST_BILLING_40',
     amount: 319.6,
@@ -337,7 +337,7 @@ async function runTests() {
   const failedPayment = failedPaymentResult.payment;
 
   let failMembership = await prisma.membership.findUnique({
-    where: { id: failInit.membership.id },
+    where: { id: failInit.membership!.id },
   });
 
   assert(
@@ -366,7 +366,7 @@ async function runTests() {
   );
 
   failMembership = await prisma.membership.findUnique({
-    where: { id: failInit.membership.id },
+    where: { id: failInit.membership!.id },
   });
   assert(
     failMembership?.activationPercentage === 60,

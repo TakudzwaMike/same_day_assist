@@ -397,7 +397,7 @@ export default function AdminCustomerProfileModal({
                     {(benefitSummary?.transactions || []).map(tx => (
                       <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="p-3 font-mono text-slate-500 whitespace-nowrap">
-                          {new Date(tx.createdAt).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </td>
                         <td className="p-3 font-mono font-bold text-navy whitespace-nowrap">
                           {tx.reference}
@@ -454,7 +454,7 @@ export default function AdminCustomerProfileModal({
                         </div>
                         <p className="text-slate-600 mt-1">{claim.serviceType}: {claim.description}</p>
                         <span className="text-[10px] font-mono text-slate-400">
-                          Logged: {new Date(claim.createdAt).toLocaleDateString('en-ZA')}
+                          Logged: {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-ZA') : '—'}
                         </span>
                       </div>
                       <div className="text-right">
@@ -494,7 +494,7 @@ export default function AdminCustomerProfileModal({
                           </span>
                         </div>
                         <span className="text-[10px] font-mono text-slate-400 block mt-1">
-                          Date: {new Date(inv.issueDate).toLocaleDateString('en-ZA')} • Plan: {inv.membershipPlan}
+                          Date: {inv.issueDate || inv.date ? new Date(inv.issueDate || inv.date || '').toLocaleDateString('en-ZA') : '—'} • Plan: {inv.membershipPlan}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -675,7 +675,7 @@ export default function AdminCustomerProfileModal({
                           </div>
 
                           {/* Arrow down connector between stages */}
-                          {idx < timeline.timelineSteps.length - 1 && (
+                          {idx < (timeline.timelineSteps?.length || 0) - 1 && (
                             <div className="flex justify-center text-slate-600 font-bold text-sm">
                               ↓
                             </div>

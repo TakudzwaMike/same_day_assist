@@ -9,7 +9,7 @@ export default function AuditLogViewer() {
   const filteredLogs = state.auditLogs.filter(log => 
     log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    log.userType.toLowerCase().includes(searchQuery.toLowerCase())
+    (log.userType && log.userType.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (

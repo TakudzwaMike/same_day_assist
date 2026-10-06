@@ -203,7 +203,7 @@ export function CustomerClaims({
                   <span className="font-mono font-black text-sm text-navy">{claim.claimNumber}</span>
                   {getStatusBadge(claim.status)}
                   <span className="text-[10px] text-slate-400 font-mono">
-                    {new Date(claim.submittedAt).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {claim.submittedAt || claim.createdAt ? new Date(claim.submittedAt || claim.createdAt || '').toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                   </span>
                 </div>
 

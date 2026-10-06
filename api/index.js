@@ -3232,7 +3232,7 @@ function createJobsRouter(io) {
       const formattedJob = formatJob(job);
       io?.to("admin-room").emit("new-job", formattedJob);
       await writeAuditLog({
-        userId: null,
+        userId: void 0,
         userType: "Non-Member Emergency",
         action: "Emergency Non-Member Request",
         details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType} \u2014 "${description}"`,
@@ -3445,7 +3445,7 @@ function createJobsRouter(io) {
       io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
       io?.to("admin-room").emit("job-updated", formatted);
       await writeAuditLog({
-        userId: null,
+        userId: void 0,
         userType: "Non-Member Emergency",
         action: "One-Time Emergency Payment Completed",
         details: `Non-member ${job.nonMemberName} paid full service amount of R${amountToPay.toFixed(2)} for Job ${job.id} via ${paymentMethod || "Card"} (Card: ****${cardLast4 || "4242"}). Request closed.`,

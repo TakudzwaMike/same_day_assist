@@ -233,7 +233,7 @@ export function createJobsRouter(io?: SocketServer) {
       io?.to('admin-room').emit('new-job', formattedJob);
 
       await writeAuditLog({
-        userId: null,
+        userId: undefined,
         userType: 'Non-Member Emergency',
         action: 'Emergency Non-Member Request',
         details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType} — "${description}"`,
@@ -481,7 +481,7 @@ export function createJobsRouter(io?: SocketServer) {
       io?.to('admin-room').emit('job-updated', formatted);
 
       await writeAuditLog({
-        userId: null,
+        userId: undefined,
         userType: 'Non-Member Emergency',
         action: 'One-Time Emergency Payment Completed',
         details: `Non-member ${job.nonMemberName} paid full service amount of R${amountToPay.toFixed(2)} for Job ${job.id} via ${paymentMethod || 'Card'} (Card: ****${cardLast4 || '4242'}). Request closed.`,

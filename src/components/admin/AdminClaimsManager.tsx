@@ -268,7 +268,7 @@ export default function AdminClaimsManager() {
                         {claim.claimNumber}
                       </td>
                       <td className="p-3.5 text-slate-500 font-mono whitespace-nowrap">
-                        {new Date(claim.createdAt).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {claim.createdAt ? new Date(claim.createdAt).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       <td className="p-3.5">
                         <span className="font-bold text-slate-800 block">{claim.customerName}</span>
@@ -335,7 +335,7 @@ export default function AdminClaimsManager() {
                   Review Claim: {selectedClaim.claimNumber}
                 </h3>
                 <span className="text-xs text-slate-500 font-mono">
-                  Logged {new Date(selectedClaim.createdAt).toLocaleString('en-ZA')}
+                  Logged {selectedClaim.createdAt ? new Date(selectedClaim.createdAt).toLocaleString('en-ZA') : '—'}
                 </span>
               </div>
               <button

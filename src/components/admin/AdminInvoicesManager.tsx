@@ -248,7 +248,7 @@ export default function AdminInvoicesManager() {
                         {invoice.invoiceNumber}
                       </td>
                       <td className="p-3.5 text-slate-500 font-mono whitespace-nowrap">
-                        {new Date(invoice.issueDate).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        {invoice.issueDate || invoice.date ? new Date(invoice.issueDate || invoice.date || '').toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       <td className="p-3.5">
                         <span className="font-bold text-slate-800 block">{invoice.customerName}</span>
@@ -323,7 +323,7 @@ export default function AdminInvoicesManager() {
                   {selectedInvoice.invoiceNumber}
                 </h3>
                 <span className="text-xs text-slate-500 font-mono">
-                  Issued: {new Date(selectedInvoice.issueDate).toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  Issued: {selectedInvoice.issueDate || selectedInvoice.date ? new Date(selectedInvoice.issueDate || selectedInvoice.date || '').toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                 </span>
               </div>
               <button
@@ -401,7 +401,7 @@ export default function AdminInvoicesManager() {
                           {fmt(selectedInvoice.partsCost)}
                         </td>
                       </tr>
-                      {selectedInvoice.otherCharges > 0 && (
+                      {(selectedInvoice.otherCharges || 0) > 0 && (
                         <tr>
                           <td className="p-3">
                             <span className="font-bold text-slate-800 block">Consumables & Sundries</span>

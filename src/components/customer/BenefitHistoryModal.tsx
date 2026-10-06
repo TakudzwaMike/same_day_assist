@@ -113,7 +113,7 @@ export function BenefitHistoryModal({
                     return (
                       <tr key={t.id} className="hover:bg-slate-900/60 transition-colors">
                         <td className="py-3 px-4 font-mono text-slate-300 whitespace-nowrap">
-                          {new Date(t.date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          {t.date ? new Date(t.date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                         </td>
                         <td className="py-3 px-3 font-mono font-bold text-white whitespace-nowrap">
                           <span className="bg-slate-800 px-2 py-0.5 rounded text-[11px] border border-slate-700">

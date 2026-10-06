@@ -257,8 +257,8 @@ app.get('/api/pdf/completion/:id', async (req, res) => {
     if (!job || !job.completedAt) return res.status(404).json({ error: 'Completed job not found' });
     const pdfBuffer = await generateCompletionReportPDF({
       jobId: job.id,
-      customerName: job.customer.name,
-      customerAddress: job.customer.address,
+      customerName: job.customer?.name || job.nonMemberName || 'Customer',
+      customerAddress: job.customer?.address || job.nonMemberAddress || 'Customer Location',
       serviceType: job.serviceType,
       description: job.description,
       contractorName: job.assignedContractor?.name || 'Same Day Assist Responder',
