@@ -1,3 +1,4 @@
+import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -447,7 +448,7 @@ import { Router } from "express";
 
 // server/src/config/auth.ts
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 var JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "sda-access-secret-key-12345";
 var JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "sda-refresh-secret-key-67890";
 var ACCESS_TOKEN_EXPIRY = "15m";

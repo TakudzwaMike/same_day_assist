@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'sda-access-secret-key-12345';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'sda-refresh-secret-key-67890';
