@@ -101,4 +101,129 @@ app.use('/api/memberships', membershipsRouter);
 app.use('/api/claims', claimsRouter);
 app.use('/api/invoices', invoicesRouter);
 
+// PDF download routes
+app.get('/api/pdf/quotation/:id', async (req, res) => {
+  try {
+    const { generateQuotationPDF } = await import('./services/pdf');
+    const quotation = await prisma.quotation.findUnique({
+      where: { id: req.params.id },
+      include: { enquiry: true },
+    });
+    if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+    const lineItems = JSON.parse(quotation.lineItems);
+    const pdfBuffer = await generateQuotationPDF({
+      id: quotation.id,
+      customerName: quotation.enquiry.customerName,
+      customerEmail: quotation.enquiry.email,
+      customerAddress: quotation.enquiry.address,
+      serviceCategory: quotation.enquiry.serviceCategory,
+      lineItems,
+      amount: quotation.amount,
+      createdAt: quotation.createdAt.toISOString(),
+    });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="SDA-Quote-${quotation.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error('[PDF/Quotation]', error);
+    return res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+});
+
+app.get('/api/pdf/invoice/:id', async (req, res) => {
+  try {
+    const { generateInvoicePDF } = await import('./services/pdf');
+    
+    // Query invoice by id or invoiceNumber
+    const invoice = await prisma.invoice.findFirst({
+      where: { OR: [{ id: req.params.id }, { invoiceNumber: req.params.id }] },
+      include: { user: true, claim: true },
+    });
+
+    if (invoice) {
+      const pdfBuffer = await generateInvoicePDF({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customerName,
+        customerEmail: invoice.customerEmail || invoice.user?.email || '',
+        customerAddress: invoice.customerAddress || invoice.user?.address || '',
+        membershipPlan: invoice.membershipPlan,
+        serviceRequested: invoice.serviceRequested,
+        serviceReference: invoice.jobId || undefined,
+        claimNumber: invoice.claim?.claimNumber || undefined,
+        technicianName: invoice.technicianName || 'Same Day Assist Responder',
+        parts: invoice.parts,
+        labour: invoice.labour,
+        otherCharges: invoice.otherCharges,
+        subtotal: invoice.subtotal,
+        taxVat: invoice.taxVat,
+        total: invoice.total,
+        amountCoveredByBenefit: invoice.amountCoveredByBenefit,
+        amountPayableByCustomer: invoice.amountPayableByCustomer,
+        date: invoice.date.toISOString(),
+        status: invoice.paymentStatus,
+        invoiceStatus: invoice.invoiceStatus,
+      });
+      res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${invoice.invoiceNumber}.pdf"` });
+      return res.send(pdfBuffer);
+    }
+
+    // Fallback: check Payment table
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.id },
+      include: { customer: true },
+    });
+    if (!payment) return res.status(404).json({ error: 'Invoice record not found' });
+    const pdfBuffer = await generateInvoicePDF({
+      id: payment.id,
+      customerName: payment.customerName,
+      customerEmail: payment.customer?.email,
+      type: payment.type,
+      amount: payment.amount,
+      date: payment.date,
+      status: payment.status,
+    });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="SDA-Invoice-${payment.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error('[PDF/Invoice]', error);
+    return res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+});
+
+app.get('/api/pdf/completion/:id', async (req, res) => {
+  try {
+    const { generateCompletionReportPDF } = await import('./services/pdf');
+    const job = await prisma.job.findUnique({
+      where: { id: req.params.id },
+      include: {
+        customer: true,
+        assignedContractor: true,
+      },
+    });
+    if (!job || !job.completedAt) return res.status(404).json({ error: 'Completed job not found' });
+    const pdfBuffer = await generateCompletionReportPDF({
+      jobId: job.id,
+      customerName: job.customer?.name || job.nonMemberName || 'Customer',
+      customerAddress: job.customer?.address || job.nonMemberAddress || 'Customer Location',
+      serviceType: job.serviceType,
+      description: job.description,
+      contractorName: job.assignedContractor?.name || 'Same Day Assist Responder',
+      contractorNotes: job.contractorNotes || '',
+      contractorSignature: job.contractorSignature || '',
+      completedAt: job.completedAt.toISOString(),
+      rating: job.rating || undefined,
+    });
+    res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="SDA-Completion-${job.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+});
+
+// Global error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[Vercel Server Error]', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 export default app;

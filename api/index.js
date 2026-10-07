@@ -1,12 +1,50 @@
+var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __commonJS = (cb, mod) => function __require2() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// node_modules/@prisma/client/default.js
+var require_default = __commonJS({
+  "node_modules/@prisma/client/default.js"(exports, module) {
+    module.exports = {
+      ...__require(".prisma/client/default")
+    };
+  }
+});
 
 // server/src/config/plans.ts
 var plans_exports = {};
@@ -175,6 +213,192 @@ var init_plans = __esm({
   }
 });
 
+// server/src/services/pdf.ts
+var pdf_exports = {};
+__export(pdf_exports, {
+  generateCompletionReportPDF: () => generateCompletionReportPDF,
+  generateInvoicePDF: () => generateInvoicePDF,
+  generateQuotationPDF: () => generateQuotationPDF
+});
+import PDFDocument from "pdfkit";
+function drawHeader(doc, title) {
+  doc.rect(0, 0, doc.page.width, 90).fill(BRAND_NAVY);
+  doc.fillColor("white").fontSize(20).font("Helvetica-Bold").text("SAME DAY ASSIST", 40, 20, { align: "left" });
+  doc.fillColor(BRAND_RED).fontSize(8).font("Helvetica").text("EMERGENCY ASSIST NETWORK \u2022 PSIRA ASSURANCE \u2022 SOUTH AFRICA", 40, 46);
+  doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text(title, 40, 65, { align: "left" });
+  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica").text(`Generated: ${(/* @__PURE__ */ new Date()).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" })}`, 0, 68, { align: "right", width: doc.page.width - 40 });
+  doc.rect(0, 90, doc.page.width, 4).fill(BRAND_RED);
+}
+function drawFooter(doc) {
+  const y = doc.page.height - 50;
+  doc.rect(0, y, doc.page.width, 50).fill(BRAND_NAVY);
+  doc.fillColor("white").fontSize(7).font("Helvetica").text("\xA9 2026 Same Day Assist (Pty) Ltd \u2022 Soweto, Johannesburg, South Africa \u2022 SABS & PSIRA Assured \u2022 All rights reserved.", 0, y + 18, { align: "center", width: doc.page.width });
+}
+function sectionTitle(doc, text, y) {
+  const ty = y ?? doc.y;
+  doc.rect(40, ty, doc.page.width - 80, 20).fill("#F1F5F9");
+  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica-Bold").text(text, 48, ty + 5);
+  doc.moveDown(0.5);
+}
+function row(doc, label, value) {
+  doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`${label}:`, 48, doc.y, { continued: true, width: 140 });
+  doc.fillColor("#1E293B").font("Helvetica").text(value, { width: 350 });
+}
+async function generateQuotationPDF(data) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Quotation ${data.id}`, Author: "Same Day Assist" } });
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+    drawHeader(doc, "PRE-COMPLIANCE REPAIR QUOTATION");
+    doc.moveDown(4);
+    sectionTitle(doc, "CUSTOMER DETAILS");
+    doc.moveDown(0.3);
+    row(doc, "Client Name", data.customerName);
+    row(doc, "Email", data.customerEmail);
+    row(doc, "Property Address", data.customerAddress);
+    row(doc, "Service Category", data.serviceCategory);
+    row(doc, "Quote Reference", data.id);
+    row(doc, "Date Issued", new Date(data.createdAt).toLocaleDateString("en-ZA"));
+    doc.moveDown(1);
+    sectionTitle(doc, "REPAIR LINE ITEMS");
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#E2E8F0");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("Description", 54, doc.y - 14, { width: 320, continued: true });
+    doc.text("Cost (ZAR)", { align: "right", width: 120 });
+    data.lineItems.forEach((item, i) => {
+      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#F8FAFC");
+      doc.fillColor("#334155").fontSize(8).font("Helvetica").text(item.description, 54, doc.y - 12, { width: 320, continued: true });
+      doc.fillColor(BRAND_NAVY).font("Helvetica-Bold").text(`R ${item.cost.toFixed(2)}`, { align: "right", width: 120 });
+    });
+    doc.moveDown(0.5);
+    doc.rect(48, doc.y, doc.page.width - 96, 22).fill(BRAND_RED);
+    doc.fillColor("white").fontSize(10).font("Helvetica-Bold").text("TOTAL AMOUNT DUE:", 54, doc.y - 17, { continued: true, width: 320 });
+    doc.text(`R ${data.amount.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(2);
+    doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text("This quotation is valid for 14 days from the issue date. Payment activates your Same Day Assist membership.", 48, doc.y);
+    drawFooter(doc);
+    doc.end();
+  });
+}
+async function generateInvoicePDF(data) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Tax Invoice ${data.invoiceNumber || data.id}`, Author: "Same Day Assist" } });
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+    drawHeader(doc, "OFFICIAL TAX INVOICE");
+    doc.moveDown(4);
+    const invNo = data.invoiceNumber || data.id;
+    const invDate = new Date(data.date).toLocaleDateString("en-ZA");
+    sectionTitle(doc, "INVOICE & MEMBER INFORMATION");
+    doc.moveDown(0.3);
+    row(doc, "Tax Invoice Number", invNo);
+    row(doc, "Date of Issue", invDate);
+    row(doc, "Member Name", data.customerName);
+    if (data.customerEmail) row(doc, "Member Email", data.customerEmail);
+    if (data.customerAddress) row(doc, "Service Address", data.customerAddress);
+    if (data.membershipPlan) row(doc, "Membership Plan", data.membershipPlan);
+    if (data.serviceReference) row(doc, "Service Request #", data.serviceReference);
+    if (data.claimNumber) row(doc, "Claim Reference #", data.claimNumber);
+    if (data.technicianName) row(doc, "Assigned Technician", data.technicianName);
+    row(doc, "Service Provided", data.serviceRequested || data.type || "On-Demand Emergency Assistance");
+    doc.moveDown(1);
+    sectionTitle(doc, "COST BREAKDOWN & FINANCIAL STATEMENT");
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#E2E8F0");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("Cost Category", 54, doc.y - 14, { width: 320, continued: true });
+    doc.text("Amount (ZAR)", { align: "right", width: 120 });
+    const partsCost = data.parts !== void 0 ? data.parts : 0;
+    const labourCost = data.labour !== void 0 ? data.labour : data.amount !== void 0 ? data.amount : 0;
+    const otherCost = data.otherCharges !== void 0 ? data.otherCharges : 0;
+    const grossTotal = data.total !== void 0 ? data.total : data.amount !== void 0 ? data.amount : partsCost + labourCost + otherCost;
+    const benefitCovered = data.amountCoveredByBenefit !== void 0 ? data.amountCoveredByBenefit : 0;
+    const customerPayable = data.amountPayableByCustomer !== void 0 ? data.amountPayableByCustomer : Math.max(0, grossTotal - benefitCovered);
+    const costItems = [
+      { desc: "Certified Labour & Diagnostics", cost: labourCost },
+      { desc: "Hardware Replacement & Parts", cost: partsCost }
+    ];
+    if (otherCost > 0) {
+      costItems.push({ desc: "Ancillary / Dispatch Charges", cost: otherCost });
+    }
+    costItems.forEach((item, i) => {
+      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#F8FAFC");
+      doc.fillColor("#334155").fontSize(8).font("Helvetica").text(item.desc, 54, doc.y - 12, { width: 320, continued: true });
+      doc.fillColor(BRAND_NAVY).font("Helvetica-Bold").text(`R ${item.cost.toFixed(2)}`, { align: "right", width: 120 });
+    });
+    doc.moveDown(0.4);
+    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#F1F5F9");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("GROSS SERVICE TOTAL:", 54, doc.y - 14, { continued: true, width: 320 });
+    doc.text(`R ${grossTotal.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(0.3);
+    doc.rect(48, doc.y, doc.page.width - 96, 20).fill("#DCFCE7");
+    doc.fillColor("#166534").fontSize(8.5).font("Helvetica-Bold").text("LESS: COVERED BY ANNUAL ASSISTANCE BENEFIT:", 54, doc.y - 15, { continued: true, width: 320 });
+    doc.text(`- R ${benefitCovered.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(0.4);
+    const payableColor = customerPayable > 0 ? BRAND_RED : BRAND_NAVY;
+    doc.rect(48, doc.y, doc.page.width - 96, 26).fill(payableColor);
+    doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text("NET AMOUNT PAYABLE BY CUSTOMER:", 54, doc.y - 19, { continued: true, width: 320 });
+    doc.text(`R ${customerPayable.toFixed(2)}`, { align: "right", width: 120 });
+    doc.moveDown(1.5);
+    const paymentStatus = data.status || (customerPayable === 0 ? "Covered" : "Unpaid");
+    doc.rect(48, doc.y, doc.page.width - 96, 22).fill("#F8FAFC");
+    doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`Invoice Status: ${data.invoiceStatus || "Issued"}   \u2022   Payment Status: ${paymentStatus.toUpperCase()}`, 54, doc.y - 16, { align: "center", width: doc.page.width - 108 });
+    doc.moveDown(1.5);
+    doc.fillColor(BRAND_GREY).fontSize(7.5).font("Helvetica").text("All services are rendered according to Same Day Assist Membership Terms & Conditions. Assistance benefit deductions are recorded on your annual member benefit ledger.", 48, doc.y, { align: "center", width: doc.page.width - 96 });
+    drawFooter(doc);
+    doc.end();
+  });
+}
+async function generateCompletionReportPDF(data) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Completion Report ${data.jobId}`, Author: "Same Day Assist" } });
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+    drawHeader(doc, "JOB COMPLETION REPORT");
+    doc.moveDown(4);
+    sectionTitle(doc, "JOB DETAILS");
+    doc.moveDown(0.3);
+    row(doc, "Job Reference", data.jobId);
+    row(doc, "Customer Name", data.customerName);
+    row(doc, "Service Address", data.customerAddress);
+    row(doc, "Service Type", data.serviceType);
+    row(doc, "Emergency Description", data.description);
+    row(doc, "Completed At", new Date(data.completedAt).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" }));
+    doc.moveDown(1);
+    sectionTitle(doc, "RESPONDER DETAILS");
+    doc.moveDown(0.3);
+    row(doc, "Field Responder", data.contractorName);
+    row(doc, "Resolution Notes", data.contractorNotes);
+    doc.moveDown(1);
+    sectionTitle(doc, "DIGITAL SIGNATURE RECORD");
+    doc.moveDown(0.3);
+    doc.fillColor(BRAND_NAVY).fontSize(12).font("Helvetica-BoldOblique").text(data.contractorSignature, 48, doc.y);
+    doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text("Electronically signed by responding officer", 48, doc.y + 2);
+    if (data.rating) {
+      doc.moveDown(1);
+      sectionTitle(doc, "CUSTOMER SATISFACTION RATING");
+      doc.moveDown(0.3);
+      const stars = "\u2605".repeat(data.rating) + "\u2606".repeat(5 - data.rating);
+      doc.fillColor(BRAND_RED).fontSize(16).font("Helvetica-Bold").text(stars, 48, doc.y);
+    }
+    drawFooter(doc);
+    doc.end();
+  });
+}
+var BRAND_RED, BRAND_NAVY, BRAND_GREY;
+var init_pdf = __esm({
+  "server/src/services/pdf.ts"() {
+    BRAND_RED = "#CC322C";
+    BRAND_NAVY = "#091C3E";
+    BRAND_GREY = "#64748B";
+  }
+});
+
 // server/src/vercel-handler.ts
 import express from "express";
 import cors from "cors";
@@ -182,7 +406,7 @@ import path3 from "path";
 import dotenv from "dotenv";
 
 // server/src/config/db.ts
-import { PrismaClient } from "@prisma/client";
+var import_client = __toESM(require_default(), 1);
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "path";
 import fs from "fs";
@@ -210,7 +434,7 @@ var getDbPath = () => {
 var adapter = new PrismaBetterSqlite3({
   url: getDbPath()
 });
-var prisma = new PrismaClient({
+var prisma = new import_client.PrismaClient({
   adapter,
   log: process.env.NODE_ENV === "development" ? ["query", "info", "warn", "error"] : ["error"]
 });
@@ -4668,107 +4892,7 @@ var claims_default = router19;
 
 // server/src/routes/invoices.ts
 import { Router as Router20 } from "express";
-
-// server/src/services/pdf.ts
-import PDFDocument from "pdfkit";
-var BRAND_RED = "#CC322C";
-var BRAND_NAVY = "#091C3E";
-var BRAND_GREY = "#64748B";
-function drawHeader(doc, title) {
-  doc.rect(0, 0, doc.page.width, 90).fill(BRAND_NAVY);
-  doc.fillColor("white").fontSize(20).font("Helvetica-Bold").text("SAME DAY ASSIST", 40, 20, { align: "left" });
-  doc.fillColor(BRAND_RED).fontSize(8).font("Helvetica").text("EMERGENCY ASSIST NETWORK \u2022 PSIRA ASSURANCE \u2022 SOUTH AFRICA", 40, 46);
-  doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text(title, 40, 65, { align: "left" });
-  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica").text(`Generated: ${(/* @__PURE__ */ new Date()).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" })}`, 0, 68, { align: "right", width: doc.page.width - 40 });
-  doc.rect(0, 90, doc.page.width, 4).fill(BRAND_RED);
-}
-function drawFooter(doc) {
-  const y = doc.page.height - 50;
-  doc.rect(0, y, doc.page.width, 50).fill(BRAND_NAVY);
-  doc.fillColor("white").fontSize(7).font("Helvetica").text("\xA9 2026 Same Day Assist (Pty) Ltd \u2022 Soweto, Johannesburg, South Africa \u2022 SABS & PSIRA Assured \u2022 All rights reserved.", 0, y + 18, { align: "center", width: doc.page.width });
-}
-function sectionTitle(doc, text, y) {
-  const ty = y ?? doc.y;
-  doc.rect(40, ty, doc.page.width - 80, 20).fill("#F1F5F9");
-  doc.fillColor(BRAND_NAVY).fontSize(9).font("Helvetica-Bold").text(text, 48, ty + 5);
-  doc.moveDown(0.5);
-}
-function row(doc, label, value) {
-  doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`${label}:`, 48, doc.y, { continued: true, width: 140 });
-  doc.fillColor("#1E293B").font("Helvetica").text(value, { width: 350 });
-}
-async function generateInvoicePDF(data) {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: 40, info: { Title: `Tax Invoice ${data.invoiceNumber || data.id}`, Author: "Same Day Assist" } });
-    const buffers = [];
-    doc.on("data", (chunk) => buffers.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(buffers)));
-    doc.on("error", reject);
-    drawHeader(doc, "OFFICIAL TAX INVOICE");
-    doc.moveDown(4);
-    const invNo = data.invoiceNumber || data.id;
-    const invDate = new Date(data.date).toLocaleDateString("en-ZA");
-    sectionTitle(doc, "INVOICE & MEMBER INFORMATION");
-    doc.moveDown(0.3);
-    row(doc, "Tax Invoice Number", invNo);
-    row(doc, "Date of Issue", invDate);
-    row(doc, "Member Name", data.customerName);
-    if (data.customerEmail) row(doc, "Member Email", data.customerEmail);
-    if (data.customerAddress) row(doc, "Service Address", data.customerAddress);
-    if (data.membershipPlan) row(doc, "Membership Plan", data.membershipPlan);
-    if (data.serviceReference) row(doc, "Service Request #", data.serviceReference);
-    if (data.claimNumber) row(doc, "Claim Reference #", data.claimNumber);
-    if (data.technicianName) row(doc, "Assigned Technician", data.technicianName);
-    row(doc, "Service Provided", data.serviceRequested || data.type || "On-Demand Emergency Assistance");
-    doc.moveDown(1);
-    sectionTitle(doc, "COST BREAKDOWN & FINANCIAL STATEMENT");
-    doc.moveDown(0.3);
-    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#E2E8F0");
-    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("Cost Category", 54, doc.y - 14, { width: 320, continued: true });
-    doc.text("Amount (ZAR)", { align: "right", width: 120 });
-    const partsCost = data.parts !== void 0 ? data.parts : 0;
-    const labourCost = data.labour !== void 0 ? data.labour : data.amount !== void 0 ? data.amount : 0;
-    const otherCost = data.otherCharges !== void 0 ? data.otherCharges : 0;
-    const grossTotal = data.total !== void 0 ? data.total : data.amount !== void 0 ? data.amount : partsCost + labourCost + otherCost;
-    const benefitCovered = data.amountCoveredByBenefit !== void 0 ? data.amountCoveredByBenefit : 0;
-    const customerPayable = data.amountPayableByCustomer !== void 0 ? data.amountPayableByCustomer : Math.max(0, grossTotal - benefitCovered);
-    const costItems = [
-      { desc: "Certified Labour & Diagnostics", cost: labourCost },
-      { desc: "Hardware Replacement & Parts", cost: partsCost }
-    ];
-    if (otherCost > 0) {
-      costItems.push({ desc: "Ancillary / Dispatch Charges", cost: otherCost });
-    }
-    costItems.forEach((item, i) => {
-      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#F8FAFC");
-      doc.fillColor("#334155").fontSize(8).font("Helvetica").text(item.desc, 54, doc.y - 12, { width: 320, continued: true });
-      doc.fillColor(BRAND_NAVY).font("Helvetica-Bold").text(`R ${item.cost.toFixed(2)}`, { align: "right", width: 120 });
-    });
-    doc.moveDown(0.4);
-    doc.rect(48, doc.y, doc.page.width - 96, 18).fill("#F1F5F9");
-    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("GROSS SERVICE TOTAL:", 54, doc.y - 14, { continued: true, width: 320 });
-    doc.text(`R ${grossTotal.toFixed(2)}`, { align: "right", width: 120 });
-    doc.moveDown(0.3);
-    doc.rect(48, doc.y, doc.page.width - 96, 20).fill("#DCFCE7");
-    doc.fillColor("#166534").fontSize(8.5).font("Helvetica-Bold").text("LESS: COVERED BY ANNUAL ASSISTANCE BENEFIT:", 54, doc.y - 15, { continued: true, width: 320 });
-    doc.text(`- R ${benefitCovered.toFixed(2)}`, { align: "right", width: 120 });
-    doc.moveDown(0.4);
-    const payableColor = customerPayable > 0 ? BRAND_RED : BRAND_NAVY;
-    doc.rect(48, doc.y, doc.page.width - 96, 26).fill(payableColor);
-    doc.fillColor("white").fontSize(11).font("Helvetica-Bold").text("NET AMOUNT PAYABLE BY CUSTOMER:", 54, doc.y - 19, { continued: true, width: 320 });
-    doc.text(`R ${customerPayable.toFixed(2)}`, { align: "right", width: 120 });
-    doc.moveDown(1.5);
-    const paymentStatus = data.status || (customerPayable === 0 ? "Covered" : "Unpaid");
-    doc.rect(48, doc.y, doc.page.width - 96, 22).fill("#F8FAFC");
-    doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text(`Invoice Status: ${data.invoiceStatus || "Issued"}   \u2022   Payment Status: ${paymentStatus.toUpperCase()}`, 54, doc.y - 16, { align: "center", width: doc.page.width - 108 });
-    doc.moveDown(1.5);
-    doc.fillColor(BRAND_GREY).fontSize(7.5).font("Helvetica").text("All services are rendered according to Same Day Assist Membership Terms & Conditions. Assistance benefit deductions are recorded on your annual member benefit ledger.", 48, doc.y, { align: "center", width: doc.page.width - 96 });
-    drawFooter(doc);
-    doc.end();
-  });
-}
-
-// server/src/routes/invoices.ts
+init_pdf();
 var router20 = Router20();
 function generateInvoiceNumber3() {
   const rand = Math.floor(1e5 + Math.random() * 9e5);
@@ -5105,6 +5229,120 @@ app.use("/api/wallet", wallet_default);
 app.use("/api/memberships", memberships_default);
 app.use("/api/claims", claims_default);
 app.use("/api/invoices", invoices_default);
+app.get("/api/pdf/quotation/:id", async (req, res) => {
+  try {
+    const { generateQuotationPDF: generateQuotationPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
+    const quotation = await prisma.quotation.findUnique({
+      where: { id: req.params.id },
+      include: { enquiry: true }
+    });
+    if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+    const lineItems = JSON.parse(quotation.lineItems);
+    const pdfBuffer = await generateQuotationPDF2({
+      id: quotation.id,
+      customerName: quotation.enquiry.customerName,
+      customerEmail: quotation.enquiry.email,
+      customerAddress: quotation.enquiry.address,
+      serviceCategory: quotation.enquiry.serviceCategory,
+      lineItems,
+      amount: quotation.amount,
+      createdAt: quotation.createdAt.toISOString()
+    });
+    res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="SDA-Quote-${quotation.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("[PDF/Quotation]", error);
+    return res.status(500).json({ error: "Failed to generate PDF" });
+  }
+});
+app.get("/api/pdf/invoice/:id", async (req, res) => {
+  try {
+    const { generateInvoicePDF: generateInvoicePDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
+    const invoice = await prisma.invoice.findFirst({
+      where: { OR: [{ id: req.params.id }, { invoiceNumber: req.params.id }] },
+      include: { user: true, claim: true }
+    });
+    if (invoice) {
+      const pdfBuffer2 = await generateInvoicePDF2({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customerName,
+        customerEmail: invoice.customerEmail || invoice.user?.email || "",
+        customerAddress: invoice.customerAddress || invoice.user?.address || "",
+        membershipPlan: invoice.membershipPlan,
+        serviceRequested: invoice.serviceRequested,
+        serviceReference: invoice.jobId || void 0,
+        claimNumber: invoice.claim?.claimNumber || void 0,
+        technicianName: invoice.technicianName || "Same Day Assist Responder",
+        parts: invoice.parts,
+        labour: invoice.labour,
+        otherCharges: invoice.otherCharges,
+        subtotal: invoice.subtotal,
+        taxVat: invoice.taxVat,
+        total: invoice.total,
+        amountCoveredByBenefit: invoice.amountCoveredByBenefit,
+        amountPayableByCustomer: invoice.amountPayableByCustomer,
+        date: invoice.date.toISOString(),
+        status: invoice.paymentStatus,
+        invoiceStatus: invoice.invoiceStatus
+      });
+      res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${invoice.invoiceNumber}.pdf"` });
+      return res.send(pdfBuffer2);
+    }
+    const payment = await prisma.payment.findUnique({
+      where: { id: req.params.id },
+      include: { customer: true }
+    });
+    if (!payment) return res.status(404).json({ error: "Invoice record not found" });
+    const pdfBuffer = await generateInvoicePDF2({
+      id: payment.id,
+      customerName: payment.customerName,
+      customerEmail: payment.customer?.email,
+      type: payment.type,
+      amount: payment.amount,
+      date: payment.date,
+      status: payment.status
+    });
+    res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="SDA-Invoice-${payment.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("[PDF/Invoice]", error);
+    return res.status(500).json({ error: "Failed to generate PDF" });
+  }
+});
+app.get("/api/pdf/completion/:id", async (req, res) => {
+  try {
+    const { generateCompletionReportPDF: generateCompletionReportPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
+    const job = await prisma.job.findUnique({
+      where: { id: req.params.id },
+      include: {
+        customer: true,
+        assignedContractor: true
+      }
+    });
+    if (!job || !job.completedAt) return res.status(404).json({ error: "Completed job not found" });
+    const pdfBuffer = await generateCompletionReportPDF2({
+      jobId: job.id,
+      customerName: job.customer?.name || job.nonMemberName || "Customer",
+      customerAddress: job.customer?.address || job.nonMemberAddress || "Customer Location",
+      serviceType: job.serviceType,
+      description: job.description,
+      contractorName: job.assignedContractor?.name || "Same Day Assist Responder",
+      contractorNotes: job.contractorNotes || "",
+      contractorSignature: job.contractorSignature || "",
+      completedAt: job.completedAt.toISOString(),
+      rating: job.rating || void 0
+    });
+    res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="SDA-Completion-${job.id}.pdf"` });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to generate PDF" });
+  }
+});
+app.use((err, req, res, next) => {
+  console.error("[Vercel Server Error]", err);
+  res.status(500).json({ error: "Internal server error" });
+});
 var vercel_handler_default = app;
 export {
   vercel_handler_default as default
