@@ -273,7 +273,7 @@ export default function App() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-black uppercase tracking-widest text-red font-mono bg-red/10 border border-red/30 px-2 py-0.5 rounded-full">
-                        ON-DEMAND ROADSIDE ASSIST
+                        ON-DEMAND EMERGENCY ASSIST
                       </span>
                       <span className="text-[9px] font-mono text-slate-400">NO MEMBERSHIP REQUIRED</span>
                     </div>
