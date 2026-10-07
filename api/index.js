@@ -3299,13 +3299,14 @@ function formatJob(j) {
     ...j,
     customerType: j.customerType || "MEMBER",
     customerName: isNonMember ? j.nonMemberName || "Emergency Caller" : j.customer?.name || "Valued Member",
-    customerAddress: isNonMember ? j.nonMemberAddress || "On-Scene Location" : j.customer?.address || "Sandton, Johannesburg",
+    customerAddress: isNonMember ? j.nonMemberAddress || "Incident Location" : j.customer?.address || "Sandton, Johannesburg",
     customerPhone: isNonMember ? j.nonMemberPhone || "" : j.customer?.phone || "",
     customerEmail: isNonMember ? j.nonMemberEmail || "" : j.customer?.email || "",
     customerVehicle: parsedVehicle,
     vehicleInfo: parsedResponderVehicle,
-    finalAmount: j.finalAmount || 0,
-    paymentStatus: j.paymentStatus || "Pending",
+    finalAmount: isNonMember ? 650 : j.finalAmount || 0,
+    callOutFee: isNonMember ? 650 : null,
+    paymentStatus: j.paymentStatus || (isNonMember ? "Payment Required" : "Pending"),
     servicePerformed: j.servicePerformed || null
   };
 }
@@ -3415,27 +3416,52 @@ function createJobsRouter(io) {
     }
   });
   router12.post("/emergency-non-member", async (req, res) => {
-    const { name, phone, email, address, serviceType, description, photoUrl, vehicle } = req.body;
+    const { name, phone, email, address, serviceType, description, urgency, additionalNotes, consentAgreed, photoUrl } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: "Customer name is required for emergency dispatch." });
+      return res.status(400).json({ error: "Full name is required for emergency dispatch." });
     }
     if (!phone || !phone.trim()) {
-      return res.status(400).json({ error: "Contact phone number is required so our response unit can reach you." });
+      return res.status(400).json({ error: "Mobile contact number is required for dispatch communication." });
     }
     if (!address || !address.trim()) {
-      return res.status(400).json({ error: "Emergency incident location or address is required." });
+      return res.status(400).json({ error: "Incident location or address is required." });
     }
     if (!serviceType || !serviceType.trim()) {
       return res.status(400).json({ error: "Service category is required." });
     }
     if (!description || !description.trim()) {
-      return res.status(400).json({ error: "Please describe the emergency incident." });
+      return res.status(400).json({ error: "Please provide a brief description of the problem." });
+    }
+    const serviceLower = serviceType.toLowerCase();
+    if (serviceLower.includes("roadside") || serviceLower.includes("towing") || serviceLower.includes("tyre") || serviceLower.includes("flat battery")) {
+      return res.status(400).json({
+        error: "Same Day Assist Emergency Assistance is for property and security services (Garage & Gate, Electric Fence, Alarm, CCTV, Access Control, Electrical, Plumbing, Locksmith, Security). Roadside assistance is not offered."
+      });
+    }
+    if (consentAgreed !== void 0 && consentAgreed !== true && consentAgreed !== "true") {
+      return res.status(400).json({ error: "Terms and R650 Call-Out Fee confirmation is required." });
     }
     try {
-      let vehicleStr = null;
-      if (vehicle) {
-        vehicleStr = typeof vehicle === "string" ? vehicle : JSON.stringify(vehicle);
+      const sixtySecondsAgo = new Date(Date.now() - 60 * 1e3);
+      const existingRecent = await prisma.job.findFirst({
+        where: {
+          customerType: "NON_MEMBER_EMERGENCY",
+          nonMemberPhone: phone.trim(),
+          serviceType: serviceType.trim(),
+          createdAt: { gte: sixtySecondsAgo },
+          paymentStatus: "Payment Required"
+        }
+      });
+      if (existingRecent) {
+        return res.status(200).json({
+          success: true,
+          duplicatePrevented: true,
+          message: "Active emergency request found. Please complete the R650 Call-Out Fee payment to dispatch assistance.",
+          job: formatJob(existingRecent),
+          callOutFee: 650
+        });
       }
+      const problemDescription = urgency ? `[Urgency: ${urgency}] ${description.trim()}${additionalNotes ? ` | Note: ${additionalNotes.trim()}` : ""}` : description.trim();
       const job = await prisma.job.create({
         data: {
           customerType: "NON_MEMBER_EMERGENCY",
@@ -3444,14 +3470,16 @@ function createJobsRouter(io) {
           nonMemberPhone: phone.trim(),
           nonMemberEmail: email ? email.trim() : null,
           nonMemberAddress: address.trim(),
-          customerVehicle: vehicleStr,
+          customerVehicle: null,
+          // Strictly NO roadside/vehicle tracking
           serviceType: serviceType.trim(),
-          description: description.trim(),
+          description: problemDescription,
           photoUrl: photoUrl || null,
-          status: "Requested",
+          status: "Payment Required",
           trackerProgress: 10,
-          paymentStatus: "Pending",
-          finalAmount: 0
+          paymentStatus: "Payment Required",
+          finalAmount: 650
+          // Fixed R650 Call-Out Fee
         }
       });
       const formattedJob = formatJob(job);
@@ -3459,16 +3487,17 @@ function createJobsRouter(io) {
       await writeAuditLog({
         userId: void 0,
         userType: "Non-Member Emergency",
-        action: "Emergency Non-Member Request",
-        details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType} \u2014 "${description}"`,
+        action: "Emergency Non-Member Request Created",
+        details: `Non-member emergency requested by ${name} (${phone}) at "${address}": ${serviceType}. Status: Payment Required (R650 Call-Out Fee).`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        newValue: { jobId: job.id, customerType: "NON_MEMBER_EMERGENCY", name, phone, address }
+        newValue: { jobId: job.id, customerType: "NON_MEMBER_EMERGENCY", name, phone, address, callOutFee: 650 }
       });
       return res.status(201).json({
         success: true,
-        message: "Emergency request registered. Dispatch control room notified.",
-        job: formattedJob
+        message: "Emergency request registered. Payment of fixed R650 Call-Out Fee is required before dispatch.",
+        job: formattedJob,
+        callOutFee: 650
       });
     } catch (error) {
       console.error("[Jobs/EmergencyNonMember]", error);
@@ -3481,7 +3510,8 @@ function createJobsRouter(io) {
         where: { id: req.params.id },
         include: {
           assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
-          payments: { select: { id: true, amount: true, status: true, paymentMethod: true, date: true } }
+          payments: { select: { id: true, amount: true, status: true, paymentMethod: true, date: true, transactionRef: true, gatewayReference: true } },
+          invoice: { select: { id: true, invoiceNumber: true, total: true, paymentStatus: true, date: true } }
         }
       });
       if (!job || job.customerType !== "NON_MEMBER_EMERGENCY") {
@@ -3633,55 +3663,125 @@ function createJobsRouter(io) {
     }
   });
   router12.post("/emergency-non-member/:id/pay", async (req, res) => {
-    const { paymentMethod, cardLast4 } = req.body;
+    const { paymentMethod, cardLast4, transactionRef, gatewayReference, simulateFailure } = req.body;
     try {
-      const job = await prisma.job.findUnique({ where: { id: req.params.id } });
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: { payments: true, invoice: true }
+      });
       if (!job) return res.status(404).json({ error: "Emergency request not found" });
       if (job.customerType !== "NON_MEMBER_EMERGENCY") {
         return res.status(400).json({ error: "This payment route is only for one-time emergency requests" });
       }
-      const amountToPay = job.finalAmount && job.finalAmount > 0 ? job.finalAmount : 850;
+      if (job.paymentStatus === "Paid") {
+        return res.json({
+          success: true,
+          message: "Payment already confirmed. Request is currently dispatchable.",
+          job: formatJob(job),
+          payment: job.payments?.[0] || null,
+          invoice: job.invoice || null
+        });
+      }
+      if (simulateFailure === true) {
+        await writeAuditLog({
+          userId: void 0,
+          userType: "Non-Member Emergency",
+          action: "Emergency Call-Out Payment Failed",
+          details: `Card declined for emergency call-out fee (R650) on Job ${job.id} for ${job.nonMemberName}. Dispatch remains blocked.`,
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+          newValue: { jobId: job.id, amount: 650, status: "Failed" }
+        });
+        return res.status(400).json({
+          error: "Payment failed: Card authorization declined by issuing bank. The emergency dispatch team cannot be sent until the R650 call-out fee is successfully paid.",
+          paymentStatus: "Failed",
+          callOutFee: 650
+        });
+      }
+      const CALL_OUT_FEE = 650;
+      const actualTxRef = transactionRef || `GW-SDA-${Date.now()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const actualGwRef = gatewayReference || `SDA-EMG-${Date.now()}`;
+      const invoice = await prisma.invoice.create({
+        data: {
+          invoiceNumber: generateInvoiceNumber(),
+          userId: null,
+          membershipId: null,
+          jobId: job.id,
+          customerName: job.nonMemberName || "Emergency Non-Member Customer",
+          customerEmail: job.nonMemberEmail || null,
+          customerAddress: job.nonMemberAddress || null,
+          membershipPlan: "Non-Member Emergency Assistance",
+          serviceRequested: job.serviceType,
+          technicianName: "Same Day Assist Emergency Response Unit",
+          parts: 0,
+          labour: CALL_OUT_FEE,
+          otherCharges: 0,
+          subtotal: CALL_OUT_FEE,
+          taxVat: parseFloat((CALL_OUT_FEE * 0.15).toFixed(2)),
+          total: CALL_OUT_FEE,
+          amountCoveredByBenefit: 0,
+          amountPayableByCustomer: CALL_OUT_FEE,
+          paymentStatus: "Paid",
+          invoiceStatus: "Paid",
+          paidAt: /* @__PURE__ */ new Date(),
+          paymentMethod: paymentMethod || "Card Online",
+          notes: "Emergency Assistance Call-Out Fee (R650.00). Fixed non-member one-time fee paid prior to dispatch."
+        }
+      });
       const payment = await prisma.payment.create({
         data: {
           customerId: null,
           customerName: job.nonMemberName || "Emergency Non-Member Customer",
           jobId: job.id,
-          type: "Emergency Assistance Service - Non-Member",
-          amount: amountToPay,
+          invoiceId: invoice.id,
+          paymentStage: "SERVICE_COPAY",
+          type: "Emergency Assistance Call-Out Fee",
+          amount: CALL_OUT_FEE,
           status: "Paid",
           paymentMethod: paymentMethod || "Card Online",
-          date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+          date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+          paidAt: /* @__PURE__ */ new Date(),
+          transactionRef: actualTxRef,
+          gatewayReference: actualGwRef
         }
       });
       const updatedJob = await prisma.job.update({
         where: { id: job.id },
         data: {
           paymentStatus: "Paid",
-          status: "Service Completed",
-          trackerProgress: 100,
-          completedAt: job.completedAt || /* @__PURE__ */ new Date(),
-          closedAt: /* @__PURE__ */ new Date()
+          status: "Awaiting Dispatch",
+          trackerProgress: 25,
+          finalAmount: CALL_OUT_FEE
         },
         include: {
-          assignedContractor: { select: { id: true, name: true, phone: true } }
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
+          payments: true,
+          invoice: true
         }
       });
       const formatted = formatJob(updatedJob);
       io?.to(`emergency-job-${job.id}`).emit("job-updated", formatted);
       io?.to("admin-room").emit("job-updated", formatted);
+      io?.to("admin-room").emit("emergency-paid", {
+        jobId: job.id,
+        amount: CALL_OUT_FEE,
+        customerName: job.nonMemberName,
+        paymentRef: actualGwRef
+      });
       await writeAuditLog({
         userId: void 0,
         userType: "Non-Member Emergency",
-        action: "One-Time Emergency Payment Completed",
-        details: `Non-member ${job.nonMemberName} paid full service amount of R${amountToPay.toFixed(2)} for Job ${job.id} via ${paymentMethod || "Card"} (Card: ****${cardLast4 || "4242"}). Request closed.`,
+        action: "Emergency Call-Out Fee Confirmed",
+        details: `Non-member ${job.nonMemberName} paid Emergency Call-Out Fee of R${CALL_OUT_FEE.toFixed(2)} for Job ${job.id} via ${paymentMethod || "Card"} (Ref: ${actualGwRef}). Request unlocked for dispatch.`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
-        newValue: { paymentId: payment.id, amount: amountToPay, status: "Paid", customerType: "NON_MEMBER_EMERGENCY" }
+        newValue: { paymentId: payment.id, invoiceId: invoice.id, amount: CALL_OUT_FEE, status: "Paid", customerType: "NON_MEMBER_EMERGENCY" }
       });
       return res.json({
         success: true,
-        message: "Payment confirmed! Emergency service marked as completed and paid.",
+        message: "Payment confirmed! R650 Emergency Call-Out Fee paid. Dispatch team has been notified.",
         payment,
+        invoice,
         job: formatted
       });
     } catch (error) {
@@ -3699,6 +3799,13 @@ function createJobsRouter(io) {
       ]);
       if (!job) return res.status(404).json({ error: "Job not found" });
       if (!contractor || contractor.role !== "Contractor") return res.status(400).json({ error: "Invalid contractor" });
+      if (job.customerType === "NON_MEMBER_EMERGENCY" && job.paymentStatus !== "Paid") {
+        return res.status(400).json({
+          error: "Cannot dispatch unit: Emergency Assistance Call-Out Fee (R650) must be confirmed and paid before dispatch.",
+          paymentStatus: job.paymentStatus,
+          callOutFeeRequired: 650
+        });
+      }
       const prevStatus = job.status;
       const vehicleInfo = JSON.stringify({
         make: "Toyota",
@@ -3751,23 +3858,31 @@ function createJobsRouter(io) {
   router12.patch("/:id/status", requireAuth, async (req, res) => {
     const { status } = req.body;
     const progressMap = {
+      "Payment Required": 10,
+      "Payment Processing": 15,
+      "Payment Confirmed": 20,
+      "Awaiting Dispatch": 25,
       "Request Received": 10,
       "Requested": 10,
       "Request Under Review": 20,
       "Accepted": 25,
       "Service Provider Assigned": 35,
       "Preparing for Dispatch": 45,
-      "Dispatched": 60,
-      "En Route": 75,
-      "Arrived": 85,
-      "Service In Progress": 90,
-      "In Progress": 90,
+      "Dispatched": 50,
+      "Team Dispatched": 50,
+      "Team En Route": 65,
+      "En Route": 65,
+      "Arrived": 80,
+      "Assistance In Progress": 85,
+      "Service In Progress": 85,
+      "In Progress": 85,
       "Work Completed": 95,
       "Payment Pending": 98,
       "Service Completed": 100,
       "Completed": 100,
       "Paid": 100,
-      "Closed": 100
+      "Closed": 100,
+      "Cancelled": 0
     };
     if (progressMap[status] === void 0) {
       return res.status(400).json({ error: `Invalid status: ${status}` });
@@ -3775,6 +3890,28 @@ function createJobsRouter(io) {
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: "Job not found" });
+      const DISPATCH_WORKFLOW_STATUSES = [
+        "Service Provider Assigned",
+        "Preparing for Dispatch",
+        "Dispatched",
+        "Team Dispatched",
+        "En Route",
+        "Team En Route",
+        "Arrived",
+        "Assistance In Progress",
+        "Service In Progress",
+        "In Progress",
+        "Work Completed",
+        "Service Completed",
+        "Completed"
+      ];
+      if (job.customerType === "NON_MEMBER_EMERGENCY" && job.paymentStatus !== "Paid" && DISPATCH_WORKFLOW_STATUSES.includes(status)) {
+        return res.status(400).json({
+          error: `Cannot change status to "${status}": The R650 Emergency Call-Out Fee must be confirmed before dispatch.`,
+          paymentStatus: job.paymentStatus,
+          callOutFeeRequired: 650
+        });
+      }
       const updated = await prisma.job.update({
         where: { id: req.params.id },
         data: {

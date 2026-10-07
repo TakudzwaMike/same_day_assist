@@ -93,23 +93,22 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {state.jobs.filter(j => j.status === 'Requested' || j.status === 'Request Received').map(alarm => {
+            {state.jobs.filter(j => ['Requested', 'Request Received', 'Awaiting Dispatch', 'Payment Required'].includes(j.status)).map(alarm => {
               const isNonMember = alarm.customerType === 'NON_MEMBER_EMERGENCY';
-              const vehObj = typeof alarm.customerVehicle === 'object' && alarm.customerVehicle !== null 
-                ? (alarm.customerVehicle as any) 
-                : typeof alarm.customerVehicle === 'string' && alarm.customerVehicle.startsWith('{')
-                  ? (() => { try { return JSON.parse(alarm.customerVehicle); } catch { return null; } })()
-                  : null;
-              const vehString = typeof alarm.customerVehicle === 'string' && !vehObj ? alarm.customerVehicle : null;
+              const isPaid = alarm.paymentStatus === 'Paid';
+              const dispatchLocked = isNonMember && !isPaid;
+
               return (
                 <div 
                   key={alarm.id} 
-                  className="bg-white border-2 border-red-500 rounded-2xl p-4.5 shadow-lg flex flex-col justify-between gap-3"
+                  className={`bg-white border-2 rounded-2xl p-4.5 shadow-lg flex flex-col justify-between gap-3 ${
+                    dispatchLocked ? 'border-amber-400' : 'border-red-500'
+                  }`}
                 >
                   <div>
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="bg-red-600 text-white text-[9px] font-extrabold uppercase px-2 py-0.5 rounded font-mono">
                             {alarm.serviceType || 'EMERGENCY DISPATCH'}
                           </span>
@@ -126,8 +125,12 @@ export default function AdminDashboard() {
                           <span>{alarm.customerName || 'Emergency Customer'}</span>
                         </h3>
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">
-                        LIVE ALARM
+                      <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded border ${
+                        dispatchLocked 
+                          ? 'text-amber-700 bg-amber-50 border-amber-200' 
+                          : 'text-red-600 bg-red-50 border-red-200'
+                      }`}>
+                        {dispatchLocked ? 'AWAITING R650' : 'DISPATCH READY'}
                       </span>
                     </div>
 
@@ -142,16 +145,17 @@ export default function AdminDashboard() {
                       <p className="flex items-center gap-1.5 font-medium">
                         <span className="font-bold text-slate-900">📞 Phone:</span> {alarm.customerPhone || '+27 82 555 1000'}
                       </p>
-                      {vehObj && (
-                        <p className="flex items-center gap-1.5 font-medium text-slate-800">
-                          <span className="font-bold text-slate-900">🚗 Customer Vehicle:</span>{' '}
-                          {vehObj.make} {vehObj.model} ({vehObj.year || 'N/A'}) • {vehObj.licensePlate} • {vehObj.color}
-                        </p>
-                      )}
-                      {vehString && (
-                        <p className="flex items-center gap-1.5 font-medium text-slate-800">
-                          <span className="font-bold text-slate-900">🚗 Customer Vehicle:</span> {vehString}
-                        </p>
+                      {isNonMember && (
+                        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+                          <span className="text-slate-500">Call-Out Fee (R650):</span>
+                          <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
+                            isPaid 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                              : 'bg-red-100 text-red-800 border border-red-300'
+                          }`}>
+                            {isPaid ? '✓ R650 PAID' : '⏳ PAYMENT REQUIRED'}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -165,10 +169,16 @@ export default function AdminDashboard() {
                     </a>
                     <button
                       type="button"
+                      disabled={dispatchLocked}
                       onClick={broadcastRadioDispatch}
-                      className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center shadow-xs cursor-pointer transition-colors"
+                      className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 text-center shadow-xs transition-colors ${
+                        dispatchLocked 
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' 
+                          : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                      }`}
+                      title={dispatchLocked ? 'Dispatch locked until R650 Call-Out Fee is confirmed' : 'Dispatch Response Unit'}
                     >
-                      <span>🚨 Dispatch Unit</span>
+                      <span>{dispatchLocked ? '🔒 Dispatch Locked' : '🚨 Dispatch Unit'}</span>
                     </button>
                   </div>
                 </div>

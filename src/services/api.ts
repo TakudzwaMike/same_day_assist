@@ -293,16 +293,12 @@ class ApiClient {
     address: string;
     serviceType: string;
     description: string;
+    urgency?: string;
+    additionalNotes?: string;
+    consentAgreed?: boolean;
     photoUrl?: string;
-    vehicle?: {
-      make: string;
-      model: string;
-      year?: number | string;
-      licensePlate: string;
-      color?: string;
-    };
   }) {
-    return this.request<{ success: boolean; message: string; job: any }>('/jobs/emergency-non-member', {
+    return this.request<{ success: boolean; message: string; job: any; callOutFee?: number }>('/jobs/emergency-non-member', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -316,8 +312,14 @@ class ApiClient {
       body: JSON.stringify(payload),
     });
   }
-  async payEmergencyService(jobId: string, payload: { paymentMethod?: string; cardLast4?: string }) {
-    return this.request<{ success: boolean; message: string; payment: any; job: any }>(`/jobs/emergency-non-member/${jobId}/pay`, {
+  async payEmergencyService(jobId: string, payload: { 
+    paymentMethod?: string; 
+    cardLast4?: string;
+    transactionRef?: string;
+    gatewayReference?: string;
+    simulateFailure?: boolean;
+  }) {
+    return this.request<{ success: boolean; message: string; payment: any; invoice?: any; job: any }>(`/jobs/emergency-non-member/${jobId}/pay`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });

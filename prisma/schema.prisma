@@ -463,8 +463,8 @@ model Invoice {
   id                      String               @id @default(uuid())
   invoiceNumber           String               @unique // e.g. SDA-INV-000101
   date                    DateTime             @default(now())
-  userId                  String
-  user                    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                  String?
+  user                    User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   membershipId            String?
   membership              Membership?          @relation(fields: [membershipId], references: [id], onDelete: SetNull)
   jobId                   String?              @unique

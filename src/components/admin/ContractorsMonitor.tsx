@@ -241,29 +241,34 @@ export default function ContractorsMonitor() {
 
                 {/* Non-Member Financial & Payment Status */}
                 {isNonMember && (
-                  <div className="bg-slate-950 text-white p-3 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                  <div className="bg-slate-950 text-white p-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs font-mono border border-slate-800">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-amber-400" />
                       <div>
-                        <span className="text-[9px] text-slate-400 uppercase block">Applicable Service Fee</span>
-                        <span className="text-sm font-bold text-amber-400">
-                          {job.finalAmount && job.finalAmount > 0 ? `R${job.finalAmount.toFixed(2)}` : 'R850.00 (Pending Final Review)'}
+                        <span className="text-[9px] text-slate-400 uppercase block">Emergency Call-Out Fee</span>
+                        <span className="text-sm font-black text-amber-400">
+                          R650.00 (Fixed Call-Out Fee)
                         </span>
                       </div>
                     </div>
                     <div>
                       <span className="text-[9px] text-slate-400 uppercase block">Payment Status</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        job.paymentStatus === 'Paid' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      <span className={`px-2.5 py-1 rounded text-[10px] font-bold tracking-wide uppercase ${
+                        job.paymentStatus === 'Paid' 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                          : 'bg-red-500/20 text-red-300 border border-red-500/40'
                       }`}>
-                        {job.paymentStatus === 'Paid' ? '✓ FULLY PAID' : '⏳ PAYMENT PENDING'}
+                        {job.paymentStatus === 'Paid' ? '✓ PAYMENT CONFIRMED (R650 PAID)' : '⏳ PAYMENT REQUIRED (R650 DUE)'}
                       </span>
                     </div>
-                    {job.servicePerformed && (
-                      <div className="w-full pt-1.5 border-t border-slate-800 text-[10px] text-slate-300">
-                        <span className="text-slate-400">Completed Service:</span> {job.servicePerformed}
-                      </div>
-                    )}
+                    <div className="w-full pt-1.5 border-t border-slate-800 flex justify-between items-center text-[10px] text-slate-400">
+                      <span>Dispatch Eligibility:</span>
+                      <span className={`font-bold ${job.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {job.paymentStatus === 'Paid' 
+                          ? 'Eligible for Dispatch (Awaiting Unit Assignment)' 
+                          : 'LOCKED: Dispatch prohibited until R650 is verified'}
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -292,40 +297,45 @@ export default function ContractorsMonitor() {
                   {!['Completed', 'Service Completed', 'Closed'].includes(job.status) && (
                     <select
                       value={job.status}
+                      disabled={isNonMember && job.paymentStatus !== 'Paid'}
                       onChange={e => handleQuickStatusChange(job.id, e.target.value)}
-                      className="text-xs p-1.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-bold"
+                      className="text-xs p-1.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-700 font-bold disabled:opacity-50"
                     >
-                      <option value="Requested">Requested</option>
-                      <option value="Request Under Review">Request Under Review</option>
-                      <option value="Service Provider Assigned">Assigned</option>
-                      <option value="Dispatched">Dispatched</option>
-                      <option value="En Route">En Route</option>
-                      <option value="Arrived">Arrived</option>
-                      <option value="Service In Progress">In Progress</option>
-                      <option value="Work Completed">Work Completed</option>
+                      {isNonMember && job.paymentStatus !== 'Paid' ? (
+                        <option value="Payment Required">Payment Required (Dispatch Locked)</option>
+                      ) : (
+                        <>
+                          {isNonMember && <option value="Awaiting Dispatch">Awaiting Dispatch</option>}
+                          <option value="Requested">Requested</option>
+                          <option value="Request Under Review">Request Under Review</option>
+                          <option value="Service Provider Assigned">Service Provider Assigned</option>
+                          <option value="Dispatched">Dispatched</option>
+                          <option value="Team En Route">Team En Route</option>
+                          <option value="En Route">En Route</option>
+                          <option value="Arrived">Arrived</option>
+                          <option value="Assistance In Progress">Assistance In Progress</option>
+                          <option value="Service In Progress">Service In Progress</option>
+                          <option value="Work Completed">Work Completed</option>
+                          <option value="Completed">Completed</option>
+                        </>
+                      )}
                     </select>
                   )}
 
-                  {/* Assign responder button */}
-                  {job.status === 'Requested' && (
+                  {/* Assign responder button — strictly enabled for non-members ONLY AFTER payment is confirmed */}
+                  {(!job.assignedContractorId && ['Requested', 'Awaiting Dispatch', 'Payment Confirmed'].includes(job.status)) && (
                     <button
                       type="button"
+                      disabled={isNonMember && job.paymentStatus !== 'Paid'}
                       onClick={() => handleAssignClick(job.id)}
-                      className="px-3.5 py-1.5 bg-red hover:bg-red/90 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer uppercase tracking-wider"
+                      className={`px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-xs cursor-pointer uppercase tracking-wider ${
+                        isNonMember && job.paymentStatus !== 'Paid'
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          : 'bg-red hover:bg-red/90 text-white'
+                      }`}
+                      title={isNonMember && job.paymentStatus !== 'Paid' ? 'Dispatch locked until R650 Call-Out fee is paid' : 'Assign response unit'}
                     >
-                      Assign Unit
-                    </button>
-                  )}
-
-                  {/* Non-member set final amount button */}
-                  {isNonMember && job.status !== 'Closed' && job.paymentStatus !== 'Paid' && (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenAmountModal(job)}
-                      className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
-                    >
-                      <DollarSign className="w-3.5 h-3.5" />
-                      <span>{job.finalAmount ? 'Edit Final Amount' : 'Set Final Amount'}</span>
+                      {isNonMember && job.paymentStatus !== 'Paid' ? '🔒 Dispatch Locked (Awaiting R650)' : 'Assign Unit'}
                     </button>
                   )}
 
@@ -337,7 +347,7 @@ export default function ContractorsMonitor() {
                       className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
                     >
                       <CreditCard className="w-3.5 h-3.5" />
-                      <span>Record / Confirm Payment</span>
+                      <span>Verify & Confirm R650 Payment</span>
                     </button>
                   )}
 
