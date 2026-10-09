@@ -410,7 +410,7 @@ router.post('/onboarding', async (req: any, res: Response) => {
   }
 });
 
-// PUT /api/auth/profile — Update Profile with 60-Day Lock and Admin Approval Routing
+// PUT /api/auth/profile — Update Profile (Direct update for customer profile fields; approval routing for sensitive corporate identity fields)
 router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user!.id;
   const updates = req.body;
@@ -419,16 +419,17 @@ router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    // For customers updating personal details (name, phone, address, etc.), apply directly
+    const isCustomer = user.role === 'Customer';
+    const corporateSensitiveFields = ['idNumber', 'companyRegNumber'];
+    const isCorporateSensitiveAttempt = !isCustomer && corporateSensitiveFields.some(field => updates[field] !== undefined && updates[field] !== (user as any)[field]);
+
     const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
     const now = new Date();
     const lastUpdate = user.lastProfileUpdateAt ? new Date(user.lastProfileUpdateAt) : null;
-    const isLocked = lastUpdate && (now.getTime() - lastUpdate.getTime() < SIXTY_DAYS_MS);
+    const isLocked = !isCustomer && lastUpdate && (now.getTime() - lastUpdate.getTime() < SIXTY_DAYS_MS);
 
-    // Check sensitive fields
-    const sensitiveFields = ['idNumber', 'companyRegNumber', 'name', 'email'];
-    const isSensitiveAttempt = sensitiveFields.some(field => updates[field] !== undefined && updates[field] !== (user as any)[field]);
-
-    if (isLocked || isSensitiveAttempt) {
+    if (isLocked || isCorporateSensitiveAttempt) {
       // Create pending ProfileUpdateRequest
       const pendingReq = await prisma.profileUpdateRequest.create({
         data: {
@@ -442,7 +443,7 @@ router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Respo
         userId,
         userType: user.role,
         action: 'Profile Update Requested',
-        details: `Profile update submitted for Admin Approval (60-day lock active: ${isLocked}, Sensitive edit: ${isSensitiveAttempt})`,
+        details: `Profile update submitted for Admin Approval (60-day lock active: ${isLocked}, Sensitive edit: ${isCorporateSensitiveAttempt})`,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
       });
@@ -458,7 +459,16 @@ router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...updates,
+        ...(updates.name && { name: updates.name.trim() }),
+        ...(updates.phone && { phone: updates.phone.trim() }),
+        ...(updates.secondaryPhone !== undefined && { secondaryPhone: updates.secondaryPhone }),
+        ...(updates.address && { address: updates.address.trim() }),
+        ...(updates.emergencyContactName !== undefined && { emergencyContactName: updates.emergencyContactName }),
+        ...(updates.emergencyContactPhone !== undefined && { emergencyContactPhone: updates.emergencyContactPhone }),
+        ...(updates.preferredContactMethod && { preferredContactMethod: updates.preferredContactMethod }),
+        ...(updates.companyName !== undefined && { companyName: updates.companyName }),
+        ...(updates.industry !== undefined && { industry: updates.industry }),
+        ...(isCustomer && updates.idNumber !== undefined && { idNumber: updates.idNumber }),
         lastProfileUpdateAt: now,
       },
     });
@@ -482,6 +492,10 @@ router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Respo
         phone: updatedUser.phone,
         address: updatedUser.address,
         idNumber: updatedUser.idNumber,
+        secondaryPhone: updatedUser.secondaryPhone,
+        emergencyContactName: updatedUser.emergencyContactName,
+        emergencyContactPhone: updatedUser.emergencyContactPhone,
+        preferredContactMethod: updatedUser.preferredContactMethod,
         companyName: updatedUser.companyName,
         companyRegNumber: updatedUser.companyRegNumber,
         lastProfileUpdateAt: updatedUser.lastProfileUpdateAt,
@@ -490,6 +504,179 @@ router.put('/profile', requireAuth, async (req: AuthenticatedRequest, res: Respo
   } catch (error) {
     console.error('[Auth/Profile]', error);
     return res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
+// POST /api/auth/change-password — Dedicated secure password change with verification
+router.post('/change-password', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ error: 'Current password, new password, and confirmation are required.' });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: 'New password and confirmation do not match.' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters in length.' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User record not found.' });
+
+    const isValidCurrent = await comparePassword(currentPassword, user.passwordHash);
+    if (!isValidCurrent) {
+      await writeAuditLog({
+        userId,
+        userType: user.role,
+        action: 'Change Password Failed',
+        result: 'Failed',
+        details: 'Failed password change: current password incorrect',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+      return res.status(400).json({ error: 'Current password entered is incorrect.' });
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    await writeAuditLog({
+      userId,
+      userType: user.role,
+      action: 'Change Password',
+      result: 'Success',
+      details: 'Customer successfully changed account security password',
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ message: 'Password updated successfully. Please use your new password next time you sign in.' });
+  } catch (err) {
+    console.error('[Auth/ChangePassword]', err);
+    return res.status(500).json({ error: 'Internal server error changing password.' });
+  }
+});
+
+// GET /api/auth/notifications — Retrieve connected notification channels & alert preferences
+router.get('/notifications', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  try {
+    let settings = await prisma.notificationPreference.findUnique({ where: { userId } });
+    if (!settings) {
+      settings = await prisma.notificationPreference.create({
+        data: { userId, email: true, sms: true, push: true, inApp: true },
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs: any = {};
+    if (user?.communicationPreferences) {
+      try { commPrefs = JSON.parse(user.communicationPreferences); } catch (e) {}
+    }
+
+    return res.json({
+      email: settings.email,
+      sms: settings.sms,
+      push: settings.push,
+      inApp: settings.inApp,
+      serviceUpdates: commPrefs.serviceUpdates ?? true,
+      paymentAlerts: commPrefs.paymentAlerts ?? true,
+      securityAlerts: commPrefs.securityAlerts ?? true,
+    });
+  } catch (err) {
+    console.error('[Auth/Notifications GET]', err);
+    return res.status(500).json({ error: 'Failed to retrieve notification settings.' });
+  }
+});
+
+// PUT /api/auth/notifications — Update notification preferences across channels
+router.put('/notifications', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { email, sms, push, inApp, serviceUpdates, paymentAlerts, securityAlerts } = req.body;
+
+  try {
+    const updatedSettings = await prisma.notificationPreference.upsert({
+      where: { userId },
+      update: {
+        ...(email !== undefined && { email: Boolean(email) }),
+        ...(sms !== undefined && { sms: Boolean(sms) }),
+        ...(push !== undefined && { push: Boolean(push) }),
+        ...(inApp !== undefined && { inApp: Boolean(inApp) }),
+      },
+      create: {
+        userId,
+        email: email !== undefined ? Boolean(email) : true,
+        sms: sms !== undefined ? Boolean(sms) : true,
+        push: push !== undefined ? Boolean(push) : true,
+        inApp: inApp !== undefined ? Boolean(inApp) : true,
+      },
+    });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs: any = {};
+    if (user?.communicationPreferences) {
+      try { commPrefs = JSON.parse(user.communicationPreferences); } catch (e) {}
+    }
+
+    if (serviceUpdates !== undefined) commPrefs.serviceUpdates = Boolean(serviceUpdates);
+    if (paymentAlerts !== undefined) commPrefs.paymentAlerts = Boolean(paymentAlerts);
+    if (securityAlerts !== undefined) commPrefs.securityAlerts = Boolean(securityAlerts);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { communicationPreferences: JSON.stringify(commPrefs) },
+    });
+
+    return res.json({
+      email: updatedSettings.email,
+      sms: updatedSettings.sms,
+      push: updatedSettings.push,
+      inApp: updatedSettings.inApp,
+      serviceUpdates: commPrefs.serviceUpdates ?? true,
+      paymentAlerts: commPrefs.paymentAlerts ?? true,
+      securityAlerts: commPrefs.securityAlerts ?? true,
+    });
+  } catch (err) {
+    console.error('[Auth/Notifications PUT]', err);
+    return res.status(500).json({ error: 'Failed to update notification settings.' });
+  }
+});
+
+// PATCH /api/auth/theme — Save customer theme preference (dark navy or light)
+router.patch('/theme', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user!.id;
+  const { theme } = req.body;
+
+  if (theme !== 'dark' && theme !== 'light') {
+    return res.status(400).json({ error: 'Theme must be either "dark" or "light".' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs: any = {};
+    if (user?.communicationPreferences) {
+      try { commPrefs = JSON.parse(user.communicationPreferences); } catch (e) {}
+    }
+
+    commPrefs.themePreference = theme;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { communicationPreferences: JSON.stringify(commPrefs) },
+    });
+
+    return res.json({ theme, message: 'Theme preference saved successfully.' });
+  } catch (err) {
+    console.error('[Auth/Theme PATCH]', err);
+    return res.status(500).json({ error: 'Failed to update theme preference.' });
   }
 });
 

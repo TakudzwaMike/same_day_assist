@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Eye, EyeOff, Mail, Key, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useAuth } from './contexts/AuthContext';
 import { useAppState } from './contexts/AppStateContext';
+import { useTheme } from './contexts/ThemeContext';
 import CustomerApp from './components/CustomerApp';
 import ContractorApp from './components/ContractorApp';
 import AdminPortal from './components/AdminPortal';
@@ -12,6 +13,7 @@ import logoImg from './assets/logo.png';
 export default function App() {
   const { user, isAuthenticated, login, register, onboarding, error: authError, clearError } = useAuth();
   const { state, createEnquiry } = useAppState();
+  const { theme, isDark } = useTheme();
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -533,7 +535,9 @@ export default function App() {
 
   // 2. RENDER THE CORRESPONDING ACTIVE PORTAL IF AUTHENTICATED
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans gap-8">
+    <div className={`min-h-screen flex flex-col justify-between font-sans gap-8 transition-colors duration-200 ${
+      theme === 'light' ? 'bg-[#F1F5F9] text-navy' : 'bg-slate-950 text-slate-100'
+    }`}>
       {!isOnline && (
         <div className="bg-red text-white text-[11px] font-bold py-2 px-4 text-center animate-fadeIn select-none flex items-center justify-center gap-2 z-[999] shadow-md border-b border-red/20 font-mono tracking-wider">
           <AlertCircle className="w-3.5 h-3.5 animate-pulse" />
@@ -543,7 +547,7 @@ export default function App() {
       {/* Dynamic Active Portal */}
       <div className="flex-1 flex flex-col justify-center p-4 md:p-8">
         {user?.role === 'Customer' && (
-          <div className="w-full text-slate-900">
+          <div className="w-full">
             <CustomerApp />
           </div>
         )}

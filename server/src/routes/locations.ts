@@ -43,6 +43,33 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
   }
 });
 
+// PUT /api/locations/:id — Update an existing saved location
+router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const { label, address, lat, lng, accessNotes } = req.body;
+  try {
+    const existing = await prisma.savedLocation.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.userId !== req.user!.id) {
+      return res.status(404).json({ error: 'Saved location not found' });
+    }
+
+    const updated = await prisma.savedLocation.update({
+      where: { id: req.params.id },
+      data: {
+        ...(label && { label }),
+        ...(address && { address }),
+        ...(lat !== undefined && { lat: parseFloat(lat) }),
+        ...(lng !== undefined && { lng: parseFloat(lng) }),
+        ...(accessNotes !== undefined && { accessNotes }),
+      },
+    });
+
+    return res.json(updated);
+  } catch (error) {
+    console.error('[Locations/PUT]', error);
+    return res.status(500).json({ error: 'Failed to update saved location' });
+  }
+});
+
 // DELETE /api/locations/:id — Delete a saved location
 router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

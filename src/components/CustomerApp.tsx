@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard, Settings, Sun, Moon } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import CustomerHome from './customer/CustomerHome';
-import CustomerProfile from './customer/CustomerProfile';
+import CustomerSettings from './customer/CustomerSettings';
 import CustomerInvoices from './customer/CustomerInvoices';
 import CustomerClaims from './customer/CustomerClaims';
 import CustomerActiveJob from './customer/CustomerActiveJob';
@@ -19,7 +20,8 @@ import logoImg from '../assets/logo.png';
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'profile' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
+  const { theme, toggleTheme, isDark } = useTheme();
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -47,97 +49,109 @@ export default function CustomerApp() {
   const assignedContractor = activeJob ? state.contractors.find(c => c.id === activeJob.assignedContractorId) : null;
 
   return (
-    <div className="w-full bg-white border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn text-slate-900">
+    <div className={`w-full rounded-3xl shadow-xl flex flex-col overflow-hidden animate-fadeIn transition-colors duration-200 ${
+      isDark 
+        ? 'bg-[#091C3E] border border-[#142D59] text-slate-100' 
+        : 'bg-white border border-slate-200 text-slate-900'
+    }`}>
       {/* BRANDING HEADER */}
-      <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className={`px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 border-b ${
+        isDark ? 'bg-[#050E20]/90 border-[#142D59]' : 'bg-slate-50 border-slate-100'
+      }`}>
         <div className="flex items-center gap-3">
           <img 
             src={logoImg} 
             alt="Same Day Assist Logo" 
             onClick={() => setActiveDeviceTab('home')}
-            className="w-10 h-10 object-contain shrink-0 cursor-pointer" 
+            className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-xs" 
           />
           <div>
-            <h1 className="text-lg font-black italic text-navy leading-none uppercase">Same Day Assist</h1>
-            <p className="text-[10px] font-bold text-red tracking-wider uppercase">Consumer Portal • Johannesburg Dispatch</p>
+            <h1 className={`text-lg font-black italic leading-none uppercase font-brand-header ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}>
+              Same Day Assist
+            </h1>
+            <p className="text-[10px] font-bold text-red tracking-wider uppercase font-mono">Consumer Portal • Johannesburg Dispatch</p>
           </div>
         </div>
 
         {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-x-auto">
+        <div className={`flex items-center gap-1.5 p-1 rounded-2xl border w-full md:w-auto overflow-x-auto ${
+          isDark ? 'bg-[#050E20] border-[#142D59]' : 'bg-slate-100 border-slate-200'
+        }`}>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('home')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'home'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Shield className="w-4 h-4 text-red" />
-            <span>{isFullyActive ? 'Emergency Dispatch' : 'Onboarding Status'}</span>
+            <Shield className="w-4 h-4 text-white" />
+            <span>{isFullyActive ? 'Emergency Dispatch' : 'Onboarding'}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('wallet')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'wallet'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Wallet className="w-4 h-4 text-red" />
+            <Wallet className="w-4 h-4" />
             <span>Digital Wallet</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('vehicles')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'vehicles'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Car className="w-4 h-4 text-slate-500" />
-            <span>MY VEHICLES</span>
+            <Car className="w-4 h-4" />
+            <span>Vehicles</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('locations')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'locations'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <MapPin className="w-4 h-4 text-slate-500" />
-            <span>ADDRESS</span>
+            <MapPin className="w-4 h-4" />
+            <span>Address Sites</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('contacts')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'contacts'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Users className="w-4 h-4 text-slate-500" />
-            <span>NEXT OF KIN DETAILS</span>
+            <Users className="w-4 h-4" />
+            <span>Next of Kin</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('claims')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'claims'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <ShieldAlert className="w-4 h-4 text-slate-500" />
-            <span>My Claims</span>
+            <ShieldAlert className="w-4 h-4" />
+            <span>Claims</span>
             {state.claims && state.claims.length > 0 && (
-              <span className="bg-navy text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+              <span className="bg-red text-white text-[9px] font-mono px-1.5 py-0.2 rounded-full font-bold">
                 {state.claims.length}
               </span>
             )}
@@ -145,54 +159,87 @@ export default function CustomerApp() {
           <button
             type="button"
             onClick={() => setActiveDeviceTab('invoices')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'invoices'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <FileText className="w-4 h-4 text-slate-500" />
-            <span>Invoices & Quotes</span>
+            <FileText className="w-4 h-4" />
+            <span>Invoices</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveDeviceTab('payments')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
               activeDeviceTab === 'payments'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <CreditCard className="w-4 h-4 text-red" />
-            <span>Membership Billing</span>
+            <CreditCard className="w-4 h-4" />
+            <span>Billing</span>
           </button>
           <button
             type="button"
-            onClick={() => setActiveDeviceTab('profile')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'profile'
-                ? 'bg-white text-navy shadow-xs border border-slate-200/50'
-                : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            onClick={() => setActiveDeviceTab('settings')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              activeDeviceTab === 'settings'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <User className="w-4 h-4 text-slate-500" />
-            <span>Profile Settings</span>
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* HEADER CONTROLS: THEME TOGGLE, HOTLINE, LOGOUT */}
+        <div className="flex items-center gap-2">
+          {/* Theme Quick Toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] text-blue-300 hover:bg-[#142D59]' 
+                : 'bg-white border-slate-200 text-amber-600 hover:bg-slate-100'
+            }`}
+            title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-500" />}
+            <span className="hidden sm:inline text-[10px]">{isDark ? 'Light Mode' : 'Navy Dark'}</span>
+          </button>
+
           <a
             href="tel:+27115559111"
-            className="flex items-center gap-2 px-3 py-2 bg-red/5 hover:bg-red/10 border border-red/10 text-red text-xs font-bold rounded-xl transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-red/10 hover:bg-red/20 border border-red/20 text-red text-xs font-bold rounded-xl transition-all"
+            title="Call 24/7 Operations Hotline"
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>Hotline Support</span>
+            <span className="hidden sm:inline">Hotline</span>
           </a>
+
+          <button
+            type="button"
+            onClick={() => setActiveDeviceTab('settings')}
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              activeDeviceTab === 'settings'
+                ? 'bg-red text-white border-red'
+                : isDark ? 'bg-[#050E20] border-[#142D59] text-slate-400 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-navy'
+            }`}
+            title="Customer Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
           <button
             type="button"
             onClick={() => logout()}
-            className="p-2 bg-slate-100 hover:bg-red/10 text-slate-500 hover:text-red border border-slate-200 rounded-xl cursor-pointer transition-colors"
-            title="Log Out"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isDark ? 'bg-[#050E20] border-[#142D59] text-slate-400 hover:text-red hover:bg-red/10' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-red hover:bg-red/10'
+            }`}
+            title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -200,7 +247,9 @@ export default function CustomerApp() {
       </div>
 
       {/* PORTAL TAB VIEW */}
-      <div className="p-6 md:p-8 flex-1 bg-slate-50/50">
+      <div className={`p-6 md:p-8 flex-1 transition-colors duration-200 ${
+        isDark ? 'bg-[#050E20]/60' : 'bg-slate-50/50'
+      }`}>
         <div className="max-w-4xl mx-auto flex flex-col gap-6">
           {activeDeviceTab === 'home' && (
             !isFullyActive ? (
@@ -228,8 +277,8 @@ export default function CustomerApp() {
           {activeDeviceTab === 'contacts' && (
             <AuthorisedContactsManager />
           )}
-          {activeDeviceTab === 'profile' && (
-            <CustomerProfile activeCustomer={activeCustomer} />
+          {(activeDeviceTab === 'settings' || (activeDeviceTab as any) === 'profile') && (
+            <CustomerSettings activeCustomer={activeCustomer} onNavigateTab={(tab: any) => setActiveDeviceTab(tab)} />
           )}
           {activeDeviceTab === 'claims' && (
             <CustomerClaims onNavigateTab={setActiveDeviceTab} />

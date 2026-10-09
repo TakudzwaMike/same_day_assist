@@ -8,6 +8,21 @@
   --color-navy-light: #183366;
   --color-brand-red: #CC322C;
   --color-brand-navy: #091C3E;
+
+  /* Restore Original Navy-Blue Branding: override slate & zinc dark tokens to avoid pitch black */
+  --color-slate-950: #050E20; /* Deep Brand Navy Canvas */
+  --color-slate-900: #091C3E; /* Primary Brand Navy Card/Header */
+  --color-slate-850: #0C2145; /* Elevated Navy Surface */
+  --color-slate-800: #142D59; /* Brand Navy Border & Containers */
+  --color-slate-750: #1B396E; /* Interactive Navy Hover */
+  --color-slate-700: #244682; /* Light Navy Accent */
+
+  --color-zinc-950: #050E20;
+  --color-zinc-900: #091C3E;
+  --color-zinc-850: #0C2145;
+  --color-zinc-800: #142D59;
+  --color-zinc-750: #1B396E;
+  --color-zinc-700: #244682;
   
   --font-sans: "Inter", sans-serif;
   --font-brand: "Outfit", sans-serif;
@@ -38,8 +53,32 @@
 /* Base style resets */
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #050E20; /* Restored original brand navy background by default */
+  color: #f8fafc;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Theme variables and classes */
+:root {
+  --bg-page: #050E20;
+  --bg-surface: #091C3E;
+  --bg-surface-elevated: #0C2145;
+  --border-color: #142D59;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --brand-navy: #091C3E;
+  --brand-red: #CC322C;
+}
+
+[data-theme="light"], .theme-light {
+  --bg-page: #F1F5F9;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F8FAFC;
+  --border-color: #E2E8F0;
+  --text-primary: #091C3E;
+  --text-secondary: #64748B;
+  --brand-navy: #091C3E;
+  --brand-red: #CC322C;
 }
 
 /* Smooth custom scrollbars */

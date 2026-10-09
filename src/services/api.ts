@@ -182,6 +182,55 @@ class ApiClient {
     });
   }
 
+  async changePassword(payload: { currentPassword: string; newPassword: string; confirmPassword: string }) {
+    return this.request<{ message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getNotificationPreferences() {
+    return this.request<{
+      email: boolean;
+      sms: boolean;
+      push: boolean;
+      inApp: boolean;
+      serviceUpdates: boolean;
+      paymentAlerts: boolean;
+      securityAlerts: boolean;
+    }>('/auth/notifications');
+  }
+
+  async updateNotificationPreferences(payload: {
+    email?: boolean;
+    sms?: boolean;
+    push?: boolean;
+    inApp?: boolean;
+    serviceUpdates?: boolean;
+    paymentAlerts?: boolean;
+    securityAlerts?: boolean;
+  }) {
+    return this.request<{
+      email: boolean;
+      sms: boolean;
+      push: boolean;
+      inApp: boolean;
+      serviceUpdates: boolean;
+      paymentAlerts: boolean;
+      securityAlerts: boolean;
+    }>('/auth/notifications', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async updateThemePreference(theme: 'dark' | 'light') {
+    return this.request<{ theme: string; message: string }>('/auth/theme', {
+      method: 'PATCH',
+      body: JSON.stringify({ theme }),
+    });
+  }
+
   async logout() {
     try {
       await this.request('/auth/logout', { method: 'POST' });
@@ -205,6 +254,9 @@ class ApiClient {
   async getSavedLocations() { return this.request<any[]>('/locations'); }
   async addSavedLocation(data: { label: string; address: string; lat: number; lng: number; accessNotes?: string }) {
     return this.request<any>('/locations', { method: 'POST', body: JSON.stringify(data) });
+  }
+  async updateSavedLocation(id: string, data: { label?: string; address?: string; lat?: number; lng?: number; accessNotes?: string }) {
+    return this.request<any>(`/locations/${id}`, { method: 'PUT', body: JSON.stringify(data) });
   }
   async deleteSavedLocation(id: string) {
     return this.request<{ success: boolean }>(`/locations/${id}`, { method: 'DELETE' });

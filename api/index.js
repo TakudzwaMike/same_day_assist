@@ -1673,13 +1673,14 @@ router.put("/profile", requireAuth, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
+    const isCustomer = user.role === "Customer";
+    const corporateSensitiveFields = ["idNumber", "companyRegNumber"];
+    const isCorporateSensitiveAttempt = !isCustomer && corporateSensitiveFields.some((field) => updates[field] !== void 0 && updates[field] !== user[field]);
     const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1e3;
     const now = /* @__PURE__ */ new Date();
     const lastUpdate = user.lastProfileUpdateAt ? new Date(user.lastProfileUpdateAt) : null;
-    const isLocked = lastUpdate && now.getTime() - lastUpdate.getTime() < SIXTY_DAYS_MS;
-    const sensitiveFields = ["idNumber", "companyRegNumber", "name", "email"];
-    const isSensitiveAttempt = sensitiveFields.some((field) => updates[field] !== void 0 && updates[field] !== user[field]);
-    if (isLocked || isSensitiveAttempt) {
+    const isLocked = !isCustomer && lastUpdate && now.getTime() - lastUpdate.getTime() < SIXTY_DAYS_MS;
+    if (isLocked || isCorporateSensitiveAttempt) {
       const pendingReq = await prisma.profileUpdateRequest.create({
         data: {
           userId,
@@ -1691,7 +1692,7 @@ router.put("/profile", requireAuth, async (req, res) => {
         userId,
         userType: user.role,
         action: "Profile Update Requested",
-        details: `Profile update submitted for Admin Approval (60-day lock active: ${isLocked}, Sensitive edit: ${isSensitiveAttempt})`,
+        details: `Profile update submitted for Admin Approval (60-day lock active: ${isLocked}, Sensitive edit: ${isCorporateSensitiveAttempt})`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"]
       });
@@ -1704,7 +1705,16 @@ router.put("/profile", requireAuth, async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        ...updates,
+        ...updates.name && { name: updates.name.trim() },
+        ...updates.phone && { phone: updates.phone.trim() },
+        ...updates.secondaryPhone !== void 0 && { secondaryPhone: updates.secondaryPhone },
+        ...updates.address && { address: updates.address.trim() },
+        ...updates.emergencyContactName !== void 0 && { emergencyContactName: updates.emergencyContactName },
+        ...updates.emergencyContactPhone !== void 0 && { emergencyContactPhone: updates.emergencyContactPhone },
+        ...updates.preferredContactMethod && { preferredContactMethod: updates.preferredContactMethod },
+        ...updates.companyName !== void 0 && { companyName: updates.companyName },
+        ...updates.industry !== void 0 && { industry: updates.industry },
+        ...isCustomer && updates.idNumber !== void 0 && { idNumber: updates.idNumber },
         lastProfileUpdateAt: now
       }
     });
@@ -1726,6 +1736,10 @@ router.put("/profile", requireAuth, async (req, res) => {
         phone: updatedUser.phone,
         address: updatedUser.address,
         idNumber: updatedUser.idNumber,
+        secondaryPhone: updatedUser.secondaryPhone,
+        emergencyContactName: updatedUser.emergencyContactName,
+        emergencyContactPhone: updatedUser.emergencyContactPhone,
+        preferredContactMethod: updatedUser.preferredContactMethod,
         companyName: updatedUser.companyName,
         companyRegNumber: updatedUser.companyRegNumber,
         lastProfileUpdateAt: updatedUser.lastProfileUpdateAt
@@ -1734,6 +1748,160 @@ router.put("/profile", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("[Auth/Profile]", error);
     return res.status(500).json({ error: "Server error updating profile" });
+  }
+});
+router.post("/change-password", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    return res.status(400).json({ error: "Current password, new password, and confirmation are required." });
+  }
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: "New password and confirmation do not match." });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "New password must be at least 6 characters in length." });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: "User record not found." });
+    const isValidCurrent = await comparePassword(currentPassword, user.passwordHash);
+    if (!isValidCurrent) {
+      await writeAuditLog({
+        userId,
+        userType: user.role,
+        action: "Change Password Failed",
+        result: "Failed",
+        details: "Failed password change: current password incorrect",
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"]
+      });
+      return res.status(400).json({ error: "Current password entered is incorrect." });
+    }
+    const newHash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash }
+    });
+    await writeAuditLog({
+      userId,
+      userType: user.role,
+      action: "Change Password",
+      result: "Success",
+      details: "Customer successfully changed account security password",
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"]
+    });
+    return res.json({ message: "Password updated successfully. Please use your new password next time you sign in." });
+  } catch (err) {
+    console.error("[Auth/ChangePassword]", err);
+    return res.status(500).json({ error: "Internal server error changing password." });
+  }
+});
+router.get("/notifications", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    let settings = await prisma.notificationPreference.findUnique({ where: { userId } });
+    if (!settings) {
+      settings = await prisma.notificationPreference.create({
+        data: { userId, email: true, sms: true, push: true, inApp: true }
+      });
+    }
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs = {};
+    if (user?.communicationPreferences) {
+      try {
+        commPrefs = JSON.parse(user.communicationPreferences);
+      } catch (e) {
+      }
+    }
+    return res.json({
+      email: settings.email,
+      sms: settings.sms,
+      push: settings.push,
+      inApp: settings.inApp,
+      serviceUpdates: commPrefs.serviceUpdates ?? true,
+      paymentAlerts: commPrefs.paymentAlerts ?? true,
+      securityAlerts: commPrefs.securityAlerts ?? true
+    });
+  } catch (err) {
+    console.error("[Auth/Notifications GET]", err);
+    return res.status(500).json({ error: "Failed to retrieve notification settings." });
+  }
+});
+router.put("/notifications", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const { email, sms, push, inApp, serviceUpdates, paymentAlerts, securityAlerts } = req.body;
+  try {
+    const updatedSettings = await prisma.notificationPreference.upsert({
+      where: { userId },
+      update: {
+        ...email !== void 0 && { email: Boolean(email) },
+        ...sms !== void 0 && { sms: Boolean(sms) },
+        ...push !== void 0 && { push: Boolean(push) },
+        ...inApp !== void 0 && { inApp: Boolean(inApp) }
+      },
+      create: {
+        userId,
+        email: email !== void 0 ? Boolean(email) : true,
+        sms: sms !== void 0 ? Boolean(sms) : true,
+        push: push !== void 0 ? Boolean(push) : true,
+        inApp: inApp !== void 0 ? Boolean(inApp) : true
+      }
+    });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs = {};
+    if (user?.communicationPreferences) {
+      try {
+        commPrefs = JSON.parse(user.communicationPreferences);
+      } catch (e) {
+      }
+    }
+    if (serviceUpdates !== void 0) commPrefs.serviceUpdates = Boolean(serviceUpdates);
+    if (paymentAlerts !== void 0) commPrefs.paymentAlerts = Boolean(paymentAlerts);
+    if (securityAlerts !== void 0) commPrefs.securityAlerts = Boolean(securityAlerts);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { communicationPreferences: JSON.stringify(commPrefs) }
+    });
+    return res.json({
+      email: updatedSettings.email,
+      sms: updatedSettings.sms,
+      push: updatedSettings.push,
+      inApp: updatedSettings.inApp,
+      serviceUpdates: commPrefs.serviceUpdates ?? true,
+      paymentAlerts: commPrefs.paymentAlerts ?? true,
+      securityAlerts: commPrefs.securityAlerts ?? true
+    });
+  } catch (err) {
+    console.error("[Auth/Notifications PUT]", err);
+    return res.status(500).json({ error: "Failed to update notification settings." });
+  }
+});
+router.patch("/theme", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+  const { theme } = req.body;
+  if (theme !== "dark" && theme !== "light") {
+    return res.status(400).json({ error: 'Theme must be either "dark" or "light".' });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { communicationPreferences: true } });
+    let commPrefs = {};
+    if (user?.communicationPreferences) {
+      try {
+        commPrefs = JSON.parse(user.communicationPreferences);
+      } catch (e) {
+      }
+    }
+    commPrefs.themePreference = theme;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { communicationPreferences: JSON.stringify(commPrefs) }
+    });
+    return res.json({ theme, message: "Theme preference saved successfully." });
+  } catch (err) {
+    console.error("[Auth/Theme PATCH]", err);
+    return res.status(500).json({ error: "Failed to update theme preference." });
   }
 });
 router.post("/logout", requireAuth, async (req, res) => {
@@ -2763,6 +2931,29 @@ router9.post("/", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("[Locations/POST]", error);
     return res.status(500).json({ error: "Failed to create saved location" });
+  }
+});
+router9.put("/:id", requireAuth, async (req, res) => {
+  const { label, address, lat, lng, accessNotes } = req.body;
+  try {
+    const existing = await prisma.savedLocation.findUnique({ where: { id: req.params.id } });
+    if (!existing || existing.userId !== req.user.id) {
+      return res.status(404).json({ error: "Saved location not found" });
+    }
+    const updated = await prisma.savedLocation.update({
+      where: { id: req.params.id },
+      data: {
+        ...label && { label },
+        ...address && { address },
+        ...lat !== void 0 && { lat: parseFloat(lat) },
+        ...lng !== void 0 && { lng: parseFloat(lng) },
+        ...accessNotes !== void 0 && { accessNotes }
+      }
+    });
+    return res.json(updated);
+  } catch (error) {
+    console.error("[Locations/PUT]", error);
+    return res.status(500).json({ error: "Failed to update saved location" });
   }
 });
 router9.delete("/:id", requireAuth, async (req, res) => {
