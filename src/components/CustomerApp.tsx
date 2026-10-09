@@ -10,7 +10,6 @@ import CustomerClaims from './customer/CustomerClaims';
 import CustomerActiveJob from './customer/CustomerActiveJob';
 import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
-import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
 import { CustomerPayments } from './customer/CustomerPayments';
 import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
@@ -113,18 +112,6 @@ export default function CustomerApp() {
           >
             <Building2 className="w-4 h-4" />
             <span>My Properties</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveDeviceTab('contacts')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'contacts'
-                ? 'bg-red text-white shadow-xs'
-                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Next of Kin</span>
           </button>
           <button
             type="button"
@@ -258,11 +245,12 @@ export default function CustomerApp() {
           {(activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'locations') && (
             <SavedLocationsManager />
           )}
-          {activeDeviceTab === 'contacts' && (
-            <AuthorisedContactsManager />
-          )}
-          {(activeDeviceTab === 'settings' || (activeDeviceTab as any) === 'profile') && (
-            <CustomerSettings activeCustomer={activeCustomer} onNavigateTab={(tab: any) => setActiveDeviceTab(tab)} />
+          {(activeDeviceTab === 'settings' || (activeDeviceTab as any) === 'profile' || activeDeviceTab === 'contacts') && (
+            <CustomerSettings 
+              activeCustomer={activeCustomer} 
+              initialSubTab={activeDeviceTab === 'contacts' ? 'contacts' : undefined}
+              onNavigateTab={(tab: any) => setActiveDeviceTab(tab)} 
+            />
           )}
           {activeDeviceTab === 'claims' && (
             <CustomerClaims onNavigateTab={setActiveDeviceTab} />

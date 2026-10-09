@@ -25,17 +25,22 @@ import {
   Moon,
   Sparkles,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Users,
+  ShieldCheck,
+  HeartHandshake
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppState } from '../../contexts/AppStateContext';
 import { api } from '../../services/api';
 import { SavedLocation } from '../../types';
+import { AuthorisedContactsManager } from './AuthorisedContactsManager';
 
 interface CustomerSettingsProps {
   activeCustomer?: any;
   onNavigateTab?: (tab: string) => void;
+  initialSubTab?: 'appearance' | 'profile' | 'addresses' | 'contacts' | 'security' | 'notifications' | 'account';
 }
 
 const SA_PROVINCES = [
@@ -50,12 +55,60 @@ const SA_PROVINCES = [
   'Northern Cape',
 ];
 
-export default function CustomerSettings({ activeCustomer, onNavigateTab }: CustomerSettingsProps) {
+export default function CustomerSettings({ activeCustomer, onNavigateTab, initialSubTab }: CustomerSettingsProps) {
   const { theme, setTheme, isDark } = useTheme();
   const { user, logout, refreshUser } = useAuth();
   const { addAuditLogLocal } = useAppState();
 
-  const [activeSubTab, setActiveSubTab] = useState<'appearance' | 'profile' | 'addresses' | 'security' | 'notifications' | 'account'>('appearance');
+  const [activeSubTab, setActiveSubTab] = useState<'appearance' | 'profile' | 'addresses' | 'contacts' | 'security' | 'notifications' | 'account'>(initialSubTab || 'appearance');
+
+  useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  // Next of Kin State & Handler
+  const [kinRelationship, setKinRelationship] = useState('Spouse / Partner');
+  const [kinSaving, setKinSaving] = useState(false);
+  const [kinSuccessMsg, setKinSuccessMsg] = useState<string | null>(null);
+  const [kinErrorMsg, setKinErrorMsg] = useState<string | null>(null);
+
+  const handleSaveNextOfKin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setKinSuccessMsg(null);
+    setKinErrorMsg(null);
+
+    if (!emergencyContactName.trim()) {
+      setKinErrorMsg('Next of Kin full name is required.');
+      return;
+    }
+    if (!emergencyContactPhone.trim()) {
+      setKinErrorMsg('Next of Kin emergency phone number is required.');
+      return;
+    }
+
+    setKinSaving(true);
+    try {
+      const res = await api.updateProfile({
+        emergencyContactName: emergencyContactName.trim(),
+        emergencyContactPhone: emergencyContactPhone.trim(),
+        secondaryPhone: secondaryPhone.trim() || undefined,
+      });
+
+      if (res.user) {
+        localStorage.setItem('sda_user', JSON.stringify({ ...user, ...res.user }));
+      }
+      await refreshUser();
+      addAuditLogLocal('Next of Kin Updated', `Customer updated Next of Kin contact to ${emergencyContactName} (${emergencyContactPhone})`);
+      setKinSuccessMsg('Primary Next of Kin details updated and verified successfully!');
+      setTimeout(() => setKinSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setKinErrorMsg(err.message || 'Failed to save Next of Kin details.');
+    } finally {
+      setKinSaving(false);
+    }
+  };
 
   // ==========================================
   // SECTION B: PROFILE STATE
@@ -468,6 +521,19 @@ export default function CustomerSettings({ activeCustomer, onNavigateTab }: Cust
         >
           <MapPin className="w-4 h-4" />
           <span>Addresses & Sites</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('contacts')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+            activeSubTab === 'contacts'
+              ? 'bg-red text-white shadow-xs'
+              : isDark ? 'text-slate-400 hover:text-white hover:bg-slate-900' : 'text-slate-600 hover:text-navy hover:bg-white'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Next of Kin</span>
         </button>
 
         <button
@@ -1051,6 +1117,131 @@ export default function CustomerSettings({ activeCustomer, onNavigateTab }: Cust
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SECTION: NEXT OF KIN & EMERGENCY CONTACTS                                 */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'contacts' && (
+        <div className="flex flex-col gap-6">
+          <div className={`p-6 rounded-3xl border ${cardBgClass} shadow-md flex flex-col gap-6`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-black italic uppercase font-brand-header text-navy dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-red" />
+                  Primary Next of Kin
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Designate your primary emergency contact who will be reached immediately in case of emergency dispatches or security incidents.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-red/10 border border-red/20 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+                <ShieldCheck className="w-4 h-4 text-red" />
+                <span className="text-[11px] font-bold text-red">Priority Emergency Contact</span>
+              </div>
+            </div>
+
+            {kinSuccessMsg && (
+              <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>{kinSuccessMsg}</span>
+              </div>
+            )}
+
+            {kinErrorMsg && (
+              <div className="p-3.5 bg-red-500/10 border border-red-500/20 text-red rounded-2xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{kinErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveNextOfKin} className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Next of Kin Name */}
+                <div className="flex flex-col gap-1.5">
+                  <label className={`text-[10px] font-black uppercase tracking-wider ${labelClass}`}>
+                    Next of Kin Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={emergencyContactName}
+                    onChange={e => setEmergencyContactName(e.target.value)}
+                    placeholder="e.g. Lerato Ndlovu"
+                    className={`p-3 rounded-xl text-xs border focus:outline-none transition-all ${inputBgClass}`}
+                  />
+                </div>
+
+                {/* Next of Kin Phone */}
+                <div className="flex flex-col gap-1.5">
+                  <label className={`text-[10px] font-black uppercase tracking-wider ${labelClass}`}>
+                    Primary Emergency Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={emergencyContactPhone}
+                    onChange={e => setEmergencyContactPhone(e.target.value)}
+                    placeholder="e.g. +27 83 777 8888"
+                    className={`p-3 rounded-xl text-xs border focus:outline-none transition-all ${inputBgClass}`}
+                  />
+                </div>
+
+                {/* Relationship */}
+                <div className="flex flex-col gap-1.5">
+                  <label className={`text-[10px] font-black uppercase tracking-wider ${labelClass}`}>
+                    Relationship / Role
+                  </label>
+                  <select
+                    value={kinRelationship}
+                    onChange={e => setKinRelationship(e.target.value)}
+                    className={`p-3 rounded-xl text-xs border focus:outline-none transition-all ${inputBgClass}`}
+                  >
+                    <option value="Spouse / Partner">Spouse / Partner</option>
+                    <option value="Parent / Guardian">Parent / Guardian</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Adult Child">Adult Child</option>
+                    <option value="Trusted Relative">Trusted Relative</option>
+                    <option value="Business Partner">Business Partner</option>
+                    <option value="Keyholder / Neighbour">Keyholder / Neighbour</option>
+                  </select>
+                </div>
+
+                {/* Secondary Phone */}
+                <div className="flex flex-col gap-1.5">
+                  <label className={`text-[10px] font-black uppercase tracking-wider ${labelClass}`}>
+                    Alternative Contact Number (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={secondaryPhone}
+                    onChange={e => setSecondaryPhone(e.target.value)}
+                    placeholder="e.g. +27 11 987 6543"
+                    className={`p-3 rounded-xl text-xs border focus:outline-none transition-all ${inputBgClass}`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-3 border-t border-slate-200/50 dark:border-slate-800/80">
+                <button
+                  type="submit"
+                  disabled={kinSaving}
+                  className="px-6 py-3 bg-red hover:bg-red/90 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{kinSaving ? 'Saving...' : 'Save Next of Kin'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Authorised Keyholders & Additional Contacts */}
+          <AuthorisedContactsManager 
+            title="Authorized Keyholders & Secondary Contacts"
+            description="Add additional family members, keyholders, or estate contacts authorized to authenticate dispatches and receive alerts."
+          />
         </div>
       )}
 
