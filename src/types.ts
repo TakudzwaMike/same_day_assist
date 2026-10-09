@@ -618,6 +618,7 @@ export interface Claim {
   jobId?: string;
   serviceType: string;
   description: string;
+  propertyLocation?: string;
   vehicleOrProperty?: string;
   vehicleDetails?: string;
   propertyAddress?: string;
