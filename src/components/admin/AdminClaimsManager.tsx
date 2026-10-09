@@ -360,10 +360,10 @@ export default function AdminClaimsManager() {
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Plan & Vehicle</span>
+                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Plan & Property Location</span>
                   <span className="font-bold text-navy block mt-0.5">{selectedClaim.membershipPlan}</span>
-                  {selectedClaim.vehicleDetails && (
-                    <span className="text-slate-600 block mt-0.5">Asset: {selectedClaim.vehicleDetails}</span>
+                  {(selectedClaim.propertyLocation || selectedClaim.vehicleOrProperty || selectedClaim.vehicleDetails) && (
+                    <span className="text-slate-600 block mt-0.5">Site: {selectedClaim.propertyLocation || selectedClaim.vehicleOrProperty || selectedClaim.vehicleDetails}</span>
                   )}
                   {selectedClaim.contractorName && (
                     <span className="text-slate-600 block">Assigned Tech: {selectedClaim.contractorName}</span>
