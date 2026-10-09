@@ -26,6 +26,8 @@ export type ServiceCategory =
   | 'Maintenance Services'
   | 'Garage & Gate Automation'
   | 'Audio & Video Intercoms'
+  | 'Intercom Systems'
+  | 'Intercoms'
   | 'Access Control'
   | 'Electric Fence'
   | 'Alarm'

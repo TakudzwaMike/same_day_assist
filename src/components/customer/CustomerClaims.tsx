@@ -394,10 +394,12 @@ export function CustomerClaims({
                   onChange={e => setServiceType(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-red-500"
                 >
+                  <option value="Intercom Systems">Intercom Systems (Audio & Video, Gate Stations)</option>
                   <option value="Security Services">Security Services (Gate, Fence, CCTV, Alarm)</option>
+                  <option value="Garage & Gate Automation">Garage & Gate Automation</option>
+                  <option value="Electric Fence">Electric Fence</option>
                   <option value="Electrical Assistance">Electrical Assistance</option>
                   <option value="Plumbing Assistance">Plumbing Assistance</option>
-                  <option value="Roadside & Towing">Roadside & Towing Assistance</option>
                   <option value="Maintenance Services">General Maintenance</option>
                 </select>
               </div>

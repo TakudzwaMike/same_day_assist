@@ -97,6 +97,20 @@ export const INITIAL_CONTRACTORS: Contractor[] = [
       lng: 70,
       address: 'Randburg North, JHB'
     }
+  },
+  {
+    id: 'con-005',
+    name: 'Kagiso Sithole (Intercoms & Access)',
+    phone: '+27 84 555 1882',
+    email: 'intercoms@samedayassist.co.za',
+    rating: 5.0,
+    specialty: 'Intercom Systems & Access Control',
+    isAvailable: true,
+    location: {
+      lat: 45,
+      lng: 50,
+      address: 'Bryanston, JHB'
+    }
   }
 ];
 

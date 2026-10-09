@@ -19,6 +19,14 @@ export const EMERGENCY_SERVICES: EmergencyServiceOption[] = [
     badge: 'Popular'
   },
   {
+    id: 'intercom-systems',
+    name: 'Intercom Systems & Audio/Video Access',
+    category: 'Intercoms',
+    description: 'Gate station failure, video monitor no signal, gate release button dead, handset buzzing, wireless/GSM intercom offline.',
+    iconName: 'PhoneCall',
+    badge: 'Specialist'
+  },
+  {
     id: 'electric-fence',
     name: 'Electric Fence',
     category: 'Electric Fence',
@@ -43,10 +51,10 @@ export const EMERGENCY_SERVICES: EmergencyServiceOption[] = [
     badge: 'Essential'
   },
   {
-    id: 'access-control-intercoms',
-    name: 'Access Control & Intercoms',
+    id: 'access-control',
+    name: 'Access Control Systems',
     category: 'Access Control',
-    description: 'Keypad offline, magnetic gate lock jammed, video intercom power outage, trapped entry/exit.',
+    description: 'Keypad offline, magnetic gate lock jammed, biometric reader faults, tag reader power failure, trapped entry/exit.',
     iconName: 'KeyRound',
     badge: 'Security'
   },

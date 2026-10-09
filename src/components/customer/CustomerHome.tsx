@@ -302,6 +302,7 @@ export default function CustomerHome({
                     className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white font-bold"
                   >
                     <option value="Security Systems Assistance">🛡️ Security Systems Assistance</option>
+                    <option value="Intercom Systems">📞 Intercom Systems & Audio/Video</option>
                     <option value="Solar Systems Assistance">☀️ Solar Systems Assistance</option>
                     <option value="Electrical Assistance">⚡ Electrical Assistance</option>
                     <option value="Plumbing Assistance">💧 Plumbing Assistance</option>
@@ -477,13 +478,13 @@ export default function CustomerHome({
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                   Select Trade Specialty:
                 </label>
-                <div className="flex gap-1.5">
-                  {(['Security', 'Electrical', 'Plumbing', 'Construction'] as ServiceCategory[]).map(cat => (
+                <div className="flex flex-wrap gap-1.5">
+                  {(['Intercoms', 'Security', 'Gate Automation', 'Electrical', 'Plumbing', 'Construction'] as ServiceCategory[]).map(cat => (
                     <button
                       key={cat}
                       type="button"
                       onClick={() => setAssistCategory(cat)}
-                      className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
                         assistCategory === cat 
                           ? 'bg-navy border-navy text-white shadow-xs' 
                           : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
@@ -509,7 +510,7 @@ export default function CustomerHome({
 
                 <div className="relative">
                   <textarea
-                    placeholder="Type your problem here... (e.g. Electric fence sensor is tripping intermittently, gate motor battery needs replacement, or water leak under bathroom sink)"
+                    placeholder="Type your problem here... (e.g. Intercom gate buzzer not ringing or video monitor dead, electric fence tripping, gate motor issue, or water leak)"
                     required
                     value={assistDesc}
                     onChange={e => setAssistDesc(e.target.value)}
