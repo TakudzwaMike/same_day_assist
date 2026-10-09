@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  X, User, Shield, FileText, CreditCard, Car, Folder, History,
+  X, User, Shield, FileText, CreditCard, Folder, History,
   TrendingDown, CheckCircle, CheckCircle2, AlertTriangle, Calendar, Clock,
   ArrowRight, Download, RefreshCw, PlusCircle, ShieldAlert, Zap, AlertCircle, Building2
 } from 'lucide-react';
@@ -15,7 +15,7 @@ interface AdminCustomerProfileModalProps {
   onClose: () => void;
 }
 
-type ProfileTab = 'overview' | 'membership' | 'benefit' | 'claims' | 'invoices' | 'payments' | 'vehicles' | 'documents' | 'audit';
+type ProfileTab = 'overview' | 'membership' | 'benefit' | 'claims' | 'invoices' | 'payments' | 'properties' | 'documents' | 'audit';
 
 export default function AdminCustomerProfileModal({
   customer,
@@ -29,6 +29,7 @@ export default function AdminCustomerProfileModal({
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [timeline, setTimeline] = useState<PaymentTimeline | null>(null);
   const [isTriggeringBilling, setIsTriggeringBilling] = useState(false);
+  const [customerLocations, setCustomerLocations] = useState<any[]>([]);
 
   // Override / Adjustment form state
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
@@ -54,6 +55,12 @@ export default function AdminCustomerProfileModal({
       setTimeline(tl);
     } catch (err) {
       console.warn('Could not fetch customer payment timeline', err);
+    }
+    try {
+      const locs = await api.getSavedLocations();
+      setCustomerLocations(locs.filter((l: any) => l.userId === customer.id));
+    } catch (err) {
+      console.warn('Could not fetch customer saved locations', err);
     } finally {
       setIsLoadingSummary(false);
     }
@@ -99,7 +106,6 @@ export default function AdminCustomerProfileModal({
   const customerClaims = (state.claims || []).filter(c => c.customerId === customer.id);
   const customerInvoices = (state.invoices || []).filter(i => i.customerId === customer.id);
   const customerPayments = (state.payments || []).filter(p => p.customerId === customer.id);
-  const customerVehicles = (state.vehicles || []).filter(v => v.customerId === customer.id);
   const customerLogs = (state.auditLogs || []).filter(l => 
     l.details?.toLowerCase().includes(customer.name?.toLowerCase() || '') ||
     l.details?.toLowerCase().includes(customer.email?.toLowerCase() || '') ||
@@ -189,7 +195,7 @@ export default function AdminCustomerProfileModal({
             { id: 'claims', label: 'Claims', icon: ShieldAlert, badge: customerClaims.length },
             { id: 'invoices', label: 'Invoices', icon: FileText, badge: customerInvoices.length },
             { id: 'payments', label: 'Payments', icon: CreditCard, badge: customerPayments.length },
-            { id: 'vehicles', label: 'Properties & Sites', icon: Building2, badge: customerVehicles.length },
+            { id: 'properties', label: 'Properties & Sites', icon: Building2, badge: customerLocations.length },
             { id: 'audit', label: 'Activity / Audit Log', icon: History, badge: customerLogs.length },
           ].map(tab => (
             <button
@@ -790,26 +796,28 @@ export default function AdminCustomerProfileModal({
             </div>
           )}
 
-          {/* TAB 7: VEHICLES / ASSETS */}
-          {activeTab === 'vehicles' && (
+          {/* TAB 7: PROPERTIES & SITES */}
+          {activeTab === 'properties' && (
             <div className="space-y-3 animate-fadeIn">
-              {customerVehicles.length === 0 ? (
+              {customerLocations.length === 0 ? (
                 <EmptyState
-                  icon={Car}
-                  title="No Registered Vehicles"
-                  description="Customer has not registered vehicle profiles."
+                  icon={Building2}
+                  title="No Registered Properties"
+                  description="Customer has not registered property or site locations."
                 />
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {customerVehicles.map(veh => (
-                    <div key={veh.id} className="bg-white p-4 rounded-2xl border border-slate-200">
+                  {customerLocations.map((loc: any) => (
+                    <div key={loc.id} className="bg-white p-4 rounded-2xl border border-slate-200">
                       <div className="flex justify-between items-start">
-                        <span className="font-bold text-navy text-sm">{veh.make} {veh.model}</span>
-                        <span className="font-mono font-bold text-xs bg-slate-100 px-2 py-0.5 rounded">{veh.licensePlate}</span>
+                        <span className="font-bold text-navy text-sm">{loc.label}</span>
+                        <span className="font-mono font-bold text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded">
+                          Site
+                        </span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-2 space-y-0.5">
-                        <p>Colour: {veh.color} • Year: {veh.year}</p>
-                        <p>VIN: {veh.vin || 'Not provided'}</p>
+                      <div className="text-[11px] text-slate-600 mt-2 space-y-0.5">
+                        <p className="font-medium">{loc.address}</p>
+                        {loc.accessNotes && <p className="text-slate-400 font-mono">Access: {loc.accessNotes}</p>}
                       </div>
                     </div>
                   ))}

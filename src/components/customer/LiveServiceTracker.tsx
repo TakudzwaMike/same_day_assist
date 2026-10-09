@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Clock, MapPin, Phone, Car, CheckCircle, Navigation, Radio, MessageSquare, Star } from 'lucide-react';
+import { Shield, Clock, MapPin, Phone, CheckCircle, Navigation, Radio, MessageSquare, Star } from 'lucide-react';
 import { Job, JobStatus } from '../../types';
 import { getSocket } from '../../services/socket';
 import { api } from '../../services/api';
@@ -133,7 +133,7 @@ export function LiveServiceTracker({ job, onClose }: LiveServiceTrackerProps) {
         <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-all duration-1000">
           <div className="bg-emerald-500/20 p-4 rounded-full border border-emerald-500 animate-pulse absolute" />
           <div className="bg-emerald-600 text-white p-2 rounded-xl shadow-lg shadow-emerald-600/50 relative z-10">
-            <Car className="w-6 h-6" />
+            <Navigation className="w-6 h-6" />
           </div>
           <span className="text-[10px] bg-slate-900/90 text-emerald-400 px-2 py-0.5 rounded border border-slate-700 mt-1 font-semibold flex items-center gap-1">
             <Navigation className="w-3 h-3 animate-spin" /> Live GPS Unit
@@ -230,12 +230,12 @@ export function LiveServiceTracker({ job, onClose }: LiveServiceTrackerProps) {
 
         <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-            <Car className="w-5 h-5" />
+            <Navigation className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-500 uppercase block">Vehicle Information</span>
+            <span className="text-[10px] text-slate-500 uppercase block">Dispatched Patrol / Service Unit</span>
             <div className="text-sm font-bold text-white">{vehicle.make} {vehicle.model} ({vehicle.color})</div>
-            <span className="text-xs text-emerald-400 font-semibold">License Plate: {vehicle.licensePlate}</span>
+            <span className="text-xs text-emerald-400 font-semibold">Call Sign / Plate: {vehicle.licensePlate}</span>
           </div>
         </div>
       </div>

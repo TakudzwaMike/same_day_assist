@@ -341,7 +341,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex justify-between">
                   <span>ACTIVE SOCKET NODES:</span>
-                  <span className="text-red font-bold">3 VEHICLES</span>
+                  <span className="text-red font-bold">3 ACTIVE UNITS</span>
                 </div>
               </div>
             </div>

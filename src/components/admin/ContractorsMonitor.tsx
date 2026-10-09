@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, CheckCircle, Car, AlertTriangle, CreditCard, DollarSign, Clock, UserCheck } from 'lucide-react';
+import { Shield, Phone, CheckCircle, AlertTriangle, CreditCard, DollarSign, Clock, UserCheck } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { api } from '../../services/api';
 import EmptyState from '../shared/EmptyState';
@@ -163,7 +163,6 @@ export default function ContractorsMonitor() {
           {filteredJobs.map(job => {
             const assignedC = contractors.find(c => c.id === job.assignedContractorId);
             const isNonMember = job.customerType === 'NON_MEMBER_EMERGENCY';
-            const veh = job.customerVehicle as any;
 
             return (
               <div 
@@ -223,21 +222,6 @@ export default function ContractorsMonitor() {
                     <span className="font-bold text-slate-800">📍 Incident Address:</span> {job.customerAddress}
                   </p>
                 </div>
-
-                {/* Vehicle Information if present */}
-                {veh && (
-                  <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center gap-2.5 text-xs">
-                    <div className="p-2 bg-slate-100 rounded-lg shrink-0">
-                      <Car className="w-4 h-4 text-slate-700" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-[9px] uppercase font-bold text-slate-400 block leading-tight">Customer Vehicle on Scene</span>
-                      <span className="font-bold text-slate-900">
-                        {veh.make} {veh.model} ({veh.year || 'N/A'}) • {veh.licensePlate} • {veh.color}
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* Non-Member Financial & Payment Status */}
                 {isNonMember && (
