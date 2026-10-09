@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard, Settings, Sun, Moon } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard, Settings, Sun, Moon, Building2 } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -11,7 +11,6 @@ import CustomerActiveJob from './customer/CustomerActiveJob';
 import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { AuthorisedContactsManager } from './customer/AuthorisedContactsManager';
-import { VehicleManager } from './customer/VehicleManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
 import { CustomerPayments } from './customer/CustomerPayments';
 import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
@@ -21,7 +20,7 @@ export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'properties' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -105,27 +104,15 @@ export default function CustomerApp() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveDeviceTab('vehicles')}
+            onClick={() => setActiveDeviceTab('properties')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'vehicles'
+              activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'vehicles' || (activeDeviceTab as any) === 'locations'
                 ? 'bg-red text-white shadow-xs'
                 : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Car className="w-4 h-4" />
-            <span>Vehicles</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveDeviceTab('locations')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'locations'
-                ? 'bg-red text-white shadow-xs'
-                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
-            }`}
-          >
-            <MapPin className="w-4 h-4" />
-            <span>Address Sites</span>
+            <Building2 className="w-4 h-4" />
+            <span>My Properties</span>
           </button>
           <button
             type="button"
@@ -268,10 +255,7 @@ export default function CustomerApp() {
           {activeDeviceTab === 'wallet' && (
             <CustomerWalletView />
           )}
-          {activeDeviceTab === 'vehicles' && (
-            <VehicleManager />
-          )}
-          {activeDeviceTab === 'locations' && (
+          {(activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'vehicles' || (activeDeviceTab as any) === 'locations') && (
             <SavedLocationsManager />
           )}
           {activeDeviceTab === 'contacts' && (

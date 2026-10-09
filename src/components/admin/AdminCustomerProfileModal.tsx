@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, User, Shield, FileText, CreditCard, Car, Folder, History,
   TrendingDown, CheckCircle, CheckCircle2, AlertTriangle, Calendar, Clock,
-  ArrowRight, Download, RefreshCw, PlusCircle, ShieldAlert, Zap, AlertCircle
+  ArrowRight, Download, RefreshCw, PlusCircle, ShieldAlert, Zap, AlertCircle, Building2
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { api } from '../../services/api';
@@ -189,7 +189,7 @@ export default function AdminCustomerProfileModal({
             { id: 'claims', label: 'Claims', icon: ShieldAlert, badge: customerClaims.length },
             { id: 'invoices', label: 'Invoices', icon: FileText, badge: customerInvoices.length },
             { id: 'payments', label: 'Payments', icon: CreditCard, badge: customerPayments.length },
-            { id: 'vehicles', label: 'Vehicles / Assets', icon: Car, badge: customerVehicles.length },
+            { id: 'vehicles', label: 'Properties & Sites', icon: Building2, badge: customerVehicles.length },
             { id: 'audit', label: 'Activity / Audit Log', icon: History, badge: customerLogs.length },
           ].map(tab => (
             <button
