@@ -406,13 +406,13 @@ export function CustomerClaims({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                  Vehicle / Property Location Involved
+                  Property / Site Location Involved *
                 </label>
                 <input
                   type="text"
                   value={vehicleOrProperty}
                   onChange={e => setVehicleOrProperty(e.target.value)}
-                  placeholder="e.g. Main Residence Gate / Toyota Hilux"
+                  placeholder="e.g. Main Residence Front Gate / Office Perimeter"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-red-500"
                 />
               </div>

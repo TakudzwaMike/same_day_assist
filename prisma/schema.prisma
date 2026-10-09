@@ -56,7 +56,7 @@ model User {
 
   // Contractor specific details
   rating       Float?   @default(5.0)
-  specialty    String?  // Security Services, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
+  specialty    String?  // Security Services, Intercoms, Gate Automation, Electrical, Plumbing, Locksmith, CCTV, Alarm, Maintenance
   isAvailable  Boolean? @default(true)
   lat          Float?   @default(-26.2041) // Default JHB latitudes
   lng          Float?   @default(28.0473)  // Default JHB longitudes
@@ -145,7 +145,7 @@ model Enquiry {
   email           String
   phone           String
   address         String
-  serviceCategory String       // Security, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
+  serviceCategory String       // Security, Intercoms, Gate Automation, Electrical, Plumbing, Locksmith, CCTV, Alarm, Maintenance
   notes           String
   status          String       @default("Pending") // Pending, Scheduled, Assessed, Quoted, Approved, Completed
   createdAt       DateTime     @default(now())
@@ -192,7 +192,7 @@ model Job {
   nonMemberEmail          String?
   nonMemberAddress        String?
   customerVehicle         String?      // JSON string of { make, model, year, licensePlate, color }
-  serviceType             String       // Security, Cleaning, Plumbing, Electrical, Locksmith, Towing, Roadside, Medical, Home Assistance, Maintenance
+  serviceType             String       // Security, Intercoms, Gate Automation, Electrical, Plumbing, Locksmith, CCTV, Alarm, Maintenance
   description             String
   photoUrl                String?
   videoUrl                String?

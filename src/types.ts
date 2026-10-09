@@ -20,8 +20,6 @@ export type ServiceCategory =
   | 'Plumbing'
   | 'Electrical Services'
   | 'Locksmith Services'
-  | 'Towing Services'
-  | 'Roadside Assistance'
   | 'Medical Assistance'
   | 'Maintenance Services'
   | 'Garage & Gate Automation'

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, Car, ShieldAlert, CreditCard, Settings, Sun, Moon, Building2 } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, ShieldAlert, CreditCard, Settings, Sun, Moon, Building2 } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -20,7 +20,7 @@ export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
-  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'properties' | 'vehicles' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
+  const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'properties' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -106,7 +106,7 @@ export default function CustomerApp() {
             type="button"
             onClick={() => setActiveDeviceTab('properties')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'vehicles' || (activeDeviceTab as any) === 'locations'
+              activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'locations'
                 ? 'bg-red text-white shadow-xs'
                 : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
@@ -255,7 +255,7 @@ export default function CustomerApp() {
           {activeDeviceTab === 'wallet' && (
             <CustomerWalletView />
           )}
-          {(activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'vehicles' || (activeDeviceTab as any) === 'locations') && (
+          {(activeDeviceTab === 'properties' || (activeDeviceTab as any) === 'locations') && (
             <SavedLocationsManager />
           )}
           {activeDeviceTab === 'contacts' && (
