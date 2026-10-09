@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet, Settings } from 'lucide-react';
+import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet, Settings, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
 import { ContractorVettingModal } from './contractor/ContractorVettingModal';
 import { InspectorSurveyPortal } from './contractor/InspectorSurveyPortal';
@@ -11,6 +12,7 @@ import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -19,109 +21,157 @@ export default function ContractorApp() {
   const verificationStatus = user?.verificationStatus || 'Pending Review';
 
   return (
-    <div className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn text-zinc-100">
+    <div className={`w-full rounded-3xl shadow-xl flex flex-col overflow-hidden animate-fadeIn transition-colors duration-200 ${
+      isDark 
+        ? 'bg-[#091C3E] border border-[#142D59] text-slate-100' 
+        : 'bg-white border border-slate-200 text-slate-900'
+    }`}>
       {/* BRANDING HEADER */}
-      <div className="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
+      <div className={`px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4 border-b ${
+        isDark ? 'bg-[#050E20]/90 border-[#142D59]' : 'bg-slate-50 border-slate-100'
+      }`}>
         <div className="flex items-center gap-3">
           <img 
             src={logoImg} 
             alt="Same Day Assist Logo" 
-            onClick={() => setIsOnline(true)}
-            className="w-10 h-10 object-contain shrink-0 cursor-pointer" 
+            onClick={() => setContractorTab('jobs')}
+            className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-xs" 
           />
           <div>
-            <h1 className="text-lg font-black italic text-white leading-none uppercase">Same Day Assist</h1>
-            <p className="text-[10px] font-mono tracking-wider text-red font-bold uppercase font-brand-sub">Contractor Responder Terminal</p>
+            <h1 className={`text-lg font-black italic leading-none uppercase font-brand-header ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}>
+              Same Day Assist
+            </h1>
+            <p className="text-[10px] font-bold text-red tracking-wider uppercase font-mono">
+              Contractor Responder Terminal • Johannesburg Dispatch
+            </p>
           </div>
         </div>
 
-        {/* TAB BUTTONS */}
-        <div className="flex flex-wrap items-center justify-center gap-1.5 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
+        {/* NAVIGATION TABS (UNIFORM PILL CONTAINER) */}
+        <div className={`flex items-center gap-1.5 p-1 rounded-2xl border w-full xl:w-auto overflow-x-auto whitespace-nowrap scrollbar-none ${
+          isDark ? 'bg-[#050E20] border-[#142D59]' : 'bg-slate-100 border-slate-200'
+        }`}>
           <button
             type="button"
             onClick={() => setContractorTab('jobs')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              contractorTab === 'jobs' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              contractorTab === 'jobs'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Wrench className="w-3.5 h-3.5" />
+            <Wrench className="w-4 h-4" />
             <span>Emergency Dispatches</span>
           </button>
 
           <button
             type="button"
             onClick={() => setContractorTab('surveys')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              contractorTab === 'surveys' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              contractorTab === 'surveys'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <FileCheck className="w-3.5 h-3.5" />
+            <FileCheck className="w-4 h-4" />
             <span>Property Safety Surveys</span>
           </button>
 
           <button
             type="button"
             onClick={() => setContractorTab('chat')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              contractorTab === 'chat' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              contractorTab === 'chat'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <MessageSquare className="w-3.5 h-3.5" />
+            <MessageSquare className="w-4 h-4" />
             <span>Live Chat (Client & Admin)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setContractorTab('earnings')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              contractorTab === 'earnings' ? 'bg-red-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              contractorTab === 'earnings'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
             }`}
           >
-            <Wallet className="w-3.5 h-3.5" />
+            <Wallet className="w-4 h-4" />
             <span>Balances & Payouts</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* HEADER CONTROLS */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={() => setShowVettingModal(true)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
               verificationStatus === 'Approved'
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                : 'bg-amber-950 text-amber-400 border border-amber-800 animate-pulse'
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : 'bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse'
             }`}
+            title="Click to view vetting credentials"
           >
             <FileCheck className="w-3.5 h-3.5" />
             <span>Vetting: {verificationStatus}</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase">Status:</span>
-            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold ${isOnline ? 'bg-green-950 text-green-400 border border-green-800 animate-pulse' : 'bg-red-950 text-red-400'}`}>
-              {isOnline ? 'ONLINE & READY' : 'OFFLINE'}
-            </span>
-          </div>
           <button 
             type="button"
             onClick={() => setIsOnline(!isOnline)} 
-            className="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-xl text-zinc-300 font-mono transition-all border border-zinc-700 cursor-pointer"
+            className={`text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl transition-all border cursor-pointer flex items-center gap-1.5 ${
+              isOnline 
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                : 'bg-red/10 text-red border-red/30'
+            }`}
+            title="Click to toggle availability"
           >
-            Toggle Availability
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red'}`} />
+            <span>{isOnline ? 'ONLINE & READY' : 'OFFLINE'}</span>
           </button>
+
+          {/* Theme Quick Toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1 text-xs font-bold ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] text-blue-300 hover:bg-[#142D59]' 
+                : 'bg-white border-slate-200 text-amber-600 hover:bg-slate-100'
+            }`}
+            title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-500" />}
+          </button>
+
+          {/* Settings Button */}
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl cursor-pointer text-zinc-300 hover:text-white transition-all flex items-center justify-center shrink-0"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isSettingsOpen
+                ? 'bg-red text-white border-red'
+                : isDark ? 'bg-[#050E20] border-[#142D59] text-slate-400 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-navy'
+            }`}
             title="Provider Account Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
+
+          {/* Log Out Button */}
           <button
             type="button"
             onClick={() => logout()}
-            className="p-2 bg-zinc-800 hover:bg-red/10 border border-zinc-700 rounded-xl cursor-pointer text-zinc-400 hover:text-red transition-all"
-            title="Log Out"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isDark ? 'bg-[#050E20] border-[#142D59] text-slate-400 hover:text-red hover:bg-red/10' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-red hover:bg-red/10'
+            }`}
+            title="Sign Out"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -141,7 +191,9 @@ export default function ContractorApp() {
       )}
 
       {/* PORTAL VIEW CONTAINER */}
-      <div className="p-6 md:p-8 flex-1 bg-zinc-900/45">
+      <div className={`p-6 md:p-8 flex-1 transition-colors ${
+        isDark ? 'bg-[#061229]/60' : 'bg-slate-50/70'
+      }`}>
         <div className="max-w-5xl mx-auto flex flex-col gap-6">
           {contractorTab === 'jobs' && <ContractorDashboard />}
           {contractorTab === 'surveys' && <InspectorSurveyPortal />}
@@ -155,4 +207,3 @@ export default function ContractorApp() {
     </div>
   );
 }
-
