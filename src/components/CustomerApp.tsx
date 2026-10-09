@@ -154,18 +154,6 @@ export default function CustomerApp() {
             <CreditCard className="w-4 h-4" />
             <span>Billing</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveDeviceTab('settings')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeDeviceTab === 'settings'
-                ? 'bg-red text-white shadow-xs'
-                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
-          </button>
         </div>
 
         {/* HEADER CONTROLS: THEME TOGGLE, HOTLINE, LOGOUT */}
