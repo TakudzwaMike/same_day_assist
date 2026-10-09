@@ -173,12 +173,23 @@ export default function CustomerHome({
     }
   };
 
-  // Check if active customer has active membership status or is a logged-in demo account
+  // Check if active customer has active membership status
   const isApprovedCustomer = 
     activeCustomer?.status === 'ACTIVE' || 
     activeCustomer?.status === 'Active' || 
-    activeCustomer?.onboardingStatus === 'ACTIVE' || 
-    Boolean(activeCustomer);
+    activeCustomer?.onboardingStatus === 'ACTIVE';
+
+  // Customer is currently progressing through pre-membership onboarding steps
+  const isOnboarding = 
+    !isApprovedCustomer &&
+    (state.currentStep === 'PROSPECT' ||
+     state.currentStep === 'INTERESTED' ||
+     state.currentStep === 'ENQUIRY_RECEIVED' ||
+     state.currentStep === 'ASSESSMENT_SCHEDULED' ||
+     state.currentStep === 'CONTRACTOR_ASSESSING' ||
+     state.currentStep === 'ASSESSMENT_UPLOADED' ||
+     state.currentStep === 'QUOTE_GENERATED' ||
+     state.currentStep === 'CUSTOMER_APPROVED');
 
   return (
     <div className="flex flex-col gap-6 animate-fadeIn">
@@ -407,7 +418,7 @@ export default function CustomerHome({
       )}
 
       {/* 6. MEMBERSHIP ACTIVE: Panic Dispatch Panel & Active Customer Features */}
-      {(isApprovedCustomer || state.currentStep === 'MEMBERSHIP_ACTIVATED' || state.currentStep === 'CUSTOMER_LOGIN') && !activeJob && (
+      {!isOnboarding && (isApprovedCustomer || state.currentStep === 'MEMBERSHIP_ACTIVATED' || state.currentStep === 'CUSTOMER_LOGIN') && !activeJob && (
         <div className="flex flex-col gap-5 animate-fadeIn">
           {/* PROMINENT ANNUAL ASSISTANCE BENEFIT BALANCE CARD */}
           <BenefitBalanceCard

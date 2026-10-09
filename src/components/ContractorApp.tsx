@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet } from 'lucide-react';
+import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
 import { ContractorVettingModal } from './contractor/ContractorVettingModal';
 import { InspectorSurveyPortal } from './contractor/InspectorSurveyPortal';
 import { ContractorChatCenter } from './contractor/ContractorChatCenter';
 import { ContractorEarningsView } from './contractor/ContractorEarningsView';
+import { ContractorSettingsModal } from './contractor/ContractorSettingsModal';
 import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys' | 'chat' | 'earnings'>('jobs');
 
   const verificationStatus = user?.verificationStatus || 'Pending Review';
@@ -109,6 +111,14 @@ export default function ContractorApp() {
           </button>
           <button
             type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl cursor-pointer text-zinc-300 hover:text-white transition-all flex items-center justify-center shrink-0"
+            title="Provider Account Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => logout()}
             className="p-2 bg-zinc-800 hover:bg-red/10 border border-zinc-700 rounded-xl cursor-pointer text-zinc-400 hover:text-red transition-all"
             title="Log Out"
@@ -139,6 +149,9 @@ export default function ContractorApp() {
           {contractorTab === 'earnings' && <ContractorEarningsView />}
         </div>
       </div>
+
+      {/* CONTRACTOR SETTINGS MODAL */}
+      <ContractorSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }

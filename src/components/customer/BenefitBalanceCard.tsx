@@ -14,21 +14,35 @@ interface BenefitBalanceCardProps {
 }
 
 export function BenefitBalanceCard({
-  summary,
+  summary: rawSummary,
   onViewClaims,
   onViewInvoices,
   onViewBenefitHistory,
   onChangePlan,
 }: BenefitBalanceCardProps) {
-  if (!summary) {
-    return (
-      <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 animate-pulse">
-        <div className="h-6 bg-slate-800 rounded w-1/3 mb-4"></div>
-        <div className="h-12 bg-slate-800 rounded mb-4"></div>
-        <div className="h-4 bg-slate-800 rounded w-1/2"></div>
-      </div>
-    );
-  }
+  const defaultSummary: BenefitSummary = {
+    membershipId: 'mem-default',
+    planId: 'assist_plus',
+    planName: 'Assist Plus Membership',
+    monthlyPrice: 389,
+    annualBenefit: 10000,
+    isPartsBenefitZero: false,
+    partsBenefitDescription: 'Annual assistance and repair allowance',
+    usedBenefit: 0,
+    remainingBenefit: 10000,
+    usagePercentage: 0,
+    remainingPercentage: 100,
+    benefitYearStart: `${new Date().getFullYear()}-01-01`,
+    benefitYearEnd: `${new Date().getFullYear()}-12-31`,
+    status: 'Active',
+    isEligibleForBenefits: true,
+    activationPercentage: 100,
+    claimsCount: 0,
+    invoicesCount: 0,
+    transactions: [],
+  };
+
+  const summary = rawSummary || defaultSummary;
 
   const isAssistZero = summary.isPartsBenefitZero || summary.annualBenefit === 0;
   const usagePct = summary.usagePercentage;

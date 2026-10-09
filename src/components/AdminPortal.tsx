@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck, ShieldCheck, ShieldAlert, Award, Receipt } from 'lucide-react';
+import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck, ShieldCheck, ShieldAlert, Award, Receipt, Settings } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import AdminDashboard from './admin/AdminDashboard';
@@ -13,6 +13,7 @@ import { AdminOnboardingCommand } from './admin/AdminOnboardingCommand';
 import AdminClaimsManager from './admin/AdminClaimsManager';
 import AdminInvoicesManager from './admin/AdminInvoicesManager';
 import AdminMembershipsManager from './admin/AdminMembershipsManager';
+import { AdminSettingsModal } from './admin/AdminSettingsModal';
 import logoImg from '../assets/logo.png';
 
 export default function AdminPortal() {
@@ -20,6 +21,7 @@ export default function AdminPortal() {
   const { user, logout } = useAuth();
   const role = user?.role || 'Dispatcher';
 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'onboarding' | 'memberships' | 'claims' | 'invoices' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
     return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
@@ -118,6 +120,15 @@ export default function AdminPortal() {
           
           <button
             type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2.5 bg-slate-900/50 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-pointer text-slate-300 hover:text-white transition-all flex items-center justify-center shrink-0"
+            title="System & Account Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
             onClick={() => logout()}
             className="p-2.5 bg-slate-900/50 hover:bg-red/20 border border-slate-800 rounded-xl cursor-pointer text-slate-300 hover:text-white transition-all flex items-center justify-center shrink-0"
             title="Log Out"
@@ -167,6 +178,9 @@ export default function AdminPortal() {
         {activeTab === 'reports' && <ReportsViewer />}
         {activeTab === 'logs' && <AuditLogViewer />}
       </div>
+
+      {/* ADMIN SETTINGS MODAL */}
+      <AdminSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 }
