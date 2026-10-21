@@ -542,9 +542,20 @@ var jobStatusSchema = z.object({
   status: z.enum(["Submitted", "Assigned", "Accepted", "En Route", "Arrived", "Assessment", "Awaiting Quote Approval", "Repair In Progress", "Quality Inspection", "Completed", "Closed", "Archived"])
 });
 var completionSchema = z.object({
-  contractorNotes: z.string().max(2e3),
-  contractorSignature: z.string().min(1, "Digital signature required"),
-  completionPhoto: z.string().optional()
+  contractorNotes: z.string().min(5, "Repair explanation of work done is compulsory").max(2e3),
+  contractorSignature: z.string().min(1, "Digital signature is compulsory"),
+  photoBeforeUrl: z.string().optional().nullable(),
+  videoBeforeUrl: z.string().optional().nullable(),
+  photoAfterUrl: z.string().optional().nullable(),
+  videoAfterUrl: z.string().optional().nullable(),
+  completionPhoto: z.string().optional().nullable(),
+  partsReplaced: z.any().optional().nullable()
+}).refine((data) => !!(data.photoBeforeUrl || data.videoBeforeUrl), {
+  message: "Compulsory: Before photo or video clip showing the issue before repair is required.",
+  path: ["photoBeforeUrl"]
+}).refine((data) => !!(data.photoAfterUrl || data.videoAfterUrl || data.completionPhoto), {
+  message: "Compulsory: After photo or video clip showing the repaired/working state is required.",
+  path: ["photoAfterUrl"]
 });
 var ratingSchema = z.object({
   rating: z.number().int().min(1).max(5),
@@ -2694,13 +2705,18 @@ async function saveFile(buffer, originalName, mimeType) {
 
 // server/src/routes/files.ts
 var router7 = Router7();
-var upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+var upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 var ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/gif",
   "video/mp4",
   "video/quicktime",
+  "video/webm",
+  "video/3gpp",
+  "video/ogg",
+  "video/x-msvideo",
   "application/pdf"
 ];
 router7.post("/upload", requireAuth, upload.single("file"), async (req, res) => {
@@ -3486,8 +3502,17 @@ function formatJob(j) {
       parsedResponderVehicle = j.vehicleInfo;
     }
   }
+  let parsedPartsReplaced = null;
+  if (j.partsReplaced) {
+    try {
+      parsedPartsReplaced = typeof j.partsReplaced === "string" ? JSON.parse(j.partsReplaced) : j.partsReplaced;
+    } catch {
+      parsedPartsReplaced = j.partsReplaced;
+    }
+  }
   return {
     ...j,
+    partsReplaced: parsedPartsReplaced,
     customerType: j.customerType || "MEMBER",
     customerName: isNonMember ? j.nonMemberName || "Emergency Caller" : j.customer?.name || "Valued Member",
     customerAddress: isNonMember ? j.nonMemberAddress || "Incident Location" : j.customer?.address || "Sandton, Johannesburg",
@@ -4168,7 +4193,16 @@ function createJobsRouter(io) {
     }
   });
   router12.post("/:id/complete", requireAuth, requireRoles("Contractor"), validate(completionSchema), async (req, res) => {
-    const { contractorNotes, contractorSignature, completionPhoto } = req.body;
+    const {
+      contractorNotes,
+      contractorSignature,
+      completionPhoto,
+      photoBeforeUrl,
+      videoBeforeUrl,
+      photoAfterUrl,
+      videoAfterUrl,
+      partsReplaced
+    } = req.body;
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id }, include: { customer: true } });
       if (!job) return res.status(404).json({ error: "Job not found" });
@@ -4182,7 +4216,12 @@ function createJobsRouter(io) {
             completedAt: /* @__PURE__ */ new Date(),
             contractorNotes,
             contractorSignature,
-            completionPhoto
+            completionPhoto: completionPhoto || photoAfterUrl || void 0,
+            photoBeforeUrl: photoBeforeUrl || void 0,
+            videoBeforeUrl: videoBeforeUrl || void 0,
+            photoAfterUrl: photoAfterUrl || completionPhoto || void 0,
+            videoAfterUrl: videoAfterUrl || void 0,
+            partsReplaced: typeof partsReplaced === "object" ? JSON.stringify(partsReplaced) : partsReplaced || void 0
           },
           include: {
             customer: { select: { id: true, name: true, phone: true } },

@@ -83,8 +83,156 @@ export default function CustomerActiveJob({ activeJob, assignedContractor }: Cus
         </div>
       )}
 
-      {/* JOB COMPLETION & REVIEW FORM */}
-      {activeJob.status === 'Completed' && (
+      {/* JOB COMPLETION & HANDOVER PROOF (BEFORE/AFTER MEDIA & EXCHANGED PARTS) */}
+      {(['Completed', 'Work Completed', 'Service Completed'].includes(activeJob.status) || activeJob.contractorNotes || activeJob.photoBeforeUrl || activeJob.videoBeforeUrl) && (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-3.5 animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <h4 className="text-xs font-bold text-navy uppercase tracking-wider">
+                  Verified On-Site Handover Proof
+                </h4>
+              </div>
+              <p className="text-[9.5px] text-slate-500">
+                Ground team photographic & video record of repairs and replaced components
+              </p>
+            </div>
+            <span className="text-[9px] bg-emerald-100 text-emerald-800 font-mono font-bold px-2 py-0.5 rounded-full uppercase">
+              Quality Verified
+            </span>
+          </div>
+
+          {/* BEFORE & AFTER MEDIA COMPARISON */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* BEFORE MEDIA */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2.5 space-y-1.5 shadow-xs">
+              <span className="text-[9.5px] font-bold text-red uppercase tracking-wider font-mono flex items-center justify-between">
+                <span>1. Before Repair (Defect)</span>
+                <span className="text-[8px] bg-red/10 text-red px-1.5 py-0.5 rounded">Initial Issue</span>
+              </span>
+
+              {activeJob.videoBeforeUrl ? (
+                <div className="rounded-lg overflow-hidden bg-black">
+                  <video 
+                    src={activeJob.videoBeforeUrl} 
+                    controls 
+                    className="w-full h-36 object-contain bg-black" 
+                  />
+                </div>
+              ) : activeJob.photoBeforeUrl ? (
+                <div className="rounded-lg overflow-hidden bg-slate-100">
+                  <img 
+                    src={activeJob.photoBeforeUrl} 
+                    alt="Before Repair Proof" 
+                    className="w-full h-36 object-cover" 
+                  />
+                </div>
+              ) : (
+                <div className="h-36 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-mono">
+                  No initial media attached
+                </div>
+              )}
+            </div>
+
+            {/* AFTER MEDIA */}
+            <div className="bg-white rounded-xl border border-slate-200 p-2.5 space-y-1.5 shadow-xs">
+              <span className="text-[9.5px] font-bold text-emerald-700 uppercase tracking-wider font-mono flex items-center justify-between">
+                <span>2. After Repair (Working State)</span>
+                <span className="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Operational</span>
+              </span>
+
+              {activeJob.videoAfterUrl ? (
+                <div className="rounded-lg overflow-hidden bg-black">
+                  <video 
+                    src={activeJob.videoAfterUrl} 
+                    controls 
+                    className="w-full h-36 object-contain bg-black" 
+                  />
+                </div>
+              ) : (activeJob.photoAfterUrl || activeJob.completionPhoto) ? (
+                <div className="rounded-lg overflow-hidden bg-slate-100">
+                  <img 
+                    src={activeJob.photoAfterUrl || activeJob.completionPhoto} 
+                    alt="After Repair Proof" 
+                    className="w-full h-36 object-cover" 
+                  />
+                </div>
+              ) : (
+                <div className="h-36 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-mono">
+                  No completion media attached
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* REPAIRS LOGGED & EXPLAINED */}
+          {activeJob.contractorNotes && (
+            <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
+              <span className="text-[9.5px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                Technician Work Summary:
+              </span>
+              <p className="text-slate-800 leading-relaxed font-medium">
+                {activeJob.contractorNotes}
+              </p>
+            </div>
+          )}
+
+          {/* EXCHANGED / REPLACED PARTS */}
+          {(() => {
+            let parts: any[] = [];
+            if (activeJob.partsReplaced) {
+              if (Array.isArray(activeJob.partsReplaced)) parts = activeJob.partsReplaced;
+              else {
+                try {
+                  const parsed = JSON.parse(activeJob.partsReplaced);
+                  if (Array.isArray(parsed)) parts = parsed;
+                } catch {
+                  if (typeof activeJob.partsReplaced === 'string') {
+                    parts = [{ name: activeJob.partsReplaced, quantity: 1 }];
+                  }
+                }
+              }
+            }
+
+            if (parts.length === 0) return null;
+
+            return (
+              <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs space-y-2">
+                <span className="text-[9.5px] font-mono uppercase text-slate-400 font-bold block">
+                  Exchanged / Replaced Parts ({parts.length}):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {parts.map((p, idx) => (
+                    <div key={idx} className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-slate-800 text-[11px]">{p.name || p}</p>
+                        {p.notes && <p className="text-[9px] text-slate-500 font-mono">{p.notes}</p>}
+                      </div>
+                      {p.quantity && (
+                        <span className="text-[10px] bg-red/10 text-red font-mono font-bold px-2 py-0.5 rounded">
+                          Qty: {p.quantity}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* SIGNATURE BADGE */}
+          {activeJob.contractorSignature && (
+            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 font-mono">
+              <span>Signed by Certified Technician: <strong className="text-slate-700">{assignedContractor?.name || 'On-Site Specialist'}</strong></span>
+              <span>Status: <strong className="text-emerald-600">Verified & Sealed</strong></span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* JOB RATING & REVIEW FORM */}
+      {(['Completed', 'Work Completed', 'Service Completed'].includes(activeJob.status) || activeJob.completedAt) && (
         <form onSubmit={handleRateSubmit} className="bg-red/5 p-4 rounded-2xl border border-red/25 flex flex-col gap-3 mt-1 animate-fadeIn">
           <div className="text-center border-b border-red/10 pb-1.5">
             <h4 className="text-xs font-bold text-navy uppercase tracking-wider">Rate Emergency Resolution</h4>

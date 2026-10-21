@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, CheckCircle, AlertTriangle, CreditCard, DollarSign, Clock, UserCheck } from 'lucide-react';
+import { Shield, Phone, CheckCircle, AlertTriangle, CreditCard, DollarSign, Clock, UserCheck, FileCheck, Camera, Video, Package, X } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { api } from '../../services/api';
 import EmptyState from '../shared/EmptyState';
@@ -15,6 +15,9 @@ export default function ContractorsMonitor() {
   const [finalAmountInput, setFinalAmountInput] = useState('');
   const [servicePerformedInput, setServicePerformedInput] = useState('');
   const [isSubmittingAmount, setIsSubmittingAmount] = useState(false);
+
+  // Evidence / Handover Proof modal state
+  const [selectedEvidenceJob, setSelectedEvidenceJob] = useState<any | null>(null);
 
   const activeJobs = state.jobs;
   const contractors = state.contractors;
@@ -335,6 +338,19 @@ export default function ContractorsMonitor() {
                     </button>
                   )}
 
+                  {/* View Ground Handover Proof */}
+                  {(job.photoBeforeUrl || job.videoBeforeUrl || job.photoAfterUrl || job.videoAfterUrl || job.contractorNotes || job.partsReplaced) && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEvidenceJob(job)}
+                      className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
+                      title="Inspect ground technician evidence & replaced parts"
+                    >
+                      <FileCheck className="w-3.5 h-3.5" />
+                      <span>Handover Proof</span>
+                    </button>
+                  )}
+
                   {/* Close job */}
                   {(['Completed', 'Service Completed', 'Work Completed'].includes(job.status) || job.paymentStatus === 'Paid') && job.status !== 'Closed' && (
                     <button
@@ -507,6 +523,151 @@ export default function ContractorsMonitor() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* HANDOVER EVIDENCE & QUALITY PROOF AUDIT MODAL */}
+      {selectedEvidenceJob && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-red" />
+                <div>
+                  <h3 className="text-sm font-bold text-navy uppercase font-brand-header tracking-wider">
+                    Ground Handover Evidence Report
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono">Job ID: {selectedEvidenceJob.id} • {selectedEvidenceJob.customerName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEvidenceJob(null)}
+                className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* BEFORE & AFTER MEDIA */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* BEFORE */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-red font-mono uppercase">
+                  <span className="flex items-center gap-1.5">
+                    {selectedEvidenceJob.videoBeforeUrl ? <Video className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
+                    1. Before Repair (Defect)
+                  </span>
+                  <span className="text-[9px] bg-red/10 text-red px-1.5 py-0.5 rounded">Issue Recorded</span>
+                </div>
+                {selectedEvidenceJob.videoBeforeUrl ? (
+                  <video src={selectedEvidenceJob.videoBeforeUrl} controls className="w-full h-44 object-contain rounded-xl bg-black" />
+                ) : selectedEvidenceJob.photoBeforeUrl ? (
+                  <img src={selectedEvidenceJob.photoBeforeUrl} alt="Before Proof" className="w-full h-44 object-cover rounded-xl" />
+                ) : (
+                  <div className="h-44 rounded-xl bg-slate-200 flex items-center justify-center text-slate-400 text-xs font-mono">
+                    No initial media recorded
+                  </div>
+                )}
+              </div>
+
+              {/* AFTER */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-600 font-mono uppercase">
+                  <span className="flex items-center gap-1.5">
+                    {selectedEvidenceJob.videoAfterUrl ? <Video className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
+                    2. After Repair (Working State)
+                  </span>
+                  <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">Operational Proof</span>
+                </div>
+                {selectedEvidenceJob.videoAfterUrl ? (
+                  <video src={selectedEvidenceJob.videoAfterUrl} controls className="w-full h-44 object-contain rounded-xl bg-black" />
+                ) : (selectedEvidenceJob.photoAfterUrl || selectedEvidenceJob.completionPhoto) ? (
+                  <img src={selectedEvidenceJob.photoAfterUrl || selectedEvidenceJob.completionPhoto} alt="After Proof" className="w-full h-44 object-cover rounded-xl" />
+                ) : (
+                  <div className="h-44 rounded-xl bg-slate-200 flex items-center justify-center text-slate-400 text-xs font-mono">
+                    No completion media recorded
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* REPAIRS LOG */}
+            {selectedEvidenceJob.contractorNotes && (
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+                <span className="text-[10px] font-mono uppercase font-bold text-slate-400 block">
+                  Ground Technician Work Summary:
+                </span>
+                <p className="text-slate-800 leading-relaxed font-medium">
+                  {selectedEvidenceJob.contractorNotes}
+                </p>
+              </div>
+            )}
+
+            {/* EXCHANGED / REPLACED PARTS */}
+            {(() => {
+              let parts: any[] = [];
+              if (selectedEvidenceJob.partsReplaced) {
+                if (Array.isArray(selectedEvidenceJob.partsReplaced)) parts = selectedEvidenceJob.partsReplaced;
+                else {
+                  try {
+                    const parsed = JSON.parse(selectedEvidenceJob.partsReplaced);
+                    if (Array.isArray(parsed)) parts = parsed;
+                  } catch {
+                    if (typeof selectedEvidenceJob.partsReplaced === 'string') {
+                      parts = [{ name: selectedEvidenceJob.partsReplaced, quantity: 1 }];
+                    }
+                  }
+                }
+              }
+
+              if (parts.length === 0) return null;
+
+              return (
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-2">
+                  <span className="text-[10px] font-mono uppercase font-bold text-slate-400 block">
+                    Exchanged & Replaced Parts ({parts.length}):
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {parts.map((p, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-red shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-800">{p.name || p}</p>
+                            {p.notes && <p className="text-[9px] text-slate-500 font-mono">{p.notes}</p>}
+                          </div>
+                        </div>
+                        {p.quantity && (
+                          <span className="text-[10px] bg-red/10 text-red font-mono font-bold px-2 py-0.5 rounded">
+                            Qty: {p.quantity}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* SIGNATURE & AUDIT TIMESTAMP */}
+            {selectedEvidenceJob.contractorSignature && (
+              <div className="bg-slate-100/80 p-3 rounded-2xl border border-slate-200 flex items-center justify-between text-[10px] font-mono text-slate-600">
+                <span>Certified Digital Signature: <strong className="text-slate-800">{selectedEvidenceJob.contractorSignature}</strong></span>
+                <span>Completed: <strong className="text-emerald-700">{selectedEvidenceJob.completedAt ? new Date(selectedEvidenceJob.completedAt).toLocaleString() : 'Logged On-Site'}</strong></span>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedEvidenceJob(null)}
+                className="px-5 py-2 bg-navy hover:bg-navy-light text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer uppercase tracking-wider"
+              >
+                Done Inspecting
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

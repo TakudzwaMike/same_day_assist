@@ -77,9 +77,20 @@ export const jobStatusSchema = z.object({
 });
 
 export const completionSchema = z.object({
-  contractorNotes: z.string().max(2000),
-  contractorSignature: z.string().min(1, 'Digital signature required'),
-  completionPhoto: z.string().optional(),
+  contractorNotes: z.string().min(5, 'Repair explanation of work done is compulsory').max(2000),
+  contractorSignature: z.string().min(1, 'Digital signature is compulsory'),
+  photoBeforeUrl: z.string().optional().nullable(),
+  videoBeforeUrl: z.string().optional().nullable(),
+  photoAfterUrl: z.string().optional().nullable(),
+  videoAfterUrl: z.string().optional().nullable(),
+  completionPhoto: z.string().optional().nullable(),
+  partsReplaced: z.any().optional().nullable(),
+}).refine(data => !!(data.photoBeforeUrl || data.videoBeforeUrl), {
+  message: 'Compulsory: Before photo or video clip showing the issue before repair is required.',
+  path: ['photoBeforeUrl'],
+}).refine(data => !!(data.photoAfterUrl || data.videoAfterUrl || data.completionPhoto), {
+  message: 'Compulsory: After photo or video clip showing the repaired/working state is required.',
+  path: ['photoAfterUrl'],
 });
 
 export const ratingSchema = z.object({

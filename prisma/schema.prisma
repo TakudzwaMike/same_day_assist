@@ -211,10 +211,13 @@ model Job {
   estimatedArrivalMinutes Int?         @default(15)
   distanceRemainingKm     Float?       @default(4.2)
 
-  // Live Photo Milestones (Before, During, After)
+  // Live Photo & Video Milestones (Before, During, After)
   photoBeforeUrl          String?
+  videoBeforeUrl          String?
   photoDuringUrl          String?
   photoAfterUrl           String?
+  videoAfterUrl           String?
+  partsReplaced           String?      // JSON string: Array<{ name, quantity, notes }>
 
   rating                  Int?
   ratingComment           String?

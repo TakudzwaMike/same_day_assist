@@ -41,8 +41,18 @@ function formatJob(j: any) {
     }
   }
 
+  let parsedPartsReplaced = null;
+  if (j.partsReplaced) {
+    try {
+      parsedPartsReplaced = typeof j.partsReplaced === 'string' ? JSON.parse(j.partsReplaced) : j.partsReplaced;
+    } catch {
+      parsedPartsReplaced = j.partsReplaced;
+    }
+  }
+
   return {
     ...j,
+    partsReplaced: parsedPartsReplaced,
     customerType: j.customerType || 'MEMBER',
     customerName: isNonMember ? (j.nonMemberName || 'Emergency Caller') : (j.customer?.name || 'Valued Member'),
     customerAddress: isNonMember ? (j.nonMemberAddress || 'Incident Location') : (j.customer?.address || 'Sandton, Johannesburg'),
@@ -839,7 +849,16 @@ export function createJobsRouter(io?: SocketServer) {
 
   // POST /api/jobs/:id/complete — Contractor: submit completion report
   router.post('/:id/complete', requireAuth, requireRoles('Contractor'), validate(completionSchema), async (req: AuthenticatedRequest, res: Response) => {
-    const { contractorNotes, contractorSignature, completionPhoto } = req.body;
+    const { 
+      contractorNotes, 
+      contractorSignature, 
+      completionPhoto,
+      photoBeforeUrl,
+      videoBeforeUrl,
+      photoAfterUrl,
+      videoAfterUrl,
+      partsReplaced,
+    } = req.body;
 
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id }, include: { customer: true } });
@@ -855,7 +874,12 @@ export function createJobsRouter(io?: SocketServer) {
             completedAt: new Date(),
             contractorNotes,
             contractorSignature,
-            completionPhoto,
+            completionPhoto: completionPhoto || photoAfterUrl || undefined,
+            photoBeforeUrl: photoBeforeUrl || undefined,
+            videoBeforeUrl: videoBeforeUrl || undefined,
+            photoAfterUrl: photoAfterUrl || completionPhoto || undefined,
+            videoAfterUrl: videoAfterUrl || undefined,
+            partsReplaced: typeof partsReplaced === 'object' ? JSON.stringify(partsReplaced) : (partsReplaced || undefined),
           },
           include: {
             customer: { select: { id: true, name: true, phone: true } },

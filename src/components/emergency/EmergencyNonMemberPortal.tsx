@@ -4,7 +4,7 @@ import {
   Clock, DollarSign, CreditCard, ChevronRight, ArrowLeft,
   FileText, Camera, Radio, Lock, RefreshCw, UserCheck,
   Zap, DoorClosed, ShieldAlert, KeyRound, Power, Droplets,
-  AlertCircle, Download, ExternalLink, HelpCircle
+  AlertCircle, Download, ExternalLink, HelpCircle, Video, Package
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { getSocket } from '../../services/socket';
@@ -906,6 +906,119 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
                     )}
                   </div>
                 </div>
+
+                {/* VERIFIED GROUND HANDOVER PROOF (BEFORE/AFTER MEDIA & EXCHANGED PARTS) */}
+                {(trackedJob.photoBeforeUrl || trackedJob.videoBeforeUrl || trackedJob.photoAfterUrl || trackedJob.videoAfterUrl || trackedJob.contractorNotes || ['Completed', 'Service Completed', 'Work Completed'].includes(trackedJob.status)) && (
+                  <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3.5">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase font-mono">
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        <span>Verified On-Site Repair Evidence</span>
+                      </div>
+                      <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono uppercase font-bold">
+                        Officer Verified
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* BEFORE MEDIA */}
+                      <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-red font-bold uppercase">
+                          <span className="flex items-center gap-1">
+                            {trackedJob.videoBeforeUrl ? <Video className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
+                            1. Before Repair (Defect State)
+                          </span>
+                        </div>
+                        {trackedJob.videoBeforeUrl ? (
+                          <video src={trackedJob.videoBeforeUrl} controls className="w-full h-36 object-contain rounded-lg bg-black" />
+                        ) : trackedJob.photoBeforeUrl ? (
+                          <img src={trackedJob.photoBeforeUrl} alt="Before Proof" className="w-full h-36 object-cover rounded-lg" />
+                        ) : (
+                          <div className="h-36 rounded-lg bg-slate-950 flex items-center justify-center text-[10px] text-slate-500 font-mono">
+                            Initial evidence recorded
+                          </div>
+                        )}
+                      </div>
+
+                      {/* AFTER MEDIA */}
+                      <div className="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400 font-bold uppercase">
+                          <span className="flex items-center gap-1">
+                            {trackedJob.videoAfterUrl ? <Video className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
+                            2. After Repair (Working State)
+                          </span>
+                        </div>
+                        {trackedJob.videoAfterUrl ? (
+                          <video src={trackedJob.videoAfterUrl} controls className="w-full h-36 object-contain rounded-lg bg-black" />
+                        ) : (trackedJob.photoAfterUrl || trackedJob.completionPhoto) ? (
+                          <img src={trackedJob.photoAfterUrl || trackedJob.completionPhoto} alt="After Proof" className="w-full h-36 object-cover rounded-lg" />
+                        ) : (
+                          <div className="h-36 rounded-lg bg-slate-950 flex items-center justify-center text-[10px] text-slate-500 font-mono">
+                            Completion operational evidence recorded
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* WORK EXPLANATION */}
+                    {trackedJob.contractorNotes && (
+                      <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs">
+                        <span className="text-[9.5px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                          Technician Work Log:
+                        </span>
+                        <p className="text-slate-200 leading-relaxed font-medium">
+                          {trackedJob.contractorNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* EXCHANGED PARTS */}
+                    {(() => {
+                      let parts: any[] = [];
+                      if (trackedJob.partsReplaced) {
+                        if (Array.isArray(trackedJob.partsReplaced)) parts = trackedJob.partsReplaced;
+                        else {
+                          try {
+                            const parsed = JSON.parse(trackedJob.partsReplaced);
+                            if (Array.isArray(parsed)) parts = parsed;
+                          } catch {
+                            if (typeof trackedJob.partsReplaced === 'string') {
+                              parts = [{ name: trackedJob.partsReplaced, quantity: 1 }];
+                            }
+                          }
+                        }
+                      }
+
+                      if (parts.length === 0) return null;
+
+                      return (
+                        <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                          <span className="text-[9.5px] font-mono uppercase text-slate-400 font-bold block">
+                            Exchanged / Replaced Parts ({parts.length}):
+                          </span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {parts.map((p, idx) => (
+                              <div key={idx} className="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2">
+                                  <Package className="w-3.5 h-3.5 text-red shrink-0" />
+                                  <div>
+                                    <p className="font-bold text-white text-[11px]">{p.name || p}</p>
+                                    {p.notes && <p className="text-[9px] text-slate-400 font-mono">{p.notes}</p>}
+                                  </div>
+                                </div>
+                                {p.quantity && (
+                                  <span className="text-[10px] bg-red/10 text-red font-mono font-bold px-2 py-0.5 rounded">
+                                    × {p.quantity}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             )}
           </div>

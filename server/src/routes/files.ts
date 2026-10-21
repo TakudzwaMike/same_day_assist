@@ -5,11 +5,11 @@ import multer from 'multer';
 import { saveFile } from '../services/storage';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const ALLOWED_TYPES = [
-  'image/jpeg', 'image/png', 'image/webp',
-  'video/mp4', 'video/quicktime',
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/3gpp', 'video/ogg', 'video/x-msvideo',
   'application/pdf',
 ];
 

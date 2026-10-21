@@ -344,10 +344,13 @@ export interface Job {
   estimatedArrivalMinutes?: number;
   distanceRemainingKm?: number;
 
-  // Live Milestone Photos
+  // Live Milestone Photos & Video Verification Proof (Compulsory Sign-off)
   photoBeforeUrl?: string;
+  videoBeforeUrl?: string;
   photoDuringUrl?: string;
   photoAfterUrl?: string;
+  videoAfterUrl?: string;
+  partsReplaced?: string | ReplacedPart[];
 
   rating?: number;
   ratingComment?: string;
@@ -360,6 +363,13 @@ export interface Job {
   completionPhoto?: string;
   jobRatings?: JobRating[];
   chatMessages?: ChatMessage[];
+}
+
+export interface ReplacedPart {
+  id?: string;
+  name: string;
+  quantity: number;
+  notes?: string;
 }
 
 

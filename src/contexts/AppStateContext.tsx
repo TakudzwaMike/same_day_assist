@@ -26,7 +26,16 @@ interface AppStateContextType {
   assignContractor: (jobId: string, contractorId: string) => Promise<void>;
   updateJobStatus: (jobId: string, status: string) => Promise<void>;
   updateContractorLocation: (jobId: string, lat: number, lng: number) => Promise<void>;
-  completeJob: (jobId: string, payload: { contractorNotes: string; contractorSignature: string; completionPhoto?: string }) => Promise<void>;
+  completeJob: (jobId: string, payload: {
+    contractorNotes: string;
+    contractorSignature: string;
+    completionPhoto?: string;
+    photoBeforeUrl?: string;
+    videoBeforeUrl?: string;
+    photoAfterUrl?: string;
+    videoAfterUrl?: string;
+    partsReplaced?: any;
+  }) => Promise<void>;
   rateJob: (jobId: string, rating: number, ratingComment?: string) => Promise<void>;
   closeJob: (jobId: string) => Promise<void>;
   initiatePayment: (type: string, amount: number) => Promise<void>;
@@ -536,10 +545,31 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const completeJob = async (jobId: string, payload: { contractorNotes: string; contractorSignature: string; completionPhoto?: string }) => {
+  const completeJob = async (jobId: string, payload: {
+    contractorNotes: string;
+    contractorSignature: string;
+    completionPhoto?: string;
+    photoBeforeUrl?: string;
+    videoBeforeUrl?: string;
+    photoAfterUrl?: string;
+    videoAfterUrl?: string;
+    partsReplaced?: any;
+  }) => {
     setError(null);
     try {
-      await api.completeJob(jobId, payload);
+      const res: any = await api.completeJob(jobId, payload);
+      const updatedJob = res?.job || res;
+      setState(prev => ({
+        ...prev,
+        jobs: prev.jobs.map(j => j.id === jobId ? {
+          ...j,
+          ...payload,
+          ...updatedJob,
+          status: 'Work Completed',
+          trackerProgress: 95,
+          completedAt: new Date().toISOString(),
+        } : j),
+      }));
       await refreshData();
     } catch (err: any) {
       setError(err.message || 'Failed to complete job');
