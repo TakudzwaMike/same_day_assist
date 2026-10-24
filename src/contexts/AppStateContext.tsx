@@ -165,6 +165,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getEnquiries().catch(() => []));
         promises.push(api.getAllQuotations().catch(() => []));
+        promises.push(api.getAllAssessments().catch(() => []));
         promises.push(api.getAllPayments().catch(() => []));
         promises.push(api.getVehicles().catch(() => []));
         if (user?.role === 'Super Administrator') {
@@ -178,6 +179,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         promises.push(api.getAllJobs().catch(() => []));
         promises.push(api.getEnquiries().catch(() => []));
         promises.push(api.getAllQuotations().catch(() => []));
+        promises.push(api.getAllAssessments().catch(() => []));
         promises.push(api.getAllClaims().catch(() => []));
         promises.push(api.getAllInvoices().catch(() => []));
       } else if (isContractor) {
@@ -213,6 +215,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
+          updated.assessments = results[idx++] || [];
           const allPayRes = results[idx++];
           updated.payments = Array.isArray(allPayRes) ? allPayRes : (allPayRes?.payments || []);
           updated.vehicles = results[idx++] || [];
@@ -223,6 +226,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           updated.jobs = (results[idx++] || []).map(normalizeJob);
           updated.enquiries = results[idx++] || [];
           updated.quotations = results[idx++] || [];
+          updated.assessments = results[idx++] || [];
           updated.claims = results[idx++] || [];
           updated.invoices = results[idx++] || [];
         } else if (isContractor) {

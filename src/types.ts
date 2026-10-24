@@ -369,6 +369,7 @@ export interface ReplacedPart {
   id?: string;
   name: string;
   quantity: number;
+  cost?: number;
   notes?: string;
 }
 
