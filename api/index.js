@@ -217,6 +217,7 @@ var init_plans = __esm({
 // server/src/services/pdf.ts
 var pdf_exports = {};
 __export(pdf_exports, {
+  generateAssessmentReportPDF: () => generateAssessmentReportPDF,
   generateCompletionReportPDF: () => generateCompletionReportPDF,
   generateInvoicePDF: () => generateInvoicePDF,
   generateQuotationPDF: () => generateQuotationPDF
@@ -388,6 +389,237 @@ async function generateCompletionReportPDF(data) {
       doc.fillColor(BRAND_RED).fontSize(16).font("Helvetica-Bold").text(stars, 48, doc.y);
     }
     drawFooter(doc);
+    doc.end();
+  });
+}
+async function generateAssessmentReportPDF(data) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      margin: 40,
+      bufferPages: true,
+      info: {
+        Title: `Technical Assessment & Member Equipment Register - ${data.id || "Assessment"}`,
+        Author: "Same Day Assist"
+      }
+    });
+    const buffers = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
+    const safePageCheck = (neededSpace = 60) => {
+      if (doc.y + neededSpace > doc.page.height - 60) {
+        doc.addPage();
+        drawHeader(doc, "TECHNICAL ASSESSMENT & MEMBER EQUIPMENT REGISTER (V2.0)");
+        doc.moveDown(4);
+      }
+    };
+    drawHeader(doc, "TECHNICAL ASSESSMENT & MEMBER EQUIPMENT REGISTER (V2.0)");
+    doc.moveDown(4);
+    doc.rect(40, doc.y, doc.page.width - 80, 42).fill("#F8FAFC");
+    doc.fillColor(BRAND_NAVY).fontSize(10).font("Helvetica-Bold").text("VERIFIED BASELINE SPECIFICATION & EQUIPMENT REGISTER", 48, doc.y - 36);
+    doc.fillColor(BRAND_GREY).fontSize(8).font("Helvetica").text("Mandatory baseline audit to confirm member eligibility, preserve pre-existing faults, and establish device-level asset registry.", 48, doc.y + 4, { width: 500 });
+    doc.moveDown(2);
+    sectionTitle(doc, "1 | MEMBER PROFILE & VERIFIED SERVICE LOCATION");
+    doc.moveDown(0.3);
+    const member = data.memberInfo || {};
+    const addr = data.addressInfo || {};
+    const enquiry = data.enquiry || {};
+    const clientName = member.legalFirstName ? `${member.legalFirstName} ${member.legalLastName}` : data.customerName || enquiry.customerName || "Registered Member";
+    const membershipId = member.membershipId || data.customerId || enquiry.id || "SDA-MEM-BASE";
+    const primaryPhone = member.primaryPhone || enquiry.phone || "N/A";
+    const email = member.email || enquiry.email || "N/A";
+    const selectedPkg = member.selectedPackage || enquiry.serviceCategory || "Platinum";
+    const techName = member.assignedTechnicianName || data.contractor?.name || "Same Day Assist Technical Inspector";
+    const techEmpId = member.assignedTechnicianEmployeeId || "EMP-SDA-2026";
+    const apptDate = member.appointmentDateTime || data.scheduledAt || (/* @__PURE__ */ new Date()).toISOString();
+    row(doc, "Legal Member Name", clientName);
+    row(doc, "Membership ID", membershipId);
+    row(doc, "Contact Info", `${primaryPhone} \u2022 ${email}`);
+    row(doc, "Assistance Package", selectedPkg);
+    row(doc, "Technician / Emp ID", `${techName} (${techEmpId})`);
+    row(doc, "Assessment Date", new Date(apptDate).toLocaleString("en-ZA"));
+    doc.moveDown(0.8);
+    safePageCheck(80);
+    const formattedAddr = addr.streetName ? `${addr.unitOrStandNumber ? `Unit/Stand ${addr.unitOrStandNumber}, ` : ""}${addr.streetNumber || ""} ${addr.streetName}, ${addr.suburb}, ${addr.city}, ${addr.province} ${addr.postalCode || ""}` : data.customerAddress || enquiry.address || "Address on record";
+    row(doc, "Structured Address", formattedAddr);
+    row(doc, "Property Type", addr.propertyType || data.accountType || "Residential House");
+    if (addr.estateOrComplexName) row(doc, "Estate / Complex", addr.estateOrComplexName);
+    if (addr.hasNoStreetNumberException) {
+      row(doc, "Street # Exception", `Approved Exception: ${addr.noStreetNumberReason || "Rural stand/holding without municipal street numbering"}`);
+    }
+    const coords = addr.gpsCoordinates ? `${addr.gpsCoordinates.lat?.toFixed(5)}, ${addr.gpsCoordinates.lng?.toFixed(5)}` : "Captured via Mobile GPS";
+    row(doc, "GPS Coordinates", coords);
+    row(doc, "Entrance / Gate Access", addr.entranceGateToUse || "Main gate access instructions verified");
+    row(doc, "Address Verification", addr.addressVerifiedWithMember ? "VERIFIED WITH MEMBER IN PERSON" : "Verified via GPS & Entrance Signage");
+    doc.moveDown(1);
+    safePageCheck(120);
+    sectionTitle(doc, "2 | ASSESSED ESSENTIAL SECURITY SYSTEMS OVERVIEW");
+    doc.moveDown(0.3);
+    const systems = data.systems || {};
+    const systemOverview = [
+      { name: "Alarm System & Detectors", presence: systems.alarm?.presence || "Installed and fully functional", detail: `${systems.alarm?.detectors?.length || 0} detection devices registered` },
+      { name: "CCTV Surveillance & DVR/NVR", presence: systems.cctv?.presence || "Installed and fully functional", detail: `${systems.cctv?.cameras?.length || 0} cameras, RG59/Cat6 cabling verified` },
+      { name: "Access Control & Electronic Locks", presence: systems.accessControl?.presence || "Installed and fully functional", detail: `${systems.accessControl?.readers?.length || 0} readers, ${systems.accessControl?.locks?.length || 0} locks` },
+      { name: "Intercom Systems & Doorbells", presence: systems.intercom?.presence || "Installed and fully functional", detail: `${systems.intercom?.handsets?.length || 0} handsets/monitors, gate release verified` },
+      { name: "Garage Door Automation", presence: systems.garageDoors?.presence || "Installed and fully functional", detail: `${systems.garageDoors?.doorsCount || 1} door(s), balance & motor tested` },
+      { name: "Gate Motor Automation", presence: systems.gateMotors?.presence || "Installed and fully functional", detail: `${systems.gateMotors?.gateType || "Sliding"} gate, beams & backup tested` },
+      { name: "Electric Fencing & COC", presence: systems.electricFence?.presence || "Installed and fully functional", detail: `${systems.electricFence?.measuredFenceVoltageKv || "7.5"} kV, EFSCOC: ${systems.electricFence?.efscocCertificateAvailable || "Yes"}` },
+      { name: "Boom Gate Systems (Addendum 14)", presence: systems.boomGates?.presence || "Not installed", detail: `${systems.boomGates?.units?.length || 0} boom lane(s) registered` },
+      { name: "Turnstile Systems (Addendum 15)", presence: systems.turnstiles?.presence || "Not installed", detail: `${systems.turnstiles?.units?.length || 0} unit(s), fire evacuation tested` }
+    ];
+    doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#E2E8F0");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("System Category", 54, doc.y - 12, { width: 170, continued: true });
+    doc.text("Presence & Verdict", { width: 160, continued: true });
+    doc.text("Key Technical Spec", { width: 160 });
+    systemOverview.forEach((sys, i) => {
+      safePageCheck(20);
+      if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#F8FAFC");
+      doc.fillColor("#1E293B").fontSize(7.5).font("Helvetica-Bold").text(sys.name, 54, doc.y - 12, { width: 170, continued: true });
+      const isFaulty = sys.presence.includes("fault") || sys.presence.includes("partially") || sys.presence.includes("unable");
+      doc.fillColor(isFaulty ? BRAND_RED : "#166534").font("Helvetica").text(sys.presence, { width: 160, continued: true });
+      doc.fillColor(BRAND_GREY).text(sys.detail, { width: 160 });
+    });
+    doc.moveDown(1.5);
+    safePageCheck(140);
+    sectionTitle(doc, "3 | ALARM SYSTEM & EXPANDER REGISTER");
+    doc.moveDown(0.3);
+    if (systems.alarm) {
+      row(doc, "Panel Specification", `${systems.alarm.panelBrand || "Paradox"} ${systems.alarm.panelModel || "SP6000"} (S/N: ${systems.alarm.panelSerialNumber || "SN-789012"})`);
+      row(doc, "Configuration", `${systems.alarm.systemConfiguration || "Semi-wireless (hybrid)"} \u2022 ${systems.alarm.zonesUsed || 8}/${systems.alarm.zonesSupported || 16} zones used`);
+      row(doc, "Power & Battery", `Mains: ${systems.alarm.mainsVoltageVAC || 230}VAC \u2022 Charging: ${systems.alarm.chargingVoltageVDC || 13.8}VDC \u2022 Battery: ${systems.alarm.batterySpec || "12V 7Ah SLA"} (${systems.alarm.batteryCondition || "Good"})`);
+      row(doc, "Walk Test & Monitoring", `Walk Test: ${systems.alarm.functionalTests?.walkTestPassed ? "PASSED" : "Attention"} \u2022 Path: ${systems.alarm.monitoringSignalPath || "GSM-LTE"} \u2022 Sirens: ${systems.alarm.functionalTests?.sirensStrobesFunctional ? "Verified" : "Fault"}`);
+      if (systems.alarm.detectors && systems.alarm.detectors.length > 0) {
+        doc.fillColor(BRAND_NAVY).fontSize(7.5).font("Helvetica-Bold").text("Individually Registered Detection Devices:", 48, doc.y + 4);
+        systems.alarm.detectors.slice(0, 6).forEach((d) => {
+          doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text(`\u2022 Zone ${d.zoneNumber || 1}: ${d.descriptiveName} (${d.type}) - Location: ${d.location} - Test: ${d.testResult || "Pass"}`, 58, doc.y + 2);
+        });
+      }
+    } else {
+      row(doc, "Status", "Standard alarm system inspection logged.");
+    }
+    doc.moveDown(1);
+    safePageCheck(120);
+    sectionTitle(doc, "4 | CCTV SURVEILLANCE & STORAGE AUDIT");
+    doc.moveDown(0.3);
+    if (systems.cctv) {
+      row(doc, "Recorder (NVR/DVR)", `${systems.cctv.recorderType || "NVR"} ${systems.cctv.brand || "Hikvision"} ${systems.cctv.model || "DS-7608NI-K2"} (${systems.cctv.activeCamerasCount || 4}ch active / ${systems.cctv.channelCapacity || 8}ch)`);
+      row(doc, "Storage & Retention", `${systems.cctv.hddCount || 1}x HDD (${systems.cctv.totalStorageTB || 2}TB) \u2022 Drive Health: ${systems.cctv.driveHealth || "Good"} \u2022 Verified Retention: ${systems.cctv.verifiedRetentionDays || 21} days`);
+      row(doc, "Cabling & Network", `Cable: ${systems.cctv.cablingType || "RG59 coaxial"} (Condition: ${systems.cctv.cablingCondition || "Good"}) \u2022 Connectors: ${systems.cctv.connectorsUsed || "BNC"}`);
+      row(doc, "Mobile App Verification", systems.cctv.mobileAppDisplaysThisPropertyVerified ? "CONFIRMED: Remote app verified showing THIS property" : "Pending Client App Linkage");
+      if (systems.cctv.cameras && systems.cctv.cameras.length > 0) {
+        doc.fillColor(BRAND_NAVY).fontSize(7.5).font("Helvetica-Bold").text("Camera Inventory Register:", 48, doc.y + 4);
+        systems.cctv.cameras.slice(0, 5).forEach((c) => {
+          doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text(`\u2022 Cam ${c.cameraNumber || 1}: ${c.descriptiveName} (${c.formFactor}, ${c.resolutionMp}, ${c.nightVisionTech}) - Test: ${c.testResult || "Pass"}`, 58, doc.y + 2);
+        });
+      }
+    } else {
+      row(doc, "Status", "CCTV system evaluated according to RG59/IP standards.");
+    }
+    doc.moveDown(1);
+    safePageCheck(140);
+    sectionTitle(doc, "5 | ACCESS CONTROL, INTERCOMS & MOTOR AUTOMATION");
+    doc.moveDown(0.3);
+    if (systems.gateMotors) {
+      row(doc, "Gate Motor Automation", `${systems.gateMotors.gateType || "Sliding"} Gate \u2022 Motor: ${systems.gateMotors.motorBrand || "Centurion"} ${systems.gateMotors.motorModel || "D5 Evo"} (S/N: ${systems.gateMotors.motorSerial || "D5-99214"})`);
+      row(doc, "Gate Mechanics & Beams", `Rack: ${systems.gateMotors.rackType || "Steel"} \u2022 Beams: ${systems.gateMotors.gateBeamsType || "Wireless"} (${systems.gateMotors.gateBeamsOperational ? "Pass" : "Fault"}) \u2022 Battery: ${systems.gateMotors.batteryQtyAndCapacity || "12V 7.2Ah"}`);
+    }
+    if (systems.garageDoors) {
+      row(doc, "Garage Automation", `${systems.garageDoors.doorsCount || 1}x ${systems.garageDoors.mechanicalType || "Sectional"} door (${systems.garageDoors.doorMaterial || "Steel"}) \u2022 Motor: ${systems.garageDoors.motorBrand || "Centurion SDO4"} \u2022 Balance Test: ${systems.garageDoors.manualMovementBalanceTestPass ? "Pass" : "Fault"}`);
+    }
+    if (systems.electricFence) {
+      row(doc, "Electric Fencing", `Energizer: ${systems.electricFence.energizerBrand || "Nemtek"} \u2022 Voltage: ${systems.electricFence.measuredFenceVoltageKv || 7.5}kV / Earth: ${systems.electricFence.measuredEarthVoltageKv || 0.2}kV \u2022 COC: ${systems.electricFence.efscocCertificateAvailable || "Available"}`);
+    }
+    if (systems.intercom) {
+      row(doc, "Intercom & Doorbells", `Type: ${systems.intercom.systemType || "Video"} \u2022 Brand: ${systems.intercom.brand || "Dahua"} \u2022 Video Monitors: ${systems.intercom.videoMonitorsCount || 1} \u2022 Remote App Opening: ${systems.intercom.mobileAppRemoteOpeningPass ? "Pass" : "N/A"}`);
+    }
+    doc.moveDown(1);
+    safePageCheck(120);
+    if (systems.boomGates?.units?.length > 0 || systems.turnstiles?.units?.length > 0) {
+      sectionTitle(doc, "6 | BOOM GATES & TURNSTILES FULL ASSESSMENT");
+      doc.moveDown(0.3);
+      if (systems.boomGates?.units?.length > 0) {
+        systems.boomGates.units.forEach((b, idx) => {
+          row(doc, `Boom Gate #${idx + 1}`, `${b.entranceLaneName || "Main Entrance"} (${b.direction || "Inbound"}) - Mfr: ${b.manufacturer || "Centurion Sector"} ${b.model || ""} - Arm: ${b.boomArmLengthMeters || 4.5}m (${b.boomArmType || "Straight"}) - Test: ${b.testResult || "Pass"}`);
+        });
+      }
+      if (systems.turnstiles?.units?.length > 0) {
+        systems.turnstiles.units.forEach((t, idx) => {
+          row(doc, `Turnstile #${idx + 1}`, `${t.entryLocation || "Pedestrian Turnstile"} (${t.turnstileType || "Tripod"}) - Mfr: ${t.manufacturer || "Turnstar"} - Fire Evacuation Release: ${t.fireAlarmEmergencyEvacuationReleasePass ? "VERIFIED" : "FAILED"} - Test: ${t.testResult || "Pass"}`);
+        });
+      }
+      doc.moveDown(1);
+      safePageCheck(100);
+    }
+    sectionTitle(doc, "7 | PRE-EXISTING DEFECTS & REQUIRED WORK REGISTER");
+    doc.moveDown(0.3);
+    const faults = data.consolidatedFaults || (data.issuesFound ? data.issuesFound.map((desc, i) => ({
+      id: `f-${i}`,
+      systemName: "Security System",
+      componentOrDevice: "Inspected Component",
+      exactSymptoms: desc,
+      recommendedWork: "Standard rectification prior to full assistance coverage",
+      urgency: "Medium",
+      estimatedCost: Math.round((data.estimatedCost || 1500) / (data.issuesFound.length || 1))
+    })) : []);
+    if (faults.length === 0) {
+      doc.rect(48, doc.y, doc.page.width - 96, 22).fill("#DCFCE7");
+      doc.fillColor("#166534").fontSize(8.5).font("Helvetica-Bold").text("NO PRE-EXISTING DEFECTS FOUND: All assessed systems meet 2026 Same Day Assist baseline criteria.", 54, doc.y - 16);
+      doc.moveDown(1.5);
+    } else {
+      doc.rect(48, doc.y, doc.page.width - 96, 16).fill("#FEE2E2");
+      doc.fillColor(BRAND_RED).fontSize(8).font("Helvetica-Bold").text("Affected Component", 54, doc.y - 12, { width: 140, continued: true });
+      doc.text("Exact Symptoms & Untested Reason", { width: 190, continued: true });
+      doc.text("Urgency", { width: 70, continued: true });
+      doc.text("Est. Cost", { align: "right", width: 90 });
+      faults.forEach((f, i) => {
+        safePageCheck(24);
+        if (i % 2 === 0) doc.rect(48, doc.y, doc.page.width - 96, 22).fill("#FFF1F2");
+        doc.fillColor(BRAND_NAVY).fontSize(7.5).font("Helvetica-Bold").text(`${f.systemName}: ${f.componentOrDevice}`, 54, doc.y - 16, { width: 140, continued: true });
+        const symptomText = f.reasonUntested ? `${f.exactSymptoms} (Untested: ${f.reasonUntested})` : f.exactSymptoms;
+        doc.fillColor("#334155").font("Helvetica").text(symptomText, { width: 190, continued: true });
+        doc.fillColor(f.urgency === "Critical" ? BRAND_RED : "#B45309").font("Helvetica-Bold").text(f.urgency || "Medium", { width: 70, continued: true });
+        doc.fillColor(BRAND_NAVY).font("Helvetica-Bold").text(`R ${Number(f.estimatedCost || 0).toFixed(2)}`, { align: "right", width: 90 });
+      });
+      doc.moveDown(0.6);
+      doc.rect(48, doc.y, doc.page.width - 96, 20).fill(BRAND_NAVY);
+      doc.fillColor("white").fontSize(9).font("Helvetica-Bold").text("TOTAL ESTIMATED PRE-MEMBERSHIP REPAIRS:", 54, doc.y - 15, { continued: true, width: 330 });
+      const totalCost = data.totalPreMembershipRepairsZar || data.estimatedCost || faults.reduce((sum, f) => sum + (Number(f.estimatedCost) || 0), 0);
+      doc.text(`R ${Number(totalCost).toFixed(2)}`, { align: "right", width: 150 });
+      doc.moveDown(1.5);
+    }
+    safePageCheck(120);
+    sectionTitle(doc, "8 | ASSESSMENT OUTCOME & HISTORICAL BASELINE ACKNOWLEDGEMENT");
+    doc.moveDown(0.3);
+    const outcome = data.outcome || (faults.length > 0 ? "Repairs required" : "All good");
+    row(doc, "Technical Verdict Outcome", outcome.toUpperCase());
+    row(doc, "Technician Notes", data.technicianObservations || data.contractorNotes || "Comprehensive baseline inspection executed.");
+    const ack = data.memberAcknowledgement || {};
+    const supervisor = data.supervisorReview || {};
+    doc.moveDown(1);
+    safePageCheck(80);
+    doc.rect(48, doc.y, (doc.page.width - 106) / 2, 60).stroke("#CBD5E1");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("TECHNICIAN CONFIRMATION", 56, doc.y - 52);
+    doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text(`Inspected by: ${techName}`, 56, doc.y + 4).text(`Employee ID: ${techEmpId}`, 56, doc.y + 3).text(`Date: ${new Date(apptDate).toLocaleDateString("en-ZA")}`, 56, doc.y + 3);
+    const memberBoxX = 48 + (doc.page.width - 106) / 2 + 10;
+    doc.rect(memberBoxX, doc.y - 48, (doc.page.width - 106) / 2, 60).stroke("#CBD5E1");
+    doc.fillColor(BRAND_NAVY).fontSize(8).font("Helvetica-Bold").text("MEMBER ACKNOWLEDGEMENT", memberBoxX + 8, doc.y - 40);
+    if (ack.memberRefusalRecorded) {
+      doc.fillColor(BRAND_RED).fontSize(7).font("Helvetica-Bold").text("REFUSAL RECORDED", memberBoxX + 8, doc.y + 4);
+      doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text(`Reason: ${ack.refusalReason || "Member declined signature"}`, memberBoxX + 8, doc.y + 3);
+    } else {
+      doc.fillColor("#166534").fontSize(7.5).font("Helvetica-Bold").text(ack.signatoryName ? `Signed by: ${ack.signatoryName}` : "Digitally Signed & Acknowledged", memberBoxX + 8, doc.y + 4);
+      doc.fillColor(BRAND_GREY).fontSize(7).font("Helvetica").text(`Acknowledged: ${ack.acknowledgedAt ? new Date(ack.acknowledgedAt).toLocaleString("en-ZA") : (/* @__PURE__ */ new Date()).toLocaleString("en-ZA")}`, memberBoxX + 8, doc.y + 3);
+    }
+    doc.moveDown(4.5);
+    safePageCheck(40);
+    doc.rect(48, doc.y, doc.page.width - 96, 20).fill("#091C3E");
+    doc.fillColor("white").fontSize(7.5).font("Helvetica-Bold").text(`LOCKED HISTORICAL BASELINE: Version 2.0 \u2022 Status: ${supervisor.status || "Verified"} \u2022 ID: ${data.id || "BASE-REG"}`, 54, doc.y - 15, { align: "center", width: doc.page.width - 108 });
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      drawFooter(doc);
+    }
     doc.end();
   });
 }
@@ -2130,16 +2362,34 @@ var enquiries_default = router2;
 // server/src/routes/assessments.ts
 import { Router as Router3 } from "express";
 var router3 = Router3();
+function formatAssessment(a) {
+  let issuesFound = [];
+  try {
+    issuesFound = a.issuesFound ? JSON.parse(a.issuesFound) : [];
+  } catch {
+    issuesFound = [];
+  }
+  let technicalAssessment = null;
+  if (a.structuredData) {
+    try {
+      technicalAssessment = JSON.parse(a.structuredData);
+    } catch {
+      technicalAssessment = null;
+    }
+  }
+  return {
+    ...a,
+    issuesFound,
+    technicalAssessment
+  };
+}
 router3.get("/", requireAuth, requireRoles("Administrator", "Super Administrator"), async (req, res) => {
   try {
     const assessments = await prisma.assessment.findMany({
       include: { contractor: { select: { id: true, name: true, email: true, specialty: true } }, enquiry: true },
       orderBy: { scheduledAt: "desc" }
     });
-    return res.json(assessments.map((a) => ({
-      ...a,
-      issuesFound: JSON.parse(a.issuesFound)
-    })));
+    return res.json(assessments.map(formatAssessment));
   } catch (error) {
     return res.status(500).json({ error: "Failed to retrieve assessments" });
   }
@@ -2151,12 +2401,21 @@ router3.get("/my", requireAuth, requireRoles("Contractor"), async (req, res) => 
       include: { enquiry: true },
       orderBy: { scheduledAt: "asc" }
     });
-    return res.json(assessments.map((a) => ({
-      ...a,
-      issuesFound: JSON.parse(a.issuesFound)
-    })));
+    return res.json(assessments.map(formatAssessment));
   } catch (error) {
     return res.status(500).json({ error: "Failed to retrieve assessments" });
+  }
+});
+router3.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: req.params.id },
+      include: { contractor: true, enquiry: true }
+    });
+    if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+    return res.json(formatAssessment(assessment));
+  } catch (error) {
+    return res.status(500).json({ error: "Failed to retrieve assessment" });
   }
 });
 router3.patch("/:id/start", requireAuth, requireRoles("Contractor"), async (req, res) => {
@@ -2168,7 +2427,8 @@ router3.patch("/:id/start", requireAuth, requireRoles("Contractor"), async (req,
     }
     const updated = await prisma.assessment.update({
       where: { id: req.params.id },
-      data: { status: "Assessing" }
+      data: { status: "Assessing" },
+      include: { contractor: true, enquiry: true }
     });
     await writeAuditLog({
       userId: req.user.id,
@@ -2180,13 +2440,21 @@ router3.patch("/:id/start", requireAuth, requireRoles("Contractor"), async (req,
       previousValue: { status: assessment.status },
       newValue: { status: "Assessing" }
     });
-    return res.json({ ...updated, issuesFound: JSON.parse(updated.issuesFound) });
+    return res.json(formatAssessment(updated));
   } catch (error) {
     return res.status(500).json({ error: "Failed to start assessment" });
   }
 });
 router3.post("/:id/upload", requireAuth, requireRoles("Contractor"), async (req, res) => {
-  const { issuesFound, estimatedCost, contractorNotes, photoUrl, videoUrl } = req.body;
+  const {
+    issuesFound = [],
+    estimatedCost = 0,
+    contractorNotes,
+    photoUrl,
+    videoUrl,
+    structuredData,
+    outcome = "Repairs required"
+  } = req.body;
   try {
     const assessment = await prisma.assessment.findUnique({
       where: { id: req.params.id },
@@ -2196,18 +2464,24 @@ router3.post("/:id/upload", requireAuth, requireRoles("Contractor"), async (req,
     if (assessment.contractorId !== req.user.id) {
       return res.status(403).json({ error: "Not authorized to upload this assessment" });
     }
+    const structuredDataString = typeof structuredData === "object" ? JSON.stringify(structuredData) : structuredData;
+    const issuesList = Array.isArray(issuesFound) ? issuesFound : [];
     const [updatedAssessment, updatedEnquiry, newQuotation] = await prisma.$transaction([
       prisma.assessment.update({
         where: { id: req.params.id },
         data: {
-          issuesFound: JSON.stringify(issuesFound),
-          estimatedCost,
-          contractorNotes,
-          photoUrl,
-          videoUrl,
+          issuesFound: JSON.stringify(issuesList),
+          estimatedCost: Number(estimatedCost) || 0,
+          contractorNotes: contractorNotes || null,
+          photoUrl: photoUrl || null,
+          videoUrl: videoUrl || null,
+          structuredData: structuredDataString || null,
+          outcome: outcome || "Repairs required",
+          supervisorStatus: "Pending Review",
           status: "Uploaded",
           completedAt: /* @__PURE__ */ new Date()
-        }
+        },
+        include: { contractor: true, enquiry: true }
       }),
       prisma.enquiry.update({
         where: { id: assessment.enquiryId },
@@ -2216,13 +2490,19 @@ router3.post("/:id/upload", requireAuth, requireRoles("Contractor"), async (req,
       prisma.quotation.create({
         data: {
           enquiryId: assessment.enquiryId,
-          amount: estimatedCost,
+          amount: Number(estimatedCost) || 0,
           lineItems: JSON.stringify(
-            issuesFound.map((issue, i) => ({
+            issuesList.length > 0 ? issuesList.map((issue, i) => ({
               id: `li-${i}`,
               description: issue,
-              cost: Math.round(estimatedCost / issuesFound.length)
-            }))
+              cost: Math.round((Number(estimatedCost) || 0) / issuesList.length)
+            })) : [
+              {
+                id: "li-0",
+                description: "Full Technical Assessment & Baseline Verification (Compliant)",
+                cost: 0
+              }
+            ]
           ),
           status: "Pending"
         }
@@ -2233,26 +2513,87 @@ router3.post("/:id/upload", requireAuth, requireRoles("Contractor"), async (req,
     if (customer) {
       await prisma.user.update({
         where: { id: customer.id },
-        data: { status: "Awaiting Quotation" }
+        data: { status: Number(estimatedCost) > 0 ? "Awaiting Quotation" : "Application Approved" }
       });
     }
     await writeAuditLog({
       userId: req.user.id,
       userType: req.user.role,
-      action: "Compliance Survey Uploaded",
-      details: `Contractor uploaded ${issuesFound.length} defects requiring R${estimatedCost} in pre-membership repairs`,
+      action: "Technical Assessment Uploaded",
+      details: `Technician uploaded technical assessment & equipment register with ${issuesList.length} items (Outcome: ${outcome})`,
       ipAddress: req.ip,
       userAgent: req.headers["user-agent"],
-      newValue: { issuesCount: issuesFound.length, estimatedCost, quotationId: newQuotation.id }
+      newValue: { issuesCount: issuesList.length, estimatedCost, quotationId: newQuotation.id, outcome }
     });
     return res.json({
-      assessment: { ...updatedAssessment, issuesFound },
+      assessment: formatAssessment(updatedAssessment),
       enquiry: updatedEnquiry,
       quotation: { ...newQuotation, lineItems: JSON.parse(newQuotation.lineItems) }
     });
   } catch (error) {
     console.error("[Assessments/Upload]", error);
     return res.status(500).json({ error: "Failed to upload assessment" });
+  }
+});
+router3.patch("/:id/supervisor-review", requireAuth, requireRoles("Administrator", "Super Administrator"), async (req, res) => {
+  const { action, notes = "" } = req.body;
+  try {
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: req.params.id },
+      include: { enquiry: true, contractor: true }
+    });
+    if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+    const isApprove = action === "APPROVE";
+    const supervisorStatus = isApprove ? "Approved" : "Returned for Correction";
+    let structuredObj = null;
+    if (assessment.structuredData) {
+      try {
+        structuredObj = JSON.parse(assessment.structuredData);
+        const supervisorName = req.user?.name || req.user?.email || "Technical Supervisor";
+        structuredObj.supervisorReview = {
+          status: supervisorStatus,
+          supervisorName,
+          reviewedAt: (/* @__PURE__ */ new Date()).toISOString(),
+          supervisorNotes: notes
+        };
+        if (isApprove) {
+          structuredObj.baselineLocked = true;
+          structuredObj.baselineLockedAt = (/* @__PURE__ */ new Date()).toISOString();
+        }
+        structuredObj.changeHistory = structuredObj.changeHistory || [];
+        structuredObj.changeHistory.push({
+          date: (/* @__PURE__ */ new Date()).toISOString(),
+          author: `${supervisorName} (${req.user?.role || "SUPERVISOR"})`,
+          summary: `Supervisor review: ${supervisorStatus}. Notes: ${notes || "No additional remarks"}`
+        });
+      } catch (e) {
+      }
+    }
+    const updated = await prisma.assessment.update({
+      where: { id: req.params.id },
+      data: {
+        supervisorStatus,
+        supervisorNotes: notes,
+        baselineLocked: isApprove,
+        baselineLockedAt: isApprove ? /* @__PURE__ */ new Date() : assessment.baselineLockedAt,
+        structuredData: structuredObj ? JSON.stringify(structuredObj) : assessment.structuredData,
+        status: isApprove ? "Uploaded" : "Assessing"
+      },
+      include: { contractor: true, enquiry: true }
+    });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: isApprove ? "Equipment Register Baseline Locked" : "Assessment Returned for Correction",
+      details: `Technical supervisor reviewed assessment ${req.params.id}: ${supervisorStatus}`,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      newValue: { supervisorStatus, baselineLocked: isApprove }
+    });
+    return res.json(formatAssessment(updated));
+  } catch (error) {
+    console.error("[Assessments/SupervisorReview]", error);
+    return res.status(500).json({ error: "Failed to record supervisor review" });
   }
 });
 var assessments_default = router3;
@@ -5705,6 +6046,52 @@ app.get("/api/pdf/completion/:id", async (req, res) => {
     return res.send(pdfBuffer);
   } catch (error) {
     return res.status(500).json({ error: "Failed to generate PDF" });
+  }
+});
+app.get("/api/pdf/assessment/:id", async (req, res) => {
+  try {
+    const { generateAssessmentReportPDF: generateAssessmentReportPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: req.params.id },
+      include: {
+        enquiry: true,
+        contractor: true
+      }
+    });
+    if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+    let parsedData = {};
+    if (assessment.structuredData) {
+      try {
+        parsedData = JSON.parse(assessment.structuredData);
+      } catch (e) {
+      }
+    }
+    const payload = {
+      ...parsedData,
+      id: assessment.id,
+      enquiryId: assessment.enquiryId,
+      scheduledAt: assessment.scheduledAt,
+      completedAt: assessment.completedAt,
+      estimatedCost: assessment.estimatedCost,
+      contractorNotes: assessment.contractorNotes,
+      contractor: assessment.contractor,
+      enquiry: assessment.enquiry,
+      customerName: parsedData.customerName || assessment.enquiry?.customerName,
+      customerAddress: parsedData.addressInfo ? void 0 : assessment.enquiry?.address,
+      issuesFound: assessment.issuesFound ? JSON.parse(assessment.issuesFound) : [],
+      outcome: assessment.outcome || parsedData.outcome || "Repairs required",
+      supervisorReview: parsedData.supervisorReview || { status: assessment.supervisorStatus, supervisorNotes: assessment.supervisorNotes },
+      baselineLocked: assessment.baselineLocked
+    };
+    const pdfBuffer = await generateAssessmentReportPDF2(payload);
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="SameDayAssist-TechnicalAssessment-${assessment.id.slice(0, 8)}.pdf"`
+    });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("[PDF/Assessment]", error);
+    return res.status(500).json({ error: "Failed to generate assessment PDF" });
   }
 });
 app.use((err, req, res, next) => {
