@@ -274,6 +274,55 @@ app.get('/api/pdf/completion/:id', async (req, res) => {
   }
 });
 
+app.get('/api/pdf/assessment/:id', async (req, res) => {
+  try {
+    const { generateAssessmentReportPDF } = await import('./services/pdf');
+    const assessment = await prisma.assessment.findUnique({
+      where: { id: req.params.id },
+      include: {
+        enquiry: true,
+        contractor: true,
+      },
+    });
+    if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    let parsedData: any = {};
+    if (assessment.structuredData) {
+      try {
+        parsedData = JSON.parse(assessment.structuredData);
+      } catch (e) {}
+    }
+
+    const payload = {
+      ...parsedData,
+      id: assessment.id,
+      enquiryId: assessment.enquiryId,
+      scheduledAt: assessment.scheduledAt,
+      completedAt: assessment.completedAt,
+      estimatedCost: assessment.estimatedCost,
+      contractorNotes: assessment.contractorNotes,
+      contractor: assessment.contractor,
+      enquiry: assessment.enquiry,
+      customerName: parsedData.customerName || assessment.enquiry?.customerName,
+      customerAddress: parsedData.addressInfo ? undefined : assessment.enquiry?.address,
+      issuesFound: assessment.issuesFound ? JSON.parse(assessment.issuesFound) : [],
+      outcome: assessment.outcome || parsedData.outcome || 'Repairs required',
+      supervisorReview: parsedData.supervisorReview || { status: assessment.supervisorStatus, supervisorNotes: assessment.supervisorNotes },
+      baselineLocked: assessment.baselineLocked,
+    };
+
+    const pdfBuffer = await generateAssessmentReportPDF(payload);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="SameDayAssist-TechnicalAssessment-${assessment.id.slice(0, 8)}.pdf"`,
+    });
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error('[PDF/Assessment]', error);
+    return res.status(500).json({ error: 'Failed to generate assessment PDF' });
+  }
+});
+
 // WebSocket connections
 io.on('connection', (socket) => {
   console.log(`[Socket.IO] Client connected: ${socket.id}`);

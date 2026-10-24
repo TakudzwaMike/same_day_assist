@@ -25,7 +25,7 @@ export default function ReportsViewer() {
     fetchReportStats();
   }, []);
 
-  const handleDownloadPDF = (type: 'quotation' | 'invoice' | 'completion', id: string) => {
+  const handleDownloadPDF = (type: 'quotation' | 'invoice' | 'completion' | 'assessment', id: string) => {
     const url = api.getPDFUrl(type, id);
     window.open(url, '_blank');
   };
@@ -128,11 +128,12 @@ export default function ReportsViewer() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 border-b border-slate-100 font-mono text-[9px] font-bold">
                       <tr>
-                        <th className="p-3">Survey ID</th>
-                        <th className="p-3">Enquiry ID</th>
+                        <th className="p-3">Assessment ID</th>
                         <th className="p-3">Assigned Inspector</th>
+                        <th className="p-3">Baseline Status</th>
                         <th className="p-3">Defects Audited</th>
-                        <th className="p-3">Estimated ZAR Cost</th>
+                        <th className="p-3">Estimated ZAR</th>
+                        <th className="p-3 text-right">A4 Register PDF</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -140,17 +141,34 @@ export default function ReportsViewer() {
                         const inspector = state.contractors.find(c => c.id === a.contractorId);
                         return (
                           <tr key={a.id}>
-                            <td className="p-3 font-mono">{a.id}</td>
-                            <td className="p-3 font-mono">{a.enquiryId}</td>
-                            <td className="p-3 font-bold">{inspector?.name || 'Surveyor'}</td>
-                            <td className="p-3 text-slate-500">{a.issuesFound.length} Issues</td>
-                            <td className="p-3 font-bold">R{a.estimatedCost}</td>
+                            <td className="p-3 font-mono font-bold text-navy">{a.id.slice(0, 12)}</td>
+                            <td className="p-3 font-bold">{inspector?.name || 'Technical Inspector'}</td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                a.baselineLocked ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {a.baselineLocked ? 'Locked Baseline' : 'Pending Lock'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-500">{a.issuesFound.length} Defects</td>
+                            <td className="p-3 font-bold text-navy">R{a.estimatedCost}</td>
+                            <td className="p-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadPDF('assessment', a.id)}
+                                className="px-2.5 py-1 rounded bg-[#CC322C] hover:bg-[#b02a25] text-white text-[10px] font-bold inline-flex items-center gap-1 cursor-pointer transition-all shadow-xs"
+                                title="Download A4 PDF Report"
+                              >
+                                <FileText className="w-3 h-3" />
+                                <span>Export PDF</span>
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
                       {state.assessments.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="p-4 text-center text-slate-400 font-mono">No safety assessments uploaded yet.</td>
+                          <td colSpan={6} className="p-4 text-center text-slate-400 font-mono">No safety assessments uploaded yet.</td>
                         </tr>
                       )}
                     </tbody>

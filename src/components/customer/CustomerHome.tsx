@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Shield, AlertTriangle, Phone, CreditCard, 
   Zap, Droplet, Hammer, Camera, Send, Info, CheckCircle,
-  FileText, Edit3, X, Check, ArrowRight, RefreshCw
+  FileText, Edit3, X, Check, ArrowRight, RefreshCw, Download, ShieldCheck
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,6 +14,7 @@ import EmptyState from '../shared/EmptyState';
 import ConfirmDialog from '../shared/ConfirmDialog';
 import { BenefitBalanceCard } from './BenefitBalanceCard';
 import { BenefitHistoryModal } from './BenefitHistoryModal';
+import { MemberEquipmentRegisterView } from '../assessment/MemberEquipmentRegisterView';
 
 interface CustomerHomeProps {
   activeCustomer: any;
@@ -55,6 +56,7 @@ export default function CustomerHome({
   const [isChangePlanOpen, setIsChangePlanOpen] = useState(false);
   const [selectedNewPlanId, setSelectedNewPlanId] = useState(state.benefitSummary?.planId || 'assist-plus');
   const [isSubmittingPlanChange, setIsSubmittingPlanChange] = useState(false);
+  const [isEquipmentRegisterOpen, setIsEquipmentRegisterOpen] = useState(false);
 
   const { refreshData } = useAppState();
 
@@ -357,10 +359,31 @@ export default function CustomerHome({
       {state.currentStep === 'ASSESSMENT_UPLOADED' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200/80 text-center flex flex-col gap-4 animate-fadeIn">
           <EmptyState 
-            icon={Info}
-            title="Survey Uploaded — Awaiting Quotation"
-            description="Your property survey is complete. Our administrators are compiling a quotation for any mandatory compliance repairs."
+            icon={ShieldCheck}
+            title="Technical Assessment Complete — Equipment Register Created"
+            description="Your property technical assessment has been uploaded device-by-device. Our engineering team has registered your baseline security equipment."
           />
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsEquipmentRegisterOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-[#091C3E] hover:bg-[#142D59] text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer transition-all"
+            >
+              <FileText className="w-4 h-4 text-[#CC322C]" />
+              <span>View Verified Equipment Register</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const latest = state.assessments[state.assessments.length - 1];
+                window.open(`/api/pdf/assessment/${latest?.id || 'latest'}`, '_blank');
+              }}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center gap-2 border border-slate-200 cursor-pointer transition-all"
+            >
+              <Download className="w-4 h-4 text-emerald-600" />
+              <span>Download Official A4 PDF</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -726,6 +749,39 @@ export default function CustomerHome({
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Member Equipment Register Modal */}
+      {isEquipmentRegisterOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full max-h-[90vh] overflow-y-auto p-6 relative shadow-2xl">
+            <button
+              onClick={() => setIsEquipmentRegisterOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800 hover:bg-slate-700 transition-colors z-10"
+              title="Close equipment register"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <MemberEquipmentRegisterView
+              assessment={
+                (() => {
+                  const latest = state.assessments[state.assessments.length - 1];
+                  if (latest?.structuredData) {
+                    try {
+                      return typeof latest.structuredData === 'string'
+                        ? JSON.parse(latest.structuredData)
+                        : latest.structuredData;
+                    } catch {
+                      return latest;
+                    }
+                  }
+                  return latest;
+                })()
+              }
+              assessmentId={state.assessments[state.assessments.length - 1]?.id}
+            />
           </div>
         </div>
       )}

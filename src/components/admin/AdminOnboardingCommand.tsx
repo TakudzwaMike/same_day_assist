@@ -7,7 +7,7 @@ import { useAppState } from '../../contexts/AppStateContext';
 import { CustomerStatus, Enquiry, SurveyReport } from '../../types';
 
 export function AdminOnboardingCommand() {
-  const { state, assignSurveyInspector, adminReviewSurvey, activateCustomerAccount } = useAppState();
+  const { state, assignSurveyInspector, adminReviewSurvey, reviewAssessment, activateCustomerAccount } = useAppState();
 
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'WAITING_SURVEY' | 'ASSIGNED' | 'AWAITING_REVIEW' | 'PAYMENT_PENDING' | 'WAITING_ACTIVATION' | 'ACTIVE'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,9 +82,15 @@ export function AdminOnboardingCommand() {
     if (!reviewEnqId) return;
     try {
       await adminReviewSurvey(reviewEnqId, decision, reviewNotes);
+      
+      const assocAssessment = state.assessments.find(a => a.enquiryId === reviewEnqId);
+      if (assocAssessment && reviewAssessment) {
+        await reviewAssessment(assocAssessment.id, decision === 'APPROVE' ? 'APPROVE' : 'RETURN_FOR_CORRECTION', reviewNotes);
+      }
+
       setReviewEnqId(null);
       setReviewNotes('');
-      alert(`Survey decision (${decision}) applied successfully! Customer status updated.`);
+      alert(`Survey decision (${decision}) applied successfully! Customer status updated and equipment baseline locked.`);
     } catch (err: any) {
       alert(err.message || 'Failed to apply admin decision');
     }
@@ -385,6 +391,33 @@ export function AdminOnboardingCommand() {
                     </div>
                   </div>
 
+                  {/* TECHNICAL ASSESSMENT V2.0 EQUIPMENT REGISTER BUTTON */}
+                  {(() => {
+                    const assocAssessment = state.assessments.find(a => a.enquiryId === reviewEnqId);
+                    return (
+                      <div className="p-3 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-between">
+                        <div>
+                          <span className="font-bold text-white block">Technical Assessment & Equipment Register (v2.0)</span>
+                          <span className="text-[10px] text-slate-400">
+                            Status: {assocAssessment?.baselineLocked ? 'Locked Baseline Verified' : 'Pending Supervisor Baseline Lock'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // View register
+                            const win = window.open(`/api/pdf/assessment/${assocAssessment?.id || reviewEnqId}`, '_blank');
+                            if (!win) alert('Popup blocked. Please allow popups to view PDF report.');
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#CC322C] hover:bg-[#b02a25] text-white font-bold text-xs flex items-center gap-1.5"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>View Official A4 Report</span>
+                        </button>
+                      </div>
+                    );
+                  })()}
+
                   {/* ADMIN DECISION NOTES */}
                   <div>
                     <label className="block text-slate-400 font-semibold mb-2">Admin Review Notes / Directions</label>
@@ -405,7 +438,7 @@ export function AdminOnboardingCommand() {
                       className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/30 cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>APPROVE (50% Payment)</span>
+                      <span>APPROVE & LOCK BASELINE</span>
                     </button>
                     <button
                       type="button"

@@ -167,6 +167,12 @@ model Assessment {
   estimatedCost   Float
   status          String    @default("Scheduled") // Scheduled, Assessing, Uploaded
   contractorNotes String?
+  structuredData  String?   // Complete Technical Assessment & Member Equipment Register JSON
+  outcome         String?   // All good, Repairs required, Further assessment required, Declined pending correction
+  supervisorStatus String?  @default("Pending Review") // Pending Review, Approved, Returned for Correction
+  supervisorNotes String?
+  baselineLocked  Boolean   @default(false)
+  baselineLockedAt DateTime?
   fileRecords     FileRecord[]
 }
 

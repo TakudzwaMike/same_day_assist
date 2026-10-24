@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Camera, CheckSquare, Plus, Trash } from 'lucide-react';
+import { Camera, CheckSquare, Plus, Trash, ClipboardCheck, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
+import { TechnicalAssessmentForm } from '../assessment/TechnicalAssessmentForm';
+import { TechnicalAssessmentReport } from '../../types/technicalAssessment';
 
 interface ReportsUploaderProps {
   activeContractor: any;
@@ -9,6 +11,7 @@ interface ReportsUploaderProps {
 export default function ReportsUploader({ activeContractor }: ReportsUploaderProps) {
   const { state, uploadAssessment, addAuditLogLocal } = useAppState();
 
+  const [isFullAssessmentOpen, setIsFullAssessmentOpen] = useState(false);
   const [assessmentNotes, setAssessmentNotes] = useState('');
   const [assessmentDefects, setAssessmentDefects] = useState<string[]>([
     'Gate automation limit-switches exposed to rain (Safety risk)',
@@ -17,6 +20,10 @@ export default function ReportsUploader({ activeContractor }: ReportsUploaderPro
   const [newDefectText, setNewDefectText] = useState('');
   const [estimatedCost, setEstimatedCost] = useState(1500);
   const [assessmentPhoto, setAssessmentPhoto] = useState<string | null>(null);
+
+  const activeAssessment = state.assessments.find(
+    a => (a.contractorId === activeContractor?.id || !a.contractorId) && (a.status === 'Assessing' || a.status === 'Scheduled')
+  ) || state.assessments[0];
 
   const handleAddDefect = () => {
     if (newDefectText.trim()) {
@@ -40,36 +47,100 @@ export default function ReportsUploader({ activeContractor }: ReportsUploaderPro
     }
   };
 
+  const handleFullAssessmentComplete = async (report: TechnicalAssessmentReport) => {
+    if (!activeAssessment) {
+      alert('No active assessment survey record found to link this report to.');
+      return;
+    }
+    const issues = report.consolidatedFaults.map(f => `${f.systemName} (${f.componentOrDevice}): ${f.exactSymptoms} [${f.urgency}]`);
+    await uploadAssessment(activeAssessment.id, {
+      issuesFound: issues,
+      estimatedCost: report.totalPreMembershipRepairsZar,
+      contractorNotes: report.technicianObservations,
+      photoUrl: report.addressInfo?.propertyEntrancePhotoUrl,
+      structuredData: report,
+      outcome: report.outcome,
+    });
+    addAuditLogLocal('Full Technical Assessment Completed', `Technician completed V2.0 equipment register for assessment ${activeAssessment.id}.`);
+    setIsFullAssessmentOpen(false);
+    alert('Version 2.0 Technical Assessment & Equipment Register successfully recorded!');
+  };
+
   const handleSurveySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Find active scheduled assessment assigned to this contractor
-    const assessment = state.assessments.find(a => a.contractorId === activeContractor.id && a.status === 'Assessing');
-    if (!assessment) {
+    if (!activeAssessment) {
       alert('No active assessment survey found.');
       return;
     }
 
     try {
-      await uploadAssessment(assessment.id, {
+      await uploadAssessment(activeAssessment.id, {
         issuesFound: assessmentDefects,
         estimatedCost: estimatedCost,
         contractorNotes: assessmentNotes,
         photoUrl: assessmentPhoto || undefined
       });
-      addAuditLogLocal('Compliance Survey Uploaded', `Surveyor uploaded safety audit for assessment ${assessment.id}.`);
+      addAuditLogLocal('Compliance Survey Uploaded', `Surveyor uploaded safety audit for assessment ${activeAssessment.id}.`);
     } catch (err: any) {
       alert(err.message || 'Failed to upload assessment');
     }
   };
 
+  if (isFullAssessmentOpen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xs flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+        <div className="w-full max-w-6xl max-h-[96vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-3xl p-4 md:p-6 shadow-2xl">
+          <TechnicalAssessmentForm
+            enquiry={state.enquiries.find(e => e.id === activeAssessment?.enquiryId)}
+            assessmentRecord={activeAssessment}
+            contractorUser={activeContractor}
+            onSave={handleFullAssessmentComplete}
+            onCancel={() => setIsFullAssessmentOpen(false)}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form onSubmit={handleSurveySubmit} className="bg-zinc-850 p-5 rounded-3xl border border-zinc-800 flex flex-col gap-4 text-xs text-zinc-300 animate-fadeIn shadow-xs">
-      <div className="border-b border-zinc-800 pb-2">
-        <h4 className="text-xs font-bold text-white uppercase tracking-wider font-brand-header">Property Defect Log</h4>
-        <p className="text-[9px] text-zinc-400">Record all non-compliance issues found on premises</p>
+    <div className="flex flex-col gap-4">
+      {/* V2.0 Assessment Banner */}
+      <div className="bg-gradient-to-r from-[#091C3E] via-slate-900 to-[#142D59] p-5 rounded-3xl border border-[#CC322C]/40 shadow-lg text-white">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#CC322C]" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-[#CC322C] font-bold">
+                Same Day Assist | Version 2.0 Standard
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-white">Technical Assessment & Equipment Register</h3>
+            <p className="text-xs text-slate-300 max-w-xl">
+              Complete the verified baseline assessment across all 9 essential security systems (Alarms, CCTV, Access Control, Intercoms, Garage, Gate, Electric Fence, Boom Gates, Turnstiles) with RG59 verification, address checks, fault analysis, and member digital sign-off.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFullAssessmentOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-[#CC322C] hover:bg-[#b02b26] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all shrink-0"
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            <span>Launch V2.0 Assessment</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-3">
+      <form onSubmit={handleSurveySubmit} className="bg-zinc-850 p-5 rounded-3xl border border-zinc-800 flex flex-col gap-4 text-xs text-zinc-300 animate-fadeIn shadow-xs">
+        <div className="border-b border-zinc-800 pb-2 flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider font-brand-header">Quick Property Defect Log</h4>
+            <p className="text-[9px] text-zinc-400">Record standalone non-compliance defects or co-pay items</p>
+          </div>
+          <span className="text-[10px] text-zinc-500 font-mono">Quick Entry</span>
+        </div>
+
+        <div className="space-y-3">
         <div className="flex flex-col gap-1.5">
           <label className="text-[9px] text-zinc-400 uppercase font-bold tracking-wide">Identified Property Defects</label>
           <div className="space-y-1.5">
@@ -157,5 +228,6 @@ export default function ReportsUploader({ activeContractor }: ReportsUploaderPro
         Upload Compliance Audit Log
       </button>
     </form>
+  </div>
   );
 }

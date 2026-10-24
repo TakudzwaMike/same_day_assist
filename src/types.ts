@@ -430,6 +430,9 @@ export interface Enquiry {
   createdAt: string;
 }
 
+export * from './types/technicalAssessment';
+import type { TechnicalAssessmentReport, AssessmentOutcome } from './types/technicalAssessment';
+
 export interface Assessment {
   id: string;
   enquiryId: string;
@@ -440,8 +443,15 @@ export interface Assessment {
   photoUrl?: string;
   videoUrl?: string;
   estimatedCost: number;
-  status: 'Scheduled' | 'Assessing' | 'Uploaded';
+  status: 'Scheduled' | 'Assessing' | 'Uploaded' | 'Completed';
   contractorNotes?: string;
+  structuredData?: string;
+  technicalAssessment?: TechnicalAssessmentReport;
+  outcome?: AssessmentOutcome;
+  supervisorStatus?: 'Pending Review' | 'Approved' | 'Returned for Correction' | string;
+  supervisorNotes?: string;
+  baselineLocked?: boolean;
+  baselineLockedAt?: string;
 }
 
 export interface LineItem {

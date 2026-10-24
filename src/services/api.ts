@@ -300,11 +300,19 @@ class ApiClient {
 
   // Assessments
   async getMyAssessments() { return this.request<any[]>('/assessments/my'); }
+  async getAllAssessments() { return this.request<any[]>('/assessments'); }
+  async getAssessment(id: string) { return this.request<any>(`/assessments/${id}`); }
   async startAssessment(id: string) {
     return this.request(`/assessments/${id}/start`, { method: 'PATCH' });
   }
   async uploadAssessment(id: string, payload: any) {
     return this.request(`/assessments/${id}/upload`, { method: 'POST', body: JSON.stringify(payload) });
+  }
+  async reviewAssessment(id: string, action: 'APPROVE' | 'RETURN_FOR_CORRECTION', notes?: string) {
+    return this.request(`/assessments/${id}/supervisor-review`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, notes }),
+    });
   }
 
   // Quotations
@@ -444,7 +452,7 @@ class ApiClient {
   }
 
   // PDF downloads
-  getPDFUrl(type: 'quotation' | 'invoice' | 'completion', id: string): string {
+  getPDFUrl(type: 'quotation' | 'invoice' | 'completion' | 'assessment', id: string): string {
     return `${BASE_URL}/pdf/${type}/${id}`;
   }
 

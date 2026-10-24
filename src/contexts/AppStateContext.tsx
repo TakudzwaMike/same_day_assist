@@ -13,7 +13,16 @@ interface AppStateContextType {
   createEnquiry: (payload: { name: string; email: string; phone: string; address: string; serviceCategory: any; notes?: string }) => Promise<void>;
   scheduleAssessment: (enquiryId: string, contractorId: string) => Promise<void>;
   startAssessment: (assessmentId: string) => Promise<void>;
-  uploadAssessment: (assessmentId: string, payload: { issuesFound: string[]; estimatedCost: number; contractorNotes?: string; photoUrl?: string }) => Promise<void>;
+  uploadAssessment: (assessmentId: string, payload: {
+    issuesFound: string[];
+    estimatedCost: number;
+    contractorNotes?: string;
+    photoUrl?: string;
+    videoUrl?: string;
+    structuredData?: any;
+    outcome?: string;
+  }) => Promise<void>;
+  reviewAssessment: (assessmentId: string, action: 'APPROVE' | 'RETURN_FOR_CORRECTION', notes?: string) => Promise<void>;
   createQuotation: (payload: { enquiryId: string; lineItems: { description: string; cost: number }[] }) => Promise<void>;
   approveQuotation: (quotationId: string) => Promise<void>;
   declineQuotation: (quotationId: string) => Promise<void>;
@@ -361,7 +370,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const uploadAssessment = async (assessmentId: string, payload: { issuesFound: string[]; estimatedCost: number; contractorNotes?: string; photoUrl?: string }) => {
+  const uploadAssessment = async (assessmentId: string, payload: {
+    issuesFound: string[];
+    estimatedCost: number;
+    contractorNotes?: string;
+    photoUrl?: string;
+    videoUrl?: string;
+    structuredData?: any;
+    outcome?: string;
+  }) => {
     setError(null);
     try {
       await api.uploadAssessment(assessmentId, payload);
@@ -372,6 +389,17 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       setError(err.message || 'Failed to submit survey');
+      throw err;
+    }
+  };
+
+  const reviewAssessment = async (assessmentId: string, action: 'APPROVE' | 'RETURN_FOR_CORRECTION', notes?: string) => {
+    setError(null);
+    try {
+      await api.reviewAssessment(assessmentId, action, notes);
+      await refreshData();
+    } catch (err: any) {
+      setError(err.message || 'Failed to record supervisor review');
       throw err;
     }
   };
@@ -944,6 +972,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       scheduleAssessment,
       startAssessment,
       uploadAssessment,
+      reviewAssessment,
       createQuotation,
       approveQuotation,
       declineQuotation,
