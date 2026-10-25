@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Shield, AlertTriangle, Phone, CreditCard, 
   Zap, Droplet, Hammer, Camera, Send, Info, CheckCircle,
-  FileText, Edit3, X, Check, ArrowRight, RefreshCw, Download, ShieldCheck
+  FileText, Edit3, X, Check, ArrowRight, RefreshCw, Download, ShieldCheck,
+  Headphones, PhoneCall, Lightbulb, ShieldAlert
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +16,7 @@ import ConfirmDialog from '../shared/ConfirmDialog';
 import { BenefitBalanceCard } from './BenefitBalanceCard';
 import { BenefitHistoryModal } from './BenefitHistoryModal';
 import { MemberEquipmentRegisterView } from '../assessment/MemberEquipmentRegisterView';
+import { CustomerContactModal } from './CustomerContactModal';
 
 interface CustomerHomeProps {
   activeCustomer: any;
@@ -57,6 +59,7 @@ export default function CustomerHome({
   const [selectedNewPlanId, setSelectedNewPlanId] = useState(state.benefitSummary?.planId || 'assist-plus');
   const [isSubmittingPlanChange, setIsSubmittingPlanChange] = useState(false);
   const [isEquipmentRegisterOpen, setIsEquipmentRegisterOpen] = useState(false);
+  const [contactModalTab, setContactModalTab] = useState<'callback' | 'suggestions' | 'complaints' | 'directory' | null>(null);
 
   const { refreshData } = useAppState();
 
@@ -753,6 +756,80 @@ export default function CustomerHome({
         </div>
       )}
 
+      {/* 4. CUSTOMER COMMUNICATION & CONTACT OPTIONS (Item 05) */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-navy uppercase tracking-wide flex items-center gap-2">
+              <Headphones className="w-4 h-4 text-red" />
+              <span>Customer Communication & Support Center</span>
+            </h3>
+            <p className="text-xs text-slate-500">Need help, want to suggest improvements, or submit a request?</p>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+            Direct Support Hub
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button
+            type="button"
+            onClick={() => setContactModalTab('callback')}
+            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-red/10 text-red flex items-center justify-center">
+              <PhoneCall className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-navy block group-hover:text-red">Request a Callback</span>
+              <span className="text-[10px] text-slate-500">We'll call you back</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContactModalTab('suggestions')}
+            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <Lightbulb className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-navy block group-hover:text-red">Suggestions</span>
+              <span className="text-[10px] text-slate-500">Submit ideas & feedback</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContactModalTab('complaints')}
+            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-red/10 text-red flex items-center justify-center">
+              <ShieldAlert className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-navy block group-hover:text-red">Complaints</span>
+              <span className="text-[10px] text-slate-500">Formal investigation</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContactModalTab('directory')}
+            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center">
+              <Phone className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-navy block group-hover:text-red">Contact Us</span>
+              <span className="text-[10px] text-slate-500">Direct phone directory</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* 5. Member Equipment Register Modal */}
       {isEquipmentRegisterOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
@@ -785,6 +862,13 @@ export default function CustomerHome({
           </div>
         </div>
       )}
+
+      {/* 6. Customer Communication & Contact Modal */}
+      <CustomerContactModal
+        isOpen={Boolean(contactModalTab)}
+        defaultTab={contactModalTab || 'directory'}
+        onClose={() => setContactModalTab(null)}
+      />
     </div>
   );
 }

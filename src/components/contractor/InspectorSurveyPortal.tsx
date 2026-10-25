@@ -168,8 +168,16 @@ export function InspectorSurveyPortal() {
       {/* ASSIGNED SURVEYS LIST */}
       <div className="space-y-4">
         {assignedSurveys.length === 0 ? (
-          <div className="bg-[#091C3E]/50 border border-[#142D59] rounded-3xl p-12 text-center text-slate-400 text-xs">
-            No property technical assessment assignments currently pending for your inspector credentials.
+          <div className="bg-[#091C3E] border-2 border-cyan-500/50 rounded-3xl p-10 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center mx-auto mb-3">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <p className="text-white font-bold text-sm tracking-wide">
+              No property technical assessment assignments currently pending for your inspector credentials.
+            </p>
+            <p className="text-cyan-200/90 text-xs mt-1.5 max-w-md mx-auto">
+              New property assessments assigned by Dispatch will appear here immediately with full access notes and checklists.
+            </p>
           </div>
         ) : (
           assignedSurveys.map(enq => {

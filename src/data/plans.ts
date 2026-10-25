@@ -22,6 +22,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Essential Labour',
     description: 'Rapid emergency response, fault finding, and certified technician labour for cost-conscious members.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Labour & fault finding',
       "Parts & replacements on member's account",
@@ -46,6 +47,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Most Popular',
     description: 'Ideal for standard residential homes needing emergency coverage and parts allowance.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Repairs & replacements up to R15,000 per year',
       'Electrical & plumbing when introduced',
@@ -69,6 +71,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Comprehensive',
     description: 'Enhanced coverage for larger homes and complex residential security infrastructure.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Repairs & replacements up to R40,000 per year',
       'Electrical & plumbing when introduced',
@@ -92,6 +95,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Executive',
     description: 'Premium protection designed for high-value properties and multi-system installations.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Repairs & replacements up to R60,000 per year',
       'Electrical & plumbing when introduced',
@@ -115,6 +119,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Estate Living',
     description: 'Extensive annual allowance for luxury estates, multi-building residences, and farms.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Repairs & replacements up to R80,000 per year',
       'Electrical & plumbing when introduced',
@@ -138,6 +143,7 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     badge: 'Commercial Enterprise',
     description: 'Maximum coverage for commercial facilities, offices, retail centres, and industrial operations.',
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Same-day assistance',
       'Repairs & replacements up to R150,000 per year',
       'Electrical & plumbing when introduced',

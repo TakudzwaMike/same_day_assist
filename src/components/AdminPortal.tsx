@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
-import { Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, FileCheck, ShieldCheck, ShieldAlert, Award, Receipt, Settings, CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { 
+  Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, 
+  FileCheck, ShieldCheck, ShieldAlert, Award, Receipt, Settings, 
+  CheckCircle2, ClipboardCheck, Sun, Moon, Menu, ChevronLeft, ChevronRight,
+  PanelLeftClose, PanelLeftOpen
+} from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import AdminDashboard from './admin/AdminDashboard';
 import EnquiriesManager from './admin/EnquiriesManager';
 import ContractorsMonitor from './admin/ContractorsMonitor';
@@ -21,9 +27,11 @@ import logoImg from '../assets/logo.png';
 export default function AdminPortal() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const role = user?.role || 'Dispatcher';
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'completedJobs' | 'technicalAssessments' | 'onboarding' | 'memberships' | 'claims' | 'invoices' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
     return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
@@ -37,43 +45,43 @@ export default function AdminPortal() {
   const unpaidInvoicesCount = (state.invoices || []).filter(i => i.paymentStatus === 'UNPAID' || i.paymentStatus === 'PARTIALLY_PAID').length;
   const totalRevenue = state.payments.reduce((sum, p) => p.status === 'Paid' ? sum + p.amount : sum, 0);
 
-  // Dynamic tabs based on user role permissions
+  // Dynamic tabs based on user role permissions (Item 10: Property Assessments label)
   const tabs = [];
   if (role === 'Dispatcher') {
-    tabs.push({ id: 'onboarding', label: 'Onboarding Surveys', icon: ShieldCheck, badge: onboardingRequestsCount });
-    tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'onboarding', label: 'Onboarding Assessments', icon: ShieldCheck, badge: onboardingRequestsCount });
+    tabs.push({ id: 'jobs', label: 'Emergency Dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'completedJobs', label: 'Jobs Done & Records', icon: CheckCircle2, badge: completedJobsCount });
     tabs.push({ id: 'technicalAssessments', label: 'Technical Registers', icon: ClipboardCheck, badge: assessmentsCount });
     tabs.push({ id: 'claims', label: 'Service Claims', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
   } else if (role === 'Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
     tabs.push({ id: 'completedJobs', label: 'Jobs Done & Safety Records', icon: CheckCircle2, badge: completedJobsCount });
-    tabs.push({ id: 'technicalAssessments', label: 'Technical Assessments', icon: ClipboardCheck, badge: assessmentsCount });
+    tabs.push({ id: 'technicalAssessments', label: 'Property Assessments', icon: ClipboardCheck, badge: assessmentsCount });
     tabs.push({ id: 'memberships', label: 'Customer Benefits', icon: Award });
     tabs.push({ id: 'claims', label: 'Claims Audit', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
-    tabs.push({ id: 'onboarding', label: 'Onboarding Survey Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
+    tabs.push({ id: 'onboarding', label: 'Onboarding Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
-    tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'jobs', label: 'Emergency Dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
   } else if (role === 'Super Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
     tabs.push({ id: 'completedJobs', label: 'Jobs Done & Safety Records', icon: CheckCircle2, badge: completedJobsCount });
-    tabs.push({ id: 'technicalAssessments', label: 'Technical Assessments & Registers', icon: ClipboardCheck, badge: assessmentsCount });
+    tabs.push({ id: 'technicalAssessments', label: 'Property Assessments & Registers', icon: ClipboardCheck, badge: assessmentsCount });
     tabs.push({ id: 'memberships', label: 'Customer Benefits', icon: Award });
     tabs.push({ id: 'claims', label: 'Claims Audit', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
-    tabs.push({ id: 'onboarding', label: 'Onboarding Survey Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
+    tabs.push({ id: 'onboarding', label: 'Onboarding Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Surveys & Quotes', icon: FileText, badge: pendingEnquiries });
-    tabs.push({ id: 'jobs', label: 'Emergency dispatch', icon: Shield, badge: criticalAlarms });
+    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'jobs', label: 'Emergency Dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
-    tabs.push({ id: 'logs', label: 'Audit trail', icon: Clipboard });
+    tabs.push({ id: 'logs', label: 'Audit Trail', icon: Clipboard });
   }
 
   const getSubTitle = () => {
@@ -89,106 +97,198 @@ export default function AdminPortal() {
   };
 
   return (
-    <div className="w-full min-h-[600px] bg-slate-50 border border-slate-200 rounded-3xl shadow-lg flex flex-col overflow-hidden animate-fadeIn">
+    <div className={`w-full min-h-[700px] border rounded-3xl shadow-xl flex flex-col overflow-hidden animate-fadeIn transition-colors duration-200 ${
+      isDark 
+        ? 'bg-[#050E20] border-[#142D59] text-slate-100' 
+        : 'bg-slate-50 border-slate-200 text-slate-900'
+    }`}>
       {/* ADMIN HEADER */}
-      <div className="bg-navy text-white px-8 py-5 flex justify-between items-center border-b border-navy-light relative">
-        <div className="flex items-center gap-3">
-          <img 
-            src={logoImg} 
-            alt="Same Day Assist Logo" 
-            className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
-          />
-          <div>
-            <h1 className="text-lg font-brand-header tracking-wide uppercase">SAME DAY ASSIST</h1>
-            <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">{getSubTitle()}</p>
+      <div className={`px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 border-b relative ${
+        isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-navy text-white border-navy-light'
+      }`}>
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
+          <div className="flex items-center gap-3">
+            {/* Sidebar toggle button (Item 11) */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              title={isSidebarCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu"}
+            >
+              {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+
+            <img 
+              src={logoImg} 
+              alt="Same Day Assist Logo" 
+              className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
+            />
+            <div>
+              <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
+              <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">{getSubTitle()}</p>
+            </div>
           </div>
+
+          <span className="text-[10px] text-slate-300 font-mono lg:hidden">{getRoleIndicator()}</span>
         </div>
         
-        {/* STATS TRAY & LOGOUT */}
-        <div className="flex items-center gap-6">
-          <div className="flex gap-6 text-right">
-            <div className="hidden sm:block">
-              <span className="text-[9px] text-slate-400 uppercase font-mono block">Node Link</span>
-              <span className="text-xs font-bold text-green-400 font-mono">SECURE SSL CONNECTION</span>
+        {/* STATS TRAY, THEME TOGGLE (Item 13), SETTINGS & LOGOUT */}
+        <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
+          <div className="hidden sm:flex gap-4 text-right">
+            <div>
+              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Node Link</span>
+              <span className="text-xs font-bold text-emerald-400 font-mono">SECURE SSL</span>
             </div>
             {role === 'Dispatcher' ? (
               <div>
-                <span className="text-[9px] text-slate-400 uppercase font-mono block">Active Enquiries</span>
+                <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Active Enquiries</span>
                 <span className="text-xs font-bold text-white font-mono">{state.enquiries.length}</span>
               </div>
             ) : (
               <div>
-                <span className="text-[9px] text-slate-400 uppercase font-mono block">ZAR Invoiced</span>
+                <span className="text-[9px] text-slate-300/80 uppercase font-mono block">ZAR Invoiced</span>
                 <span className="text-xs font-bold text-white font-mono">R{totalRevenue.toLocaleString()}</span>
               </div>
             )}
             <div>
-              <span className="text-[9px] text-slate-400 uppercase font-mono block">SLA Standards</span>
+              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">SLA Standards</span>
               <span className="text-xs font-bold text-red font-mono">99.4% ON-TIME</span>
             </div>
           </div>
-          
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2.5 bg-slate-900/50 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-pointer text-slate-300 hover:text-white transition-all flex items-center justify-center shrink-0"
-            title="System & Account Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
 
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="p-2.5 bg-slate-900/50 hover:bg-red/20 border border-slate-800 rounded-xl cursor-pointer text-slate-300 hover:text-white transition-all flex items-center justify-center shrink-0"
-            title="Log Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* DASHBOARD NAVIGATION */}
-      <div className="bg-white border-b border-slate-200 px-8 flex justify-between items-center text-sm overflow-x-auto">
-        <div className="flex gap-1 shrink-0">
-          {tabs.map(tab => (
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle Button (Item 13) */}
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-5 py-4 flex items-center gap-2 border-b-2 font-medium transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id 
-                  ? 'border-red text-red font-bold bg-slate-50/50' 
-                  : 'border-transparent text-slate-600 hover:text-navy hover:border-slate-200'
-              }`}
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center gap-1.5 text-xs font-bold"
+              title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
             >
-              <tab.icon className="w-4 h-4 shrink-0" />
-              <span>{tab.label}</span>
-              {tab.badge && tab.badge > 0 ? (
-                <span className="bg-red text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full leading-none shrink-0 animate-pulse">
-                  {tab.badge}
-                </span>
-              ) : null}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-300" />}
+              <span className="hidden md:inline text-[11px]">{isDark ? 'Light' : 'Dark'}</span>
             </button>
-          ))}
+            
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              title="System & Account Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="p-2 rounded-xl bg-white/10 hover:bg-red/30 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              title="Log Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <span className="text-xs text-slate-400 font-mono hidden md:block select-none">{getRoleIndicator()}</span>
       </div>
 
-      {/* RENDER VIEWS */}
-      <div className="flex-1 p-8 overflow-y-auto bg-slate-50/55">
-        {activeTab === 'overview' && <AdminDashboard />}
-        {activeTab === 'completedJobs' && <AdminCompletedJobsViewer />}
-        {activeTab === 'technicalAssessments' && <AdminTechnicalAssessmentsViewer />}
-        {activeTab === 'memberships' && <AdminMembershipsManager />}
-        {activeTab === 'claims' && <AdminClaimsManager />}
-        {activeTab === 'invoices' && <AdminInvoicesManager />}
-        {activeTab === 'onboarding' && <AdminOnboardingCommand />}
-        {activeTab === 'vetting' && <AdminVettingQueue />}
-        {activeTab === 'enquiries' && <EnquiriesManager />}
-        {activeTab === 'jobs' && <ContractorsMonitor />}
-        {activeTab === 'profileRequests' && <AdminProfileRequests />}
-        {activeTab === 'reports' && <ReportsViewer />}
-        {activeTab === 'logs' && <AuditLogViewer />}
+      {/* TWO-COLUMN LAYOUT: VERTICAL NAVIGATION SIDEBAR (Item 11) + CONTENT VIEWS */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* VERTICAL SIDEBAR MENU (Item 11) */}
+        <aside
+          className={`border-r transition-all duration-300 flex flex-col justify-between shrink-0 select-none ${
+            isSidebarCollapsed ? 'w-18' : 'w-64'
+          } ${
+            isDark 
+              ? 'bg-[#091C3E]/80 border-[#142D59]' 
+              : 'bg-white border-slate-200'
+          }`}
+        >
+          {/* Scrollable vertical navigation menu list */}
+          <div className="p-3 overflow-y-auto space-y-1">
+            {!isSidebarCollapsed && (
+              <div className="px-3 py-1.5 mb-1 flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                  Navigation Menu
+                </span>
+                <span className="text-[9px] font-mono text-slate-500">
+                  {tabs.length} Modules
+                </span>
+              </div>
+            )}
+
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer text-left relative group ${
+                    isActive
+                      ? 'bg-red text-white shadow-md'
+                      : isDark
+                        ? 'text-slate-300 hover:text-white hover:bg-[#142D59]'
+                        : 'text-slate-600 hover:text-navy hover:bg-slate-100'
+                  }`}
+                  title={isSidebarCollapsed ? tab.label : undefined}
+                >
+                  <tab.icon className="w-4 h-4 shrink-0" />
+                  
+                  {!isSidebarCollapsed && (
+                    <span className="truncate flex-1">{tab.label}</span>
+                  )}
+
+                  {tab.badge && tab.badge > 0 ? (
+                    <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full shrink-0 font-mono ${
+                      isActive 
+                        ? 'bg-white text-red' 
+                        : 'bg-red text-white animate-pulse'
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  ) : null}
+
+                  {/* Tooltip on collapsed state */}
+                  {isSidebarCollapsed && (
+                    <div className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-white text-[11px] rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                      {tab.label} {tab.badge ? `(${tab.badge})` : ''}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Sidebar bottom indicator */}
+          <div className={`p-3 border-t text-center ${
+            isDark ? 'border-[#142D59] bg-[#050E20]/50' : 'border-slate-100 bg-slate-50'
+          }`}>
+            {!isSidebarCollapsed ? (
+              <span className="text-[9.5px] font-mono text-slate-400 block truncate">
+                {getRoleIndicator()}
+              </span>
+            ) : (
+              <div className="w-2 h-2 rounded-full bg-emerald-500 mx-auto" title={getRoleIndicator()} />
+            )}
+          </div>
+        </aside>
+
+        {/* MAIN RENDER VIEWS (Item 13: Persistent Theme Styling) */}
+        <main className={`flex-1 p-6 lg:p-8 overflow-y-auto transition-colors duration-200 ${
+          isDark ? 'bg-[#061229]/60 text-slate-100' : 'bg-slate-50/70 text-slate-900'
+        }`}>
+          {activeTab === 'overview' && <AdminDashboard />}
+          {activeTab === 'completedJobs' && <AdminCompletedJobsViewer />}
+          {activeTab === 'technicalAssessments' && <AdminTechnicalAssessmentsViewer />}
+          {activeTab === 'memberships' && <AdminMembershipsManager />}
+          {activeTab === 'claims' && <AdminClaimsManager />}
+          {activeTab === 'invoices' && <AdminInvoicesManager />}
+          {activeTab === 'onboarding' && <AdminOnboardingCommand />}
+          {activeTab === 'vetting' && <AdminVettingQueue />}
+          {activeTab === 'enquiries' && <EnquiriesManager />}
+          {activeTab === 'jobs' && <ContractorsMonitor />}
+          {activeTab === 'profileRequests' && <AdminProfileRequests />}
+          {activeTab === 'reports' && <ReportsViewer />}
+          {activeTab === 'logs' && <AuditLogViewer />}
+        </main>
       </div>
 
       {/* ADMIN SETTINGS MODAL */}
@@ -196,5 +296,3 @@ export default function AdminPortal() {
     </div>
   );
 }
-
-

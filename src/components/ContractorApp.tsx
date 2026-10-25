@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet, Settings, Sun, Moon } from 'lucide-react';
+import { Wrench, LogOut, Shield, FileCheck, MessageSquare, Wallet, Settings, Sun, Moon, BookOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ContractorDashboard from './contractor/ContractorDashboard';
@@ -8,6 +8,7 @@ import { InspectorSurveyPortal } from './contractor/InspectorSurveyPortal';
 import { ContractorChatCenter } from './contractor/ContractorChatCenter';
 import { ContractorEarningsView } from './contractor/ContractorEarningsView';
 import { ContractorSettingsModal } from './contractor/ContractorSettingsModal';
+import { TechnicalTeamHub } from './contractor/TechnicalTeamHub';
 import logoImg from '../assets/logo.png';
 
 export default function ContractorApp() {
@@ -16,7 +17,7 @@ export default function ContractorApp() {
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys' | 'chat' | 'earnings'>('jobs');
+  const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys' | 'chat' | 'earnings' | 'teamHub'>('jobs');
 
   const verificationStatus = user?.verificationStatus || 'Pending Review';
 
@@ -26,7 +27,7 @@ export default function ContractorApp() {
         ? 'bg-[#091C3E] border border-[#142D59] text-slate-100' 
         : 'bg-white border border-slate-200 text-slate-900'
     }`}>
-      {/* BRANDING HEADER */}
+      {/* BRANDING HEADER (Item 12: Technical Responder Naming) */}
       <div className={`px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4 border-b ${
         isDark ? 'bg-[#050E20]/90 border-[#142D59]' : 'bg-slate-50 border-slate-100'
       }`}>
@@ -44,7 +45,7 @@ export default function ContractorApp() {
               Same Day Assist
             </h1>
             <p className="text-[10px] font-bold text-red tracking-wider uppercase font-mono">
-              Contractor Responder Terminal • Johannesburg Dispatch
+              Contractor / Technical Responder Terminal • Technical Response Hub
             </p>
           </div>
         </div>
@@ -76,7 +77,20 @@ export default function ContractorApp() {
             }`}
           >
             <FileCheck className="w-4 h-4" />
-            <span>Property Safety Surveys</span>
+            <span>Property Assessments</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setContractorTab('teamHub')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              contractorTab === 'teamHub'
+                ? 'bg-red text-white shadow-xs'
+                : isDark ? 'text-slate-400 hover:text-white hover:bg-[#142D59]' : 'text-slate-500 hover:text-navy hover:bg-slate-50'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Team Hub & Training</span>
           </button>
 
           <button
@@ -102,7 +116,7 @@ export default function ContractorApp() {
             }`}
           >
             <Wallet className="w-4 h-4" />
-            <span>Balances & Payouts</span>
+            <span>Team Earnings & Rewards</span>
           </button>
         </div>
 
@@ -197,6 +211,7 @@ export default function ContractorApp() {
         <div className="max-w-5xl mx-auto flex flex-col gap-6">
           {contractorTab === 'jobs' && <ContractorDashboard />}
           {contractorTab === 'surveys' && <InspectorSurveyPortal />}
+          {contractorTab === 'teamHub' && <TechnicalTeamHub />}
           {contractorTab === 'chat' && <ContractorChatCenter />}
           {contractorTab === 'earnings' && <ContractorEarningsView />}
         </div>

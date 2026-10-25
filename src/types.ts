@@ -29,6 +29,7 @@ export type ServiceCategory =
   | 'Access Control'
   | 'Electric Fence'
   | 'Alarm'
+  | 'Alarm Systems'
   | 'CCTV';
 
 export type UserRole = 'Customer' | 'Contractor' | 'Dispatcher' | 'Administrator' | 'Super Administrator';

@@ -97,7 +97,7 @@ export default function ContractorDashboard() {
             <Clock className="w-4 h-4 mt-0.5 shrink-0 animate-pulse" />
             <div>
               <span className="font-bold uppercase tracking-wider text-[11px] font-brand-header text-amber-300">
-                Pending Property Survey Assignment
+                Pending Property Assessment Assignment
               </span>
               <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
                 You are dispatched to complete a pre-compliance property assessment at client premises. Confirm arrival to begin logging compliance defects.

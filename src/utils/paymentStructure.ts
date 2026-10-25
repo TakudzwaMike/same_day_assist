@@ -33,6 +33,32 @@ export function calculatePaymentBreakdown(monthlyPrice: number): PaymentBreakdow
   };
 }
 
+export type PaymentArrangement = '20_40_40' | '50_50';
+
+export interface PaymentBreakdown5050 {
+  monthlyPrice: number;
+  initialPayment: number;       // 50%
+  secondPayment: number;        // 50%
+  total: number;
+  initialPercentage: number;
+  secondPercentage: number;
+}
+
+export function calculatePaymentBreakdown5050(monthlyPrice: number): PaymentBreakdown5050 {
+  const monthlyCents = Math.round(monthlyPrice * 100);
+  const initialCents = Math.round(monthlyCents * 0.50);
+  const secondCents = monthlyCents - initialCents;
+
+  return {
+    monthlyPrice,
+    initialPayment: initialCents / 100,
+    secondPayment: secondCents / 100,
+    total: monthlyPrice,
+    initialPercentage: 50,
+    secondPercentage: 50,
+  };
+}
+
 export function formatZAR(amount: number): string {
   return new Intl.NumberFormat('en-ZA', {
     style: 'currency',

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Shield, Check, AlertCircle, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { getPlan } from '../../data/plans';
-import { calculatePaymentBreakdown } from '../../utils/paymentStructure';
+import { calculatePaymentBreakdown, calculatePaymentBreakdown5050, PaymentArrangement } from '../../utils/paymentStructure';
 
 interface PlanConfirmationStepProps {
   selectedPlanId: string;
@@ -16,6 +16,7 @@ export function PlanConfirmationStep({
   onToggleConfirm,
   onBackToPlans,
 }: PlanConfirmationStepProps) {
+  const [arrangement, setArrangement] = useState<PaymentArrangement>('20_40_40');
   const plan = getPlan(selectedPlanId);
   const isAssistZero = plan.annualBenefit === 0;
 
@@ -107,88 +108,142 @@ export function PlanConfirmationStep({
             </div>
           </div>
 
-          {/* YOUR PAYMENT SCHEDULE (Specification Section 9) */}
+          {/* YOUR PAYMENT SCHEDULE (Specification Section 9 & Platform Review Item 09) */}
           {(() => {
-            const bd = calculatePaymentBreakdown(plan.monthlyPrice);
+            const bd3 = calculatePaymentBreakdown(plan.monthlyPrice);
+            const bd2 = calculatePaymentBreakdown5050(plan.monthlyPrice);
+            const is2Stage = arrangement === '50_50';
+
             return (
               <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-red-500/40 rounded-2xl p-5 space-y-4 shadow-xl">
-                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-800 pb-3">
                   <div>
                     <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest block">
                       ACTIVATION PAYMENT BREAKDOWN
                     </span>
                     <h3 className="text-base font-black text-white uppercase tracking-wider font-brand-header">
-                      YOUR PAYMENT SCHEDULE
+                      YOUR PAYMENT SCHEDULE & ARRANGEMENT
                     </h3>
                   </div>
-                  <span className="text-[10px] font-mono bg-red-500/10 text-red-300 border border-red-500/30 px-2.5 py-1 rounded-full font-bold">
-                    3-Stage Structure
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Initial 20% */}
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
-                      Initial Payment — 20%
-                    </span>
-                    <div className="text-lg font-black font-mono text-white mt-1">
-                      R{bd.initialPayment.toFixed(2)}
-                    </div>
-                    <span className="text-[10px] text-emerald-400 font-mono mt-1 block">
-                      Due Today (Onboarding)
-                    </span>
-                  </div>
-
-                  {/* First Billing 40% */}
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
-                      First Billing — 40%
-                    </span>
-                    <div className="text-lg font-black font-mono text-white mt-1">
-                      R{bd.firstBillingPayment.toFixed(2)}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono mt-1 block">
-                      Scheduled (25th of month)
-                    </span>
-                  </div>
-
-                  {/* Second Billing 40% */}
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
-                    <span className="text-[10px] font-mono uppercase text-slate-400 block">
-                      Second Billing — 40%
-                    </span>
-                    <div className="text-lg font-black font-mono text-white mt-1">
-                      R{bd.secondBillingPayment.toFixed(2)}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono mt-1 block">
-                      Scheduled (+1 month)
-                    </span>
+                  {/* Arrangement Selector Pills */}
+                  <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setArrangement('20_40_40')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer transition-all ${
+                        !is2Stage
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      20% / 40% / 40% (3-Stage)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setArrangement('50_50')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold cursor-pointer transition-all ${
+                        is2Stage
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      50% / 50% (2-Stage)
+                    </button>
                   </div>
                 </div>
+
+                {!is2Stage ? (
+                  /* 3-Stage: 20% / 40% / 40% */
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        Initial Payment — 20%
+                      </span>
+                      <div className="text-lg font-black font-mono text-white mt-1">
+                        R{bd3.initialPayment.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono mt-1 block">
+                        Due Today (Onboarding)
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        1st Billing — 40%
+                      </span>
+                      <div className="text-lg font-black font-mono text-white mt-1">
+                        R{bd3.firstBillingPayment.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono mt-1 block">
+                        Scheduled (25th of month)
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        2nd Billing — 40% (3rd Payment)
+                      </span>
+                      <div className="text-lg font-black font-mono text-white mt-1">
+                        R{bd3.secondBillingPayment.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-bold font-mono mt-1 block">
+                        Activates Membership ✓
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  /* 2-Stage: 50% / 50% */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        Initial Payment — 50%
+                      </span>
+                      <div className="text-lg font-black font-mono text-white mt-1">
+                        R{bd2.initialPayment.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono mt-1 block">
+                        Due Today (Onboarding)
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                        2nd Payment — 50%
+                      </span>
+                      <div className="text-lg font-black font-mono text-white mt-1">
+                        R{bd2.secondPayment.toFixed(2)}
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-bold font-mono mt-1 block">
+                        Activates Membership ✓
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Total & Activation Milestone Warning */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-950 p-3.5 rounded-xl border border-slate-800 gap-2">
                   <div className="text-xs text-slate-300">
                     <span className="text-slate-400 font-mono">Total Activation Payments: </span>
-                    <span className="font-mono font-bold text-white text-sm">R{bd.total.toLocaleString()}</span>
-                    <span className="text-[10px] text-slate-400 font-mono ml-2">(20% + 40% + 40% = 100%)</span>
+                    <span className="font-mono font-bold text-white text-sm">R{plan.monthlyPrice.toLocaleString()}</span>
+                    <span className="text-[10px] text-slate-400 font-mono ml-2">
+                      ({!is2Stage ? '20% + 40% + 40% = 100%' : '50% + 50% = 100%'})
+                    </span>
                   </div>
                   <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-md">
-                    Activation Status: Pending Activation
+                    Activation Status: {!is2Stage ? 'Active After 3rd Payment' : 'Active After 2nd Payment'}
                   </span>
                 </div>
 
-                {/* Explicit Requirement Callout */}
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 flex items-start gap-3 text-xs text-red-200">
+                {/* Explicit Requirement Callout (Exact Wording from Item 09) */}
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3 text-xs text-red-200">
                   <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <span className="font-bold text-white block">
+                    <span className="font-bold text-white block uppercase tracking-wider text-[11px]">
                       Crucial Membership Activation Notice:
                     </span>
-                    <p className="leading-relaxed">
-                      <strong>Your membership becomes ACTIVE after the second billing payment is successfully completed.</strong>{' '}
-                      You will remain in <span className="font-mono text-amber-300">Pending Activation</span> status after paying the initial 20% and first 40%. Full plan assistance benefits and claims unlock exclusively once 100% of the activation structure is collected.
+                    <p className="leading-relaxed text-slate-200">
+                      “Your membership activation depends on your selected payment arrangement. Under 50% / 50%, activation follows the second successful payment; under 20% / 40% / 40%, activation follows the third successful payment, subject to the agreed membership terms.”
                     </p>
                   </div>
                 </div>
@@ -240,8 +295,13 @@ export function PlanConfirmationStep({
                   I explicitly confirm that I understand this membership plan and payment schedule:
                 </span>
                 I acknowledge that the monthly subscription is{' '}
-                <strong>R{plan.monthlyPrice.toLocaleString()}/month</strong>, the initial onboarding payment is{' '}
-                <strong>20% (R{calculatePaymentBreakdown(plan.monthlyPrice).initialPayment.toFixed(2)})</strong>, followed by two 40% billing cycles, and my membership becomes <strong>ACTIVE only after the second billing payment is successfully completed</strong>.
+                <strong>R{plan.monthlyPrice.toLocaleString()}/month</strong>. Under my selected{' '}
+                <strong>{arrangement === '50_50' ? '50% / 50%' : '20% / 40% / 40%'}</strong> payment arrangement,{' '}
+                {arrangement === '50_50' ? (
+                  <>initial onboarding payment is <strong>50% (R{(plan.monthlyPrice * 0.5).toFixed(2)})</strong>, followed by a second 50% payment, and my membership becomes <strong>ACTIVE after the second successful payment</strong>.</>
+                ) : (
+                  <>initial onboarding payment is <strong>20% (R{(plan.monthlyPrice * 0.2).toFixed(2)})</strong>, followed by two 40% billing cycles, and my membership becomes <strong>ACTIVE after the third successful payment (second scheduled billing)</strong>.</>
+                )}
               </div>
             </label>
           </div>

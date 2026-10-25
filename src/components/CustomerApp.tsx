@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, ShieldAlert, CreditCard, Settings, Sun, Moon, Building2 } from 'lucide-react';
+import { Shield, Phone, Bell, FileText, User, LogOut, MapPin, Users, Wallet, ShieldAlert, CreditCard, Settings, Sun, Moon, Building2, Headphones } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -12,6 +12,7 @@ import { LiveServiceTracker } from './customer/LiveServiceTracker';
 import { SavedLocationsManager } from './customer/SavedLocationsManager';
 import { CustomerWalletView } from './customer/CustomerWalletView';
 import { CustomerPayments } from './customer/CustomerPayments';
+import { CustomerContactModal } from './customer/CustomerContactModal';
 import OnboardingCommandCentre from './customer/OnboardingCommandCentre';
 import logoImg from '../assets/logo.png';
 
@@ -20,6 +21,7 @@ export default function CustomerApp() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'properties' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   // Find active customer record by matching user ID or email, or constructing dynamically from logged-in user
   const activeCustomer = 
@@ -173,6 +175,20 @@ export default function CustomerApp() {
             <span className="hidden sm:inline text-[10px]">{isDark ? 'Light Mode' : 'Navy Dark'}</span>
           </button>
 
+          <button
+            type="button"
+            onClick={() => setIsContactModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+              isDark 
+                ? 'bg-[#091C3E] border-[#142D59] text-white hover:bg-[#142D59]' 
+                : 'bg-white border-slate-200 text-navy hover:bg-slate-50'
+            }`}
+            title="Customer Support, Callback, Suggestions & Complaints"
+          >
+            <Headphones className="w-3.5 h-3.5 text-red" />
+            <span className="hidden sm:inline">Support & Contact</span>
+          </button>
+
           <a
             href="tel:+27115559111"
             className="flex items-center gap-1.5 px-3 py-2 bg-red/10 hover:bg-red/20 border border-red/20 text-red text-xs font-bold rounded-xl transition-all"
@@ -222,8 +238,8 @@ export default function CustomerApp() {
               <CustomerHome 
                 activeCustomer={activeCustomer} 
                 activeJob={activeJob} 
-                assignedContractor={assignedContractor}
-                onNavigateTab={setActiveDeviceTab}
+                assignedContractor={assignedContractor} 
+                onNavigateTab={setActiveDeviceTab} 
               />
             )
           )}
@@ -252,6 +268,11 @@ export default function CustomerApp() {
         </div>
       </div>
 
+      {/* CUSTOMER COMMUNICATION & CONTACT MODAL (Item 05) */}
+      <CustomerContactModal 
+        isOpen={isContactModalOpen} 
+        onClose={() => setIsContactModalOpen(false)} 
+      />
     </div>
   );
 }

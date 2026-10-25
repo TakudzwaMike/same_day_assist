@@ -6,6 +6,7 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
     name: 'Gold Assist Shield',
     price: 349,
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Covers Security (Access Control, Alarm Systems)',
       'Covers Electrical emergency response',
       '24/7 Priority Emergency Panic Button',
@@ -18,6 +19,7 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
     name: 'Platinum Assist Elite',
     price: 599,
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Covers Security, Electrical, and Plumbing',
       'Includes Electric Fence & Gate Automation assessment',
       '24/7 Dedicated Dispatcher access',
@@ -31,6 +33,7 @@ export const SERVICE_PACKAGES: ServicePackage[] = [
     name: 'Diamond Assist Infinite',
     price: 999,
     benefits: [
+      '24/7 Assistance – Request assistance any time, day or night.',
       'Full coverage: Security, Electrical, Plumbing & Construction',
       'Covers CCTV, Garage Automation, Video & Audio Intercoms',
       'Guaranteed 15-minute emergency security response SLA',

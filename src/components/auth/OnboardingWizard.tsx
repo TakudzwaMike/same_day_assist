@@ -51,7 +51,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
       'Audio & Video Intercoms',
       'Access Control',
       'Electric Fence',
-      'Alarm',
+      'Alarm Systems',
       'CCTV',
     ] as ServiceCategory[],
 
@@ -61,6 +61,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
     // Step 7: Communication & Next of Kin Details
     preferredContactMethod: 'Email' as 'Email' | 'SMS' | 'WhatsApp' | 'Push',
+    preferredContactMethods: ['Email', 'WhatsApp'] as ('Email' | 'SMS' | 'WhatsApp' | 'Push')[],
     emergencyContactName: '',
     emergencyContactPhone: '',
     requestOnboardingSurvey: true,
@@ -480,7 +481,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                   'Audio & Video Intercoms',
                   'Access Control',
                   'Electric Fence',
-                  'Alarm',
+                  'Alarm Systems',
                   'CCTV',
                 ].map(srv => {
                   const isChecked = formData.preferredServices.includes(srv as ServiceCategory);
@@ -533,22 +534,49 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         {step === 7 && (
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Preferred Dispatch Contact Channel</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Preferred Dispatch Contact Channels
+                </label>
+                <span className="text-[10px] text-cyan-400 font-mono">Multiple selection supported</span>
+              </div>
+              <p className="text-xs text-slate-400 mb-3">
+                Select one or more channels through which our control room and responders should notify you:
+              </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {(['Email', 'SMS', 'WhatsApp', 'Push'] as const).map(method => (
-                  <button
-                    type="button"
-                    key={method}
-                    onClick={() => handleChange('preferredContactMethod', method)}
-                    className={`py-3 px-4 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      formData.preferredContactMethod === method
-                        ? 'border-red-500 bg-red-600/10 text-white shadow-lg shadow-red-600/10'
-                        : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
+                {(['Email', 'SMS', 'WhatsApp', 'Push'] as const).map(method => {
+                  const isSelected = formData.preferredContactMethods.includes(method);
+                  return (
+                    <button
+                      type="button"
+                      key={method}
+                      onClick={() => {
+                        let nextMethods = [...formData.preferredContactMethods];
+                        if (isSelected) {
+                          if (nextMethods.length > 1) {
+                            nextMethods = nextMethods.filter(m => m !== method);
+                          }
+                        } else {
+                          nextMethods.push(method);
+                        }
+                        handleChange('preferredContactMethods', nextMethods);
+                        handleChange('preferredContactMethod', nextMethods[0]);
+                      }}
+                      className={`py-3 px-4 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                        isSelected
+                          ? 'border-red-500 bg-red-600/15 text-white shadow-lg shadow-red-600/10'
+                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700 hover:text-slate-300'
+                      }`}
+                    >
+                      <span>{method}</span>
+                      <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px] ${
+                        isSelected ? 'bg-red-600 border-red-500 text-white' : 'border-slate-700 bg-slate-900'
+                      }`}>
+                        {isSelected && <Check className="w-2.5 h-2.5" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -740,6 +768,10 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2">
                 <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Selected Services</span>
                 <span className="font-semibold text-slate-300 break-words leading-relaxed">{formData.preferredServices.join(', ')}</span>
+              </div>
+              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-1">
+                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Contact Channels</span>
+                <span className="font-semibold text-emerald-400 break-words leading-relaxed">{formData.preferredContactMethods.join(', ')}</span>
               </div>
             </div>
           </div>

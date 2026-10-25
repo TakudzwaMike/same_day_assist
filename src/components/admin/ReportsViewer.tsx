@@ -44,7 +44,7 @@ export default function ReportsViewer() {
         <div className="flex flex-wrap gap-1.5 justify-end">
           {([
             { id: 'membership', label: 'Membership' },
-            { id: 'assessment', label: 'Surveys' },
+            { id: 'assessment', label: 'Property Assessments' },
             { id: 'quotation', label: 'Quotations' },
             { id: 'completion', label: 'Job Completion' },
             { id: 'compliance', label: 'Compliance Audit' },
