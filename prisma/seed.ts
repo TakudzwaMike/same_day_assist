@@ -12,6 +12,10 @@ async function main() {
   console.log('Seeding database...');
 
   // Clear existing data
+  await prisma.teamPayout.deleteMany();
+  await prisma.teamPenalty.deleteMany();
+  await prisma.teamBonus.deleteMany();
+  await prisma.teamEarning.deleteMany();
   await prisma.benefitTransaction.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.claim.deleteMany();
@@ -255,7 +259,7 @@ async function main() {
   });
 
   // 5. Dispatcher / Operations
-  await prisma.user.create({
+  const dispatcher = await prisma.user.create({
     data: {
       email: 'dispatcher@samedayassist.co.za',
       passwordHash: standardHash,
@@ -1025,6 +1029,379 @@ async function main() {
       supervisorNotes: 'Verified against all 9-system checks. RG59 cable integrity confirmed. Baseline locked.',
       baselineLocked: true,
       baselineLockedAt: new Date('2026-10-18T14:00:00Z'),
+    },
+  });
+
+  // 6. Seed Realistic Team Earnings, Performance Bonuses, Case Penalties & Payouts
+  // A. Technical Responder: Sipho Ndlovu
+  await prisma.teamEarning.createMany({
+    data: [
+      {
+        userId: sipho.id,
+        type: 'EMERGENCY_CALL_OUT',
+        title: 'CCTV IP Camera Sensor & NVR Diagnostics',
+        description: 'Client: Bright (Sandton Core Client). Rapid response fault finding and sensor alignment.',
+        reference: 'DISP-9921',
+        amount: 650.00,
+        date: new Date('2026-10-24T11:45:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: sipho.id,
+        type: 'JOB_COMPLETION',
+        title: 'Main Driveway Automated Sliding Gate Re-alignment',
+        description: 'Job #job-comp-001. Photocell safety beams replaced and float battery tested.',
+        reference: 'JOB-COMP-001',
+        amount: 1850.00,
+        date: new Date('2026-10-20T14:30:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: sipho.id,
+        type: 'ASSESSMENT_FEE',
+        title: 'Full Technical Property Assessment Audit Fee',
+        description: 'Comprehensive 9-system hardware register & baseline lock for 77 Sunset Boulevard.',
+        reference: 'TA-BRIGHT-01',
+        amount: 400.00,
+        date: new Date('2026-10-18T12:00:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: sipho.id,
+        type: 'EMERGENCY_CALL_OUT',
+        title: 'Perimeter Solar Infrared Beam & Alarm Service',
+        description: 'Client: Lerato Molefe (Bryanston Estate). Dual beam transmitter replacement.',
+        reference: 'DISP-9884',
+        amount: 950.00,
+        date: new Date('2026-08-12T10:15:00Z'),
+        month: '2026-08',
+        status: 'PAID',
+        paidAt: new Date('2026-08-31T17:00:00Z'),
+        paymentRef: 'SDA-EFT-9941',
+      },
+      {
+        userId: sipho.id,
+        type: 'ASSESSMENT_FEE',
+        title: 'Commercial Property CCTV Risk & Audit Report',
+        description: 'Client: Kempton Commercial Hub. Multi-channel NVR and camera angle audit.',
+        reference: 'SURV-102',
+        amount: 1800.00,
+        date: new Date('2026-08-10T14:00:00Z'),
+        month: '2026-08',
+        status: 'PAID',
+        paidAt: new Date('2026-08-31T17:00:00Z'),
+        paymentRef: 'SDA-EFT-9941',
+      },
+      {
+        userId: sipho.id,
+        type: 'EMERGENCY_CALL_OUT',
+        title: 'Security Access Control Gate Battery Swap',
+        description: 'Client: Thabo Mokoena (Midrand). 12V 7Ah SLA deep-cycle battery installation.',
+        reference: 'DISP-9740',
+        amount: 650.00,
+        date: new Date('2026-08-08T09:30:00Z'),
+        month: '2026-08',
+        status: 'PAID',
+        paidAt: new Date('2026-08-31T17:00:00Z'),
+        paymentRef: 'SDA-EFT-9941',
+      },
+    ],
+  });
+
+  await prisma.teamBonus.createMany({
+    data: [
+      {
+        userId: sipho.id,
+        bonusType: 'FAST_RESPONSE_SLA',
+        name: 'Rapid Response SLA Bonus (<15m)',
+        amount: 350.00,
+        reason: 'Qualifying performance: Rapid on-site arrival within 14 minutes on Job #DISP-9921 against 15m SLA target.',
+        criteriaMet: '14 min on-site arrival (SLA target: 15 min, 93.3% speed ratio)',
+        dateAwarded: new Date('2026-10-24T12:00:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'CUSTOMER_5STAR_RATING',
+        name: 'Customer 5-Star Feedback Reward',
+        amount: 100.00,
+        reason: 'Client Dr. Vernon Adams (Sandhurst): "Outstanding response speed! Sipho arrived within 25 minutes and diagnosed our Centurion gate controller flawlessly."',
+        criteriaMet: '5/5 Stars Verified Review Score',
+        dateAwarded: new Date('2026-10-24T16:30:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'CUSTOMER_5STAR_RATING',
+        name: 'Customer 5-Star Feedback Reward',
+        amount: 100.00,
+        reason: 'Client Lerato Molefe (Bryanston Estate): "Very polite, professional security wiring repair. Left the intercom neat and tested everything twice."',
+        criteriaMet: '5/5 Stars Verified Review Score',
+        dateAwarded: new Date('2026-10-22T11:15:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'CUSTOMER_5STAR_RATING',
+        name: 'Customer 5-Star Feedback Reward',
+        amount: 100.00,
+        reason: 'Client Michael van Zyl (Fourways): "Fast fault finding on perimeter electric fence false triggers. Highly recommended."',
+        criteriaMet: '5/5 Stars Verified Review Score',
+        dateAwarded: new Date('2026-10-20T14:00:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'CUSTOMER_5STAR_RATING',
+        name: 'Customer 5-Star Feedback Reward',
+        amount: 100.00,
+        reason: 'Client Annelize Botha (Rosebank): "Fixed our CCTV infrared night-vision camera issue promptly. 5 stars well deserved."',
+        criteriaMet: '5/5 Stars Verified Review Score',
+        dateAwarded: new Date('2026-10-17T09:45:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'CUSTOMER_5STAR_RATING',
+        name: 'Customer 5-Star Feedback Reward',
+        amount: 100.00,
+        reason: 'Client Kagiso Khumalo (Midrand): "Prompt arrival and high technical expertise on garage door safety sensors."',
+        criteriaMet: '5/5 Stars Verified Review Score',
+        dateAwarded: new Date('2026-10-14T15:20:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: sipho.id,
+        bonusType: 'FAST_RESPONSE_SLA',
+        name: 'Rapid Response SLA Bonus (<15m)',
+        amount: 500.00,
+        reason: 'Qualifying performance: Rapid on-site arrival within 12 minutes on Job #DISP-9884 (August High-Priority Incident).',
+        criteriaMet: '12 min on-site arrival (SLA target: 15 min, 80.0% speed ratio)',
+        dateAwarded: new Date('2026-08-12T10:30:00Z'),
+        month: '2026-08',
+        status: 'PAID',
+        isConfirmed: true,
+        paidAt: new Date('2026-08-31T17:00:00Z'),
+        paymentRef: 'SDA-EFT-9941',
+      },
+    ],
+  });
+
+  await prisma.teamPenalty.createMany({
+    data: [
+      {
+        userId: sipho.id,
+        penaltyType: 'SAFETY_AUDIT_NON_COMPLIANCE',
+        caseNumber: 'CMP-2026-0814',
+        amount: 100.00,
+        dateApplied: new Date('2026-10-18T09:30:00Z'),
+        month: '2026-10',
+        reason: 'Incomplete Safety Earthing Verification',
+        ruleOrIncident: 'Technician Service Agreement Clause 8.3 & SANS 10142 Safety Standard Compliance',
+        explanation: 'Investigation confirmed technician did not record secondary earth spike resistance test on gate automation enclosure prior to job completion sign-off.',
+        originalAmount: 3500.00,
+        deductionAmount: 100.00,
+        resultingBalance: 3400.00,
+        status: 'CONFIRMED',
+        acknowledged: true,
+        acknowledgedAt: new Date('2026-10-19T09:30:00Z'),
+        appealStatus: 'NONE',
+      },
+      {
+        userId: sipho.id,
+        penaltyType: 'INCORRECT_LOCATION_TIMESTAMP',
+        caseNumber: 'CMP-2026-0922',
+        amount: 100.00,
+        dateApplied: new Date('2026-10-23T14:15:00Z'),
+        month: '2026-10',
+        reason: 'Arrival Notice Communication Discrepancy',
+        ruleOrIncident: 'Same Day Assist Dispatch Code of Conduct § 4.1 (Accurate Location Timestamping)',
+        explanation: 'Technician logged on-site status 35 minutes prior to actual physical entry through main estate security boom.',
+        originalAmount: 3400.00,
+        deductionAmount: 100.00,
+        resultingBalance: 3300.00,
+        status: 'PENDING_REVIEW',
+        acknowledged: false,
+        appealStatus: 'NONE',
+      },
+    ],
+  });
+
+  await prisma.teamPayout.create({
+    data: {
+      userId: sipho.id,
+      payoutRef: 'SDA-EFT-9941',
+      amount: 3900.00,
+      date: new Date('2026-08-31T17:00:00Z'),
+      month: '2026-08',
+      bankAccount: 'FNB Corporate Cheque •••• 6892',
+      status: 'PAID',
+      periodStart: new Date('2026-08-01T00:00:00Z'),
+      periodEnd: new Date('2026-08-31T23:59:59Z'),
+    },
+  });
+
+  // B. Dispatcher: Operations Dispatcher Hub
+  await prisma.teamEarning.createMany({
+    data: [
+      {
+        userId: dispatcher.id,
+        type: 'DISPATCH_SHIFT_ALLOWANCE',
+        title: '12-Hour Operational Control Room Shift',
+        description: 'Day Shift (06:00 - 18:00): Full console oversight, 14 incoming alarms orchestrated.',
+        reference: 'SHIFT-2026-1024',
+        amount: 850.00,
+        date: new Date('2026-10-24T18:00:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'DISPATCH_SHIFT_ALLOWANCE',
+        title: '12-Hour Operational Control Room Shift',
+        description: 'Night Shift (18:00 - 06:00): Severe thunderstorm incident routing and armed backup allocation.',
+        reference: 'SHIFT-2026-1022',
+        amount: 850.00,
+        date: new Date('2026-10-22T06:00:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'DISPATCH_SHIFT_ALLOWANCE',
+        title: '12-Hour Operational Control Room Shift',
+        description: 'Day Shift (06:00 - 18:00): Standard dispatch operations and responder tracking.',
+        reference: 'SHIFT-2026-1020',
+        amount: 850.00,
+        date: new Date('2026-10-20T18:00:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'JOB_COMPLETION',
+        title: 'Armed Emergency Dispatch Coordination #EMG-902',
+        description: 'Rapid routing to Sandton Core sector; responder on scene in 13 minutes.',
+        reference: 'COORD-EMG-902',
+        amount: 120.00,
+        date: new Date('2026-10-24T12:00:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'JOB_COMPLETION',
+        title: 'Armed Emergency Dispatch Coordination #EMG-887',
+        description: 'Rapid routing to Bryanston sector; responder on scene in 14 minutes.',
+        reference: 'COORD-EMG-887',
+        amount: 120.00,
+        date: new Date('2026-10-23T15:30:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'JOB_COMPLETION',
+        title: 'Electrical Responder Dispatch Coordination #ELC-402',
+        description: 'Power trip isolation dispatch to Rosebank sector.',
+        reference: 'COORD-ELC-402',
+        amount: 120.00,
+        date: new Date('2026-10-20T10:15:00Z'),
+        month: '2026-10',
+        status: 'CONFIRMED',
+      },
+      {
+        userId: dispatcher.id,
+        type: 'DISPATCH_SHIFT_ALLOWANCE',
+        title: '12-Hour Operational Control Room Shift (September Close)',
+        description: 'Consolidated end-of-month weekend shift.',
+        reference: 'SHIFT-2026-0930',
+        amount: 850.00,
+        date: new Date('2026-09-30T18:00:00Z'),
+        month: '2026-09',
+        status: 'PAID',
+        paidAt: new Date('2026-10-02T10:00:00Z'),
+        paymentRef: 'SDA-EFT-8120',
+      },
+    ],
+  });
+
+  await prisma.teamBonus.createMany({
+    data: [
+      {
+        userId: dispatcher.id,
+        bonusType: 'DISPATCHER_SPEED_SLA',
+        name: 'Ultra-Fast Dispatch SLA Bonus (<3m)',
+        amount: 100.00,
+        reason: 'Dispatcher assigned armed responder within 95 seconds of alarm verification on Job #EMG-902.',
+        criteriaMet: '95s assignment latency (Target: <180s)',
+        dateAwarded: new Date('2026-10-24T12:05:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+      {
+        userId: dispatcher.id,
+        bonusType: 'DISPATCHER_SPEED_SLA',
+        name: 'Ultra-Fast Dispatch SLA Bonus (<3m)',
+        amount: 100.00,
+        reason: 'Dispatcher assigned responder within 110 seconds on Job #EMG-887.',
+        criteriaMet: '110s assignment latency (Target: <180s)',
+        dateAwarded: new Date('2026-10-23T15:35:00Z'),
+        month: '2026-10',
+        status: 'APPROVED',
+        isConfirmed: true,
+      },
+    ],
+  });
+
+  await prisma.teamPenalty.create({
+    data: {
+      userId: dispatcher.id,
+      penaltyType: 'SLA_BREACH',
+      caseNumber: 'CMP-2026-DISP-01',
+      amount: 150.00,
+      dateApplied: new Date('2026-10-21T16:00:00Z'),
+      month: '2026-10',
+      reason: 'Missed High-Priority Alarm Queue Timeout (>5m)',
+      ruleOrIncident: 'Control Room Standard Operating Procedure § 2.2: Mandatory 300-Second Alarm Routing Window',
+      explanation: 'Console log analysis revealed priority alarm remained unassigned for 380 seconds during shift handover.',
+      originalAmount: 2910.00,
+      deductionAmount: 150.00,
+      resultingBalance: 2760.00,
+      status: 'CONFIRMED',
+      acknowledged: true,
+      acknowledgedAt: new Date('2026-10-22T08:00:00Z'),
+      appealStatus: 'NONE',
+    },
+  });
+
+  await prisma.teamPayout.create({
+    data: {
+      userId: dispatcher.id,
+      payoutRef: 'SDA-EFT-8120',
+      amount: 850.00,
+      date: new Date('2026-10-02T10:00:00Z'),
+      month: '2026-09',
+      bankAccount: 'Standard Bank Current •••• 4190',
+      status: 'PAID',
+      periodStart: new Date('2026-09-01T00:00:00Z'),
+      periodEnd: new Date('2026-09-30T23:59:59Z'),
     },
   });
 

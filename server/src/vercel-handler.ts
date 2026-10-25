@@ -139,6 +139,8 @@ app.use('/api/wallet', walletRouter);
 app.use('/api/memberships', membershipsRouter);
 app.use('/api/claims', claimsRouter);
 app.use('/api/invoices', invoicesRouter);
+import teamFinancesRouter from './routes/teamFinances';
+app.use('/api/team-finances', teamFinancesRouter);
 
 // PDF download routes (Protected with authentication and object-level ownership checks)
 app.get('/api/pdf/quotation/:id', requireAuth, async (req: AuthenticatedRequest, res) => {

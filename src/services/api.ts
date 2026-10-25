@@ -686,6 +686,38 @@ class ApiClient {
     });
   }
 
+  // Team Finances (Actual Confirmed Earnings, Performance Bonuses, Case Penalties & Statements)
+  async getTeamFinancesLedger() {
+    return this.request<any>('/team-finances/my-ledger');
+  }
+
+  async getTeamMonthlyStatement(month: string) {
+    return this.request<any>(`/team-finances/statement/${month}`);
+  }
+
+  async acknowledgeTeamPenalty(penaltyId: string) {
+    return this.request<any>(`/team-finances/acknowledge-penalty/${penaltyId}`, {
+      method: 'POST',
+    });
+  }
+
+  async appealTeamPenalty(penaltyId: string, appealNotes: string) {
+    return this.request<any>(`/team-finances/appeal-penalty/${penaltyId}`, {
+      method: 'POST',
+      body: JSON.stringify({ appealNotes }),
+    });
+  }
+
+  async requestTeamPayout() {
+    return this.request<any>('/team-finances/request-payout', {
+      method: 'POST',
+    });
+  }
+
+  async getMemberFinancialsAdmin(memberId: string) {
+    return this.request<any>(`/team-finances/member/${memberId}`);
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
   }

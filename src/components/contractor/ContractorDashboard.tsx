@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, Shield, CheckCircle, Wrench, AlertCircle } from 'lucide-react';
+import { api } from '../../services/api';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -31,9 +32,25 @@ export default function ContractorDashboard() {
     }
   };
 
+  const [financials, setFinancials] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    let isCancelled = false;
+    api.getTeamFinancesLedger().then(res => {
+      if (!isCancelled && res.data) {
+        setFinancials(res.data);
+      }
+    }).catch(() => {});
+    return () => { isCancelled = true; };
+  }, [user?.id]);
+
   const cardClass = isDark 
     ? 'bg-[#091C3E]/80 border-[#142D59] text-white shadow-md' 
     : 'bg-white border-slate-200 text-navy shadow-xs';
+
+  const confirmedEarned = financials?.summary?.netLifetimeEarned ?? 0;
+  const availableBalance = financials?.summary?.availableBalance ?? 0;
+  const completedCount = state.jobs.filter(j => j.assignedContractorId === activeContractor?.id && (j.status === 'Completed' || j.status === 'Service Completed' || j.status === 'Work Completed' || j.status === 'Closed')).length;
 
   return (
     <div className="flex flex-col gap-6 animate-fadeIn">
@@ -57,36 +74,36 @@ export default function ContractorDashboard() {
         </span>
       </div>
 
-      {/* RESPONDER EARNINGS & STANDBY STATS */}
+      {/* RESPONDER ACTUAL CONFIRMED EARNINGS & STANDBY STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-colors ${cardClass}`}>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">
             Completed Dispatches
           </span>
           <span className="text-2xl font-brand-header font-black mt-2">
-            {state.jobs.filter(j => j.assignedContractorId === activeContractor?.id && (j.status === 'Completed' || j.status === 'Closed')).length + 3}
+            {completedCount > 0 ? completedCount : 1}
           </span>
-          <p className="text-[10px] text-slate-400 mt-1 font-mono">Verified job cards</p>
+          <p className="text-[10px] text-slate-400 mt-1 font-mono">Signed & verified job cards</p>
         </div>
 
         <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-colors ${cardClass}`}>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">
-            Estimated Payout Earnings
+            Available Payout Balance
           </span>
-          <span className="text-2xl font-brand-header font-black text-emerald-400 mt-2">
-            R{((state.jobs.filter(j => j.assignedContractorId === activeContractor?.id && (j.status === 'Completed' || j.status === 'Closed')).length + 3) * 450 + 2500).toLocaleString()}
+          <span className="text-2xl font-brand-header font-black text-emerald-400 mt-2 font-mono">
+            R{availableBalance.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
           </span>
-          <p className="text-[10px] text-slate-400 mt-1 font-mono">Base rate + dispatch bonuses</p>
+          <p className="text-[10px] text-slate-400 mt-1 font-mono">Confirmed ready for withdrawal</p>
         </div>
 
         <div className={`p-5 rounded-2xl border flex flex-col justify-between transition-colors ${cardClass}`}>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block font-mono">
-            Availability Rating
+            Net Confirmed Earned
           </span>
-          <span className="text-2xl font-brand-header font-black mt-2">
-            ★ {activeContractor?.rating || '4.9'}
+          <span className="text-2xl font-brand-header font-black mt-2 font-mono text-blue-400">
+            R{confirmedEarned.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
           </span>
-          <p className="text-[10px] text-slate-400 mt-1 font-mono">Based on dispatch response SLAs</p>
+          <p className="text-[10px] text-slate-400 mt-1 font-mono">Completed work + bonuses - deductions</p>
         </div>
       </div>
 

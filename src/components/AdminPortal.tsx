@@ -3,7 +3,7 @@ import {
   Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, 
   FileCheck, ShieldCheck, ShieldAlert, Award, Receipt, Settings, 
   CheckCircle2, ClipboardCheck, Sun, Moon, Menu, ChevronLeft, ChevronRight,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Wallet
 } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,6 +22,7 @@ import AdminMembershipsManager from './admin/AdminMembershipsManager';
 import { AdminCompletedJobsViewer } from './admin/AdminCompletedJobsViewer';
 import { AdminTechnicalAssessmentsViewer } from './admin/AdminTechnicalAssessmentsViewer';
 import { AdminSettingsModal } from './admin/AdminSettingsModal';
+import { DispatcherEarningsView } from './admin/DispatcherEarningsView';
 import logoImg from '../assets/logo.png';
 
 export default function AdminPortal() {
@@ -32,7 +33,7 @@ export default function AdminPortal() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'completedJobs' | 'technicalAssessments' | 'onboarding' | 'memberships' | 'claims' | 'invoices' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'completedJobs' | 'technicalAssessments' | 'onboarding' | 'memberships' | 'claims' | 'invoices' | 'enquiries' | 'jobs' | 'reports' | 'logs' | 'profileRequests' | 'vetting' | 'dispatcherEarnings'>(() => {
     return role === 'Dispatcher' ? 'jobs' : 'overview';
   });
 
@@ -55,6 +56,7 @@ export default function AdminPortal() {
     tabs.push({ id: 'claims', label: 'Service Claims', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
     tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'dispatcherEarnings', label: 'My Compensation & Earnings', icon: Wallet });
   } else if (role === 'Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
     tabs.push({ id: 'completedJobs', label: 'Jobs Done & Safety Records', icon: CheckCircle2, badge: completedJobsCount });
@@ -288,6 +290,7 @@ export default function AdminPortal() {
           {activeTab === 'profileRequests' && <AdminProfileRequests />}
           {activeTab === 'reports' && <ReportsViewer />}
           {activeTab === 'logs' && <AuditLogViewer />}
+          {activeTab === 'dispatcherEarnings' && <DispatcherEarningsView />}
         </main>
       </div>
 

@@ -85,6 +85,10 @@ model User {
   claims               Claim[]
   invoices             Invoice[]
   benefitTransactions  BenefitTransaction[]
+  teamEarnings         TeamEarning[]
+  teamBonuses          TeamBonus[]
+  teamPenalties        TeamPenalty[]
+  teamPayouts          TeamPayout[]
 }
 
 
@@ -240,6 +244,9 @@ model Job {
   payments                Payment[]
   claim                   Claim?
   invoice                 Invoice?
+  teamEarnings            TeamEarning[]
+  teamBonuses             TeamBonus[]
+  teamPenalties           TeamPenalty[]
 }
 
 model JobRating {
@@ -504,6 +511,90 @@ model Invoice {
 
   benefitTransactions     BenefitTransaction[]
   payments                Payment[]
+}
+
+model TeamEarning {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId       String?
+  job         Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  type        String    // JOB_COMPLETION, ASSESSMENT_FEE, DISPATCH_SHIFT_ALLOWANCE, EMERGENCY_CALL_OUT
+  title       String
+  description String
+  reference   String
+  amount      Float
+  date        DateTime  @default(now())
+  month       String    // YYYY-MM e.g. '2026-10'
+  status      String    @default("CONFIRMED") // CONFIRMED, PENDING_CLEARANCE, PAID, CANCELLED
+  paidAt      DateTime?
+  paymentRef  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TeamBonus {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId       String?
+  job         Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  bonusType   String    // FAST_RESPONSE_SLA, CUSTOMER_5STAR_RATING, ANNUAL_EXCELLENCE_100K, DISPATCHER_SPEED_SLA
+  name        String
+  amount      Float
+  reason      String
+  criteriaMet String?
+  dateAwarded DateTime  @default(now())
+  month       String    // YYYY-MM e.g. '2026-10'
+  status      String    @default("APPROVED") // PENDING_VERIFICATION, APPROVED, AWARDED, PAID
+  isConfirmed Boolean   @default(true)
+  paidAt      DateTime?
+  paymentRef  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TeamPenalty {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId             String?
+  job               Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  penaltyType       String    // SLA_BREACH, SAFETY_AUDIT_NON_COMPLIANCE, INCORRECT_LOCATION_TIMESTAMP, DISCIPLINARY_DEDUCTION
+  caseNumber        String
+  amount            Float
+  dateApplied       DateTime  @default(now())
+  month             String    // YYYY-MM e.g. '2026-10'
+  reason            String
+  ruleOrIncident    String
+  explanation       String
+  originalAmount    Float
+  deductionAmount   Float
+  resultingBalance  Float
+  status            String    @default("CONFIRMED") // PENDING_REVIEW, CONFIRMED, REVERSED, DISPUTED
+  acknowledged      Boolean   @default(false)
+  acknowledgedAt    DateTime?
+  appealStatus      String    @default("NONE") // NONE, PENDING_REVIEW, UPHELD, DISMISSED
+  appealNotes       String?
+  appealSubmittedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model TeamPayout {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payoutRef   String
+  amount      Float
+  date        DateTime  @default(now())
+  month       String    // YYYY-MM e.g. '2026-10'
+  bankAccount String
+  status      String    @default("PAID") // PENDING_CLEARANCE, PROCESSING, PAID, FAILED
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 
