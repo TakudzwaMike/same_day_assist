@@ -11,11 +11,12 @@ import { validate, loginSchema, registerSchema } from '../middleware/validation'
 import { writeAuditLog } from '../middleware/auditLog';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
 import { initializeMembershipWithSchedule } from '../services/paymentService';
+import { authRateLimiter } from '../middleware/rateLimit';
 
 const router = Router();
 
-// POST /api/auth/login
-router.post('/login', validate(loginSchema), async (req: any, res: Response) => {
+// POST /api/auth/login — Brute force protected
+router.post('/login', authRateLimiter, validate(loginSchema), async (req: any, res: Response) => {
   const { email, password } = req.body;
   const ipAddress = req.ip || 'Unknown';
   const userAgent = req.headers['user-agent'] || 'Unknown';
@@ -89,15 +90,30 @@ router.post('/login', validate(loginSchema), async (req: any, res: Response) => 
   }
 });
 
-// POST /api/auth/register — Dynamic, business-oriented onboarding
-router.post('/register', validate(registerSchema), async (req: any, res: Response) => {
+// POST /api/auth/register — Dynamic, business-oriented onboarding with rate limiting
+router.post('/register', authRateLimiter, validate(registerSchema), async (req: any, res: Response) => {
   const { name, email, phone, address, serviceCategory, notes, password, role, adminSecret } = req.body;
   const ipAddress = req.ip || 'Unknown';
   const userAgent = req.headers['user-agent'] || 'Unknown';
 
   try {
-    // 1. Enforce admin secret verification
-    if (role === 'Administrator') {
+    const effectiveRole = role || 'Customer';
+
+    // 1. Enforce strict authorization key verification for any privileged staff role
+    if (effectiveRole === 'Dispatcher') {
+      const systemSecret = process.env.DISPATCHER_REGISTRATION_SECRET || process.env.ADMIN_REGISTRATION_SECRET;
+      if (!systemSecret || adminSecret !== systemSecret) {
+        await writeAuditLog({
+          userType: 'Dispatcher',
+          action: 'Failed Registration',
+          result: 'Failed',
+          details: `Unauthorized attempt to register Dispatcher account for ${email}`,
+          ipAddress,
+          userAgent,
+        });
+        return res.status(403).json({ error: 'Invalid dispatcher security authorization key. Registration restricted.' });
+      }
+    } else if (effectiveRole === 'Administrator') {
       const systemSecret = process.env.ADMIN_REGISTRATION_SECRET;
       if (!systemSecret || adminSecret !== systemSecret) {
         await writeAuditLog({
@@ -110,7 +126,7 @@ router.post('/register', validate(registerSchema), async (req: any, res: Respons
         });
         return res.status(403).json({ error: 'Invalid admin authorization key. Registration restricted.' });
       }
-    } else if (role === 'Super Administrator') {
+    } else if (effectiveRole === 'Super Administrator') {
       const systemSecret = process.env.SUPER_ADMIN_SECRET;
       if (!systemSecret || adminSecret !== systemSecret) {
         await writeAuditLog({
@@ -694,8 +710,8 @@ router.post('/logout', requireAuth, async (req: AuthenticatedRequest, res: Respo
   return res.json({ message: 'Logged out successfully' });
 });
 
-// POST /api/auth/forgot-password
-router.post('/forgot-password', async (req: any, res: Response) => {
+// POST /api/auth/forgot-password — Brute-force protected
+router.post('/forgot-password', authRateLimiter, async (req: any, res: Response) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email is required' });
 
@@ -747,8 +763,12 @@ router.get('/me', requireAuth, async (req: AuthenticatedRequest, res: Response) 
   }
 });
 
-// POST /api/auth/system/reseed — Full system database reset (Super Admin only, password confirmed)
+// POST /api/auth/system/reseed — Full system database reset (Super Admin only, password confirmed; Disabled in production)
 router.post('/system/reseed', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    return res.status(403).json({ error: 'System reseed is strictly disabled in production environments for safety.' });
+  }
+
   const user = req.user!;
   const { password } = req.body;
   const ipAddress = req.ip || 'Unknown';

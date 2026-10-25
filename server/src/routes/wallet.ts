@@ -43,12 +43,21 @@ router.get('/balance', requireAuth, async (req: AuthenticatedRequest, res: Respo
   }
 });
 
-// POST /api/wallet/top-up — Top up digital wallet funds
+// POST /api/wallet/top-up — Top up digital wallet funds (Gated by payment verification or admin authority)
 router.post('/top-up', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
-  const { amount, description } = req.body;
+  const { amount, description, gatewayReference, transactionRef } = req.body;
   const numAmount = parseFloat(amount);
   if (isNaN(numAmount) || numAmount <= 0) {
     return res.status(400).json({ error: 'Valid positive top-up amount required' });
+  }
+
+  const isAdmin = req.user!.role === 'Administrator' || req.user!.role === 'Super Administrator';
+
+  // Financial Security: Prevent arbitrary balance manipulation without gateway payment reference
+  if (!isAdmin && !gatewayReference && !transactionRef) {
+    return res.status(400).json({
+      error: 'Unverified wallet top-up: A valid payment gateway transaction reference is required to credit funds.',
+    });
   }
 
   try {

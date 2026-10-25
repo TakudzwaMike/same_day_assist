@@ -98,8 +98,12 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response)
 
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
-    // Strict Authorization: Customers can only access their own invoices
-    if (req.user!.role === 'Customer' && invoice.userId !== req.user!.id) {
+    // Strict Authorization: Customers/Contractors can only access their own invoices
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isOwner = invoice.userId === req.user!.id || (invoice.customerEmail && req.user!.email && invoice.customerEmail.toLowerCase() === req.user!.email.toLowerCase());
+
+    if (!isStaff && !isOwner) {
       return res.status(403).json({ error: 'Access denied. You can only view your own invoices.' });
     }
 
@@ -125,8 +129,12 @@ router.get('/:id/pdf', requireAuth, async (req: AuthenticatedRequest, res: Respo
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
     // Authorization check
-    if (req.user!.role === 'Customer' && invoice.userId !== req.user!.id) {
-      return res.status(403).json({ error: 'Access denied.' });
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isOwner = invoice.userId === req.user!.id || (invoice.customerEmail && req.user!.email && invoice.customerEmail.toLowerCase() === req.user!.email.toLowerCase());
+
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: 'Access denied. You can only download your own invoices.' });
     }
 
     const pdfBuffer = await generateInvoicePDF({
@@ -272,8 +280,12 @@ router.patch('/:id/pay', requireAuth, async (req: AuthenticatedRequest, res: Res
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' });
 
     // Authorization: own invoice or admin
-    if (req.user!.role === 'Customer' && invoice.userId !== req.user!.id) {
-      return res.status(403).json({ error: 'Access denied.' });
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isOwner = invoice.userId === req.user!.id || (invoice.customerEmail && req.user!.email && invoice.customerEmail.toLowerCase() === req.user!.email.toLowerCase());
+
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: 'Access denied. You can only settle your own invoices.' });
     }
 
     if (invoice.paymentStatus === 'Paid') {

@@ -47,9 +47,45 @@ import membershipsRouter from './routes/memberships';
 import claimsRouter from './routes/claims';
 import invoicesRouter from './routes/invoices';
 
+import { requireAuth, AuthenticatedRequest } from './middleware/auth';
+
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+// Disable fingerprinting header
+app.disable('x-powered-by');
+
+// Trusted Origins for CORS
+const trustedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://same-day-assist.vercel.app',
+  'https://samedayassist.co.za',
+  'https://www.samedayassist.co.za',
+  process.env.CLIENT_URL,
+  process.env.APP_URL,
+].filter(Boolean) as string[];
+
+const isOriginAllowed = (origin?: string | null): boolean => {
+  if (!origin) return true; // Allow mobile apps, curl, server-to-server
+  if (trustedOrigins.includes(origin)) return true;
+  if (/^https:\/\/same-day-assist(-[a-zA-Z0-9_-]+)?\.vercel\.app$/.test(origin)) return true;
+  if (origin.startsWith('capacitor://') || origin.startsWith('ionic://') || origin === 'http://localhost') return true;
+  return false;
+};
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Cross-Origin Request Blocked by Same Day Assist Security Policy'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With'],
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -57,6 +93,9 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   next();
 });
 
@@ -101,8 +140,8 @@ app.use('/api/memberships', membershipsRouter);
 app.use('/api/claims', claimsRouter);
 app.use('/api/invoices', invoicesRouter);
 
-// PDF download routes
-app.get('/api/pdf/quotation/:id', async (req, res) => {
+// PDF download routes (Protected with authentication and object-level ownership checks)
+app.get('/api/pdf/quotation/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { generateQuotationPDF } = await import('./services/pdf');
     const quotation = await prisma.quotation.findUnique({
@@ -110,6 +149,16 @@ app.get('/api/pdf/quotation/:id', async (req, res) => {
       include: { enquiry: true },
     });
     if (!quotation) return res.status(404).json({ error: 'Quotation not found' });
+
+    // Authorization: Staff or matching customer enquiry email
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isOwner = quotation.enquiry && req.user!.email && quotation.enquiry.email.toLowerCase() === req.user!.email.toLowerCase();
+
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: 'Access denied: You are not authorized to download this quotation document.' });
+    }
+
     const lineItems = JSON.parse(quotation.lineItems);
     const pdfBuffer = await generateQuotationPDF({
       id: quotation.id,
@@ -129,7 +178,7 @@ app.get('/api/pdf/quotation/:id', async (req, res) => {
   }
 });
 
-app.get('/api/pdf/invoice/:id', async (req, res) => {
+app.get('/api/pdf/invoice/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { generateInvoicePDF } = await import('./services/pdf');
     
@@ -139,7 +188,15 @@ app.get('/api/pdf/invoice/:id', async (req, res) => {
       include: { user: true, claim: true },
     });
 
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+
     if (invoice) {
+      const isOwner = invoice.userId === req.user!.id || (invoice.customerEmail && req.user!.email && invoice.customerEmail.toLowerCase() === req.user!.email.toLowerCase());
+      if (!isStaff && !isOwner) {
+        return res.status(403).json({ error: 'Access denied: You are not authorized to download this invoice.' });
+      }
+
       const pdfBuffer = await generateInvoicePDF({
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
@@ -173,6 +230,12 @@ app.get('/api/pdf/invoice/:id', async (req, res) => {
       include: { customer: true },
     });
     if (!payment) return res.status(404).json({ error: 'Invoice record not found' });
+
+    const isPaymentOwner = payment.customerId === req.user!.id || (payment.customer?.email && req.user!.email && payment.customer.email.toLowerCase() === req.user!.email.toLowerCase());
+    if (!isStaff && !isPaymentOwner) {
+      return res.status(403).json({ error: 'Access denied: You are not authorized to download this receipt.' });
+    }
+
     const pdfBuffer = await generateInvoicePDF({
       id: payment.id,
       customerName: payment.customerName,
@@ -190,7 +253,7 @@ app.get('/api/pdf/invoice/:id', async (req, res) => {
   }
 });
 
-app.get('/api/pdf/completion/:id', async (req, res) => {
+app.get('/api/pdf/completion/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { generateCompletionReportPDF } = await import('./services/pdf');
     const job = await prisma.job.findUnique({
@@ -201,6 +264,16 @@ app.get('/api/pdf/completion/:id', async (req, res) => {
       },
     });
     if (!job || !job.completedAt) return res.status(404).json({ error: 'Completed job not found' });
+
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isJobCustomer = job.customerId === req.user!.id;
+    const isAssignedContractor = job.assignedContractorId === req.user!.id;
+
+    if (!isStaff && !isJobCustomer && !isAssignedContractor) {
+      return res.status(403).json({ error: 'Access denied: You are not authorized to download this completion certificate.' });
+    }
+
     const pdfBuffer = await generateCompletionReportPDF({
       jobId: job.id,
       customerName: job.customer?.name || job.nonMemberName || 'Customer',
@@ -220,7 +293,7 @@ app.get('/api/pdf/completion/:id', async (req, res) => {
   }
 });
 
-app.get('/api/pdf/assessment/:id', async (req, res) => {
+app.get('/api/pdf/assessment/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { generateAssessmentReportPDF } = await import('./services/pdf');
     const assessment = await prisma.assessment.findUnique({
@@ -231,6 +304,15 @@ app.get('/api/pdf/assessment/:id', async (req, res) => {
       },
     });
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isContractor = assessment.contractorId === req.user!.id;
+    const isCustomer = assessment.enquiry && req.user!.email && assessment.enquiry.email.toLowerCase() === req.user!.email.toLowerCase();
+
+    if (!isStaff && !isContractor && !isCustomer) {
+      return res.status(403).json({ error: 'Access denied: You are not authorized to download this technical assessment survey.' });
+    }
 
     let parsedData: any = {};
     if (assessment.structuredData) {

@@ -4,6 +4,7 @@ import { requireAuth, requireRoles, AuthenticatedRequest } from '../middleware/a
 import { validate, jobCreateSchema, completionSchema, ratingSchema } from '../middleware/validation';
 import { writeAuditLog } from '../middleware/auditLog';
 import { Server as SocketServer } from 'socket.io';
+import { emergencyRateLimiter } from '../middleware/rateLimit';
 import {
   getOrCreateActiveMembership,
   calculateBenefitCoverage,
@@ -193,8 +194,8 @@ export function createJobsRouter(io?: SocketServer) {
   // EMERGENCY NON-MEMBER ENDPOINTS (ONE-TIME SERVICE, STRICTLY SEPARATE BILLING)
   // =========================================================================
 
-  // POST /api/jobs/emergency-non-member — Public entry point for non-member emergency requests
-  router.post('/emergency-non-member', async (req: any, res: Response) => {
+  // POST /api/jobs/emergency-non-member — Public entry point for non-member emergency requests (Rate limited)
+  router.post('/emergency-non-member', emergencyRateLimiter, async (req: any, res: Response) => {
     const { name, phone, email, address, serviceType, description, urgency, additionalNotes, consentAgreed, photoUrl } = req.body;
 
     if (!name || !name.trim()) {
@@ -706,7 +707,40 @@ export function createJobsRouter(io?: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/status — Update job workflow status
+  // GET /api/jobs/:id — Fetch single job with Broken Object-Level Authorization protection
+  router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
+          claim: true,
+          invoice: true,
+          payments: true,
+        },
+      });
+
+      if (!job) return res.status(404).json({ error: 'Job not found' });
+
+      const userRole = req.user!.role;
+      const userId = req.user!.id;
+      const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+      const isOwner = job.customerId === userId;
+      const isAssignedContractor = job.assignedContractorId === userId;
+
+      if (!isStaff && !isOwner && !isAssignedContractor) {
+        return res.status(403).json({ error: 'Access denied: You do not have permission to view this job request.' });
+      }
+
+      return res.json(formatJob(job));
+    } catch (error) {
+      console.error('[Jobs/GetSingle]', error);
+      return res.status(500).json({ error: 'Failed to retrieve job details' });
+    }
+  });
+
+  // PATCH /api/jobs/:id/status — Update job workflow status (Object-level authorization enforced)
   router.patch('/:id/status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const { status } = req.body;
     
@@ -745,6 +779,54 @@ export function createJobsRouter(io?: SocketServer) {
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: 'Job not found' });
+
+      const userRole = req.user!.role;
+      const userId = req.user!.id;
+      const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+      const isAssignedContractor = job.assignedContractorId === userId;
+      const isCustomerOwner = job.customerId === userId;
+
+      // Access Control: Only staff, assigned contractor, or the job's customer owner may modify status
+      if (!isStaff && !isAssignedContractor && !isCustomerOwner) {
+        await writeAuditLog({
+          userId,
+          userType: userRole,
+          action: 'Unauthorized Job Status Change Attempt',
+          result: 'Failed',
+          details: `User ${userId} (${userRole}) attempted unauthorized status update to "${status}" on Job ${job.id}`,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        });
+        return res.status(403).json({ error: 'Access denied: You are not authorized to update this job status.' });
+      }
+
+      // Customer may ONLY cancel their own job, and ONLY before dispatch/arrival
+      if (isCustomerOwner && !isStaff && !isAssignedContractor) {
+        if (status !== 'Cancelled') {
+          return res.status(403).json({ error: 'Customers are only permitted to cancel their request.' });
+        }
+        const cancellableStatuses = ['Payment Required', 'Requested', 'Request Under Review', 'Accepted', 'Awaiting Dispatch'];
+        if (!cancellableStatuses.includes(job.status)) {
+          return res.status(400).json({ error: `Cannot cancel request: Service team has already been dispatched (${job.status}).` });
+        }
+      }
+
+      // Contractor may ONLY update operational service statuses
+      if (isAssignedContractor && !isStaff) {
+        const contractorAllowedStatuses = [
+          'Preparing for Dispatch',
+          'Team En Route',
+          'En Route',
+          'Arrived',
+          'Assistance In Progress',
+          'Service In Progress',
+          'In Progress',
+          'Work Completed',
+        ];
+        if (!contractorAllowedStatuses.includes(status)) {
+          return res.status(403).json({ error: `Service providers cannot transition job status to "${status}".` });
+        }
+      }
 
       // STRICT: For non-member emergency, cannot bypass payment to dispatch
       const DISPATCH_WORKFLOW_STATUSES = [
@@ -811,12 +893,24 @@ export function createJobsRouter(io?: SocketServer) {
     }
   });
 
-  // PATCH /api/jobs/:id/location — Real-Time GPS Stream & ETA Update
+  // PATCH /api/jobs/:id/location — Real-Time GPS Stream & ETA Update (Restricted to assigned contractor or staff)
   router.patch('/:id/location', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const { lat, lng, estimatedArrivalMinutes, distanceRemainingKm } = req.body;
     if (lat === undefined || lng === undefined) return res.status(400).json({ error: 'lat and lng are required' });
 
     try {
+      const existingJob = await prisma.job.findUnique({ where: { id: req.params.id } });
+      if (!existingJob) return res.status(404).json({ error: 'Job not found' });
+
+      const userRole = req.user!.role;
+      const userId = req.user!.id;
+      const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+      const isAssignedContractor = existingJob.assignedContractorId === userId;
+
+      if (!isStaff && !isAssignedContractor) {
+        return res.status(403).json({ error: 'Access denied: Only the assigned responder or control room dispatch can broadcast GPS coordinates.' });
+      }
+
       const job = await prisma.job.update({
         where: { id: req.params.id },
         data: {

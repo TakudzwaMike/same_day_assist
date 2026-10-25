@@ -10,6 +10,7 @@ import {
   changeCustomerPlan,
   deductFromBenefit,
 } from '../services/benefitService';
+import { initializeMembershipWithSchedule } from '../services/paymentService';
 
 const router = Router();
 
@@ -29,24 +30,45 @@ router.get('/my', requireAuth, requireRoles('Customer'), async (req: Authenticat
   }
 });
 
-// POST /api/memberships/change-plan — Customer: change plan or Admin change for customer
+// POST /api/memberships/change-plan — Admin change for customer or Customer plan change with payment enforcement
 router.post('/change-plan', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const { planId, customerId, reason } = req.body;
   if (!planId) return res.status(400).json({ error: 'planId is required' });
 
-  // Security: Only admins can change another customer's plan
-  const targetUserId =
-    customerId && (req.user!.role === 'Administrator' || req.user!.role === 'Super Administrator')
-      ? customerId
-      : req.user!.id;
+  const isAdmin = req.user!.role === 'Administrator' || req.user!.role === 'Super Administrator';
+
+  if (!isAdmin && customerId && customerId !== req.user!.id) {
+    return res.status(403).json({ error: 'Access denied: You cannot change another customer\'s plan.' });
+  }
+
+  const targetUserId = isAdmin && customerId ? customerId : req.user!.id;
 
   try {
+    // Security: Non-admin users cannot bypass billing to immediately activate a plan.
+    // They must pay the activation stage for the new tier.
+    if (!isAdmin) {
+      const schedule = await initializeMembershipWithSchedule({
+        userId: targetUserId,
+        planId,
+        billingDay: 25,
+        autoProcessInitial: false,
+        startDate: new Date(),
+      });
+
+      return res.json({
+        success: true,
+        message: 'Plan change initiated. Please complete the activation payment to unlock your new assistance benefits.',
+        requiresPayment: true,
+        schedule,
+      });
+    }
+
     const newMembership = await changeCustomerPlan({
       userId: targetUserId,
       newPlanId: planId,
       actorId: req.user!.id,
       actorRole: req.user!.role,
-      reason,
+      reason: reason || 'Administrative authorization',
     });
 
     const summary = await getMemberBenefitSummary(targetUserId);

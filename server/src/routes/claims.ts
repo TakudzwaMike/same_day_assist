@@ -105,8 +105,11 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response)
 
     if (!claim) return res.status(404).json({ error: 'Claim not found' });
 
-    // Strict Authorization: Customers can only access their own claims
-    if (req.user!.role === 'Customer' && claim.userId !== req.user!.id) {
+    // Strict Authorization: Staff or claim owner only
+    const userRole = req.user!.role;
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isOwner = claim.userId === req.user!.id;
+    if (!isStaff && !isOwner) {
       return res.status(403).json({ error: 'Access denied. You can only view your own claims.' });
     }
 

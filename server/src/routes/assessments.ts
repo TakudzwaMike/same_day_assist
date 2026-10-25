@@ -56,7 +56,7 @@ router.get('/my', requireAuth, requireRoles('Contractor'), async (req: Authentic
   }
 });
 
-// GET /api/assessments/:id — Get single assessment
+// GET /api/assessments/:id — Get single assessment (Object-level authorization enforced)
 router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const assessment = await prisma.assessment.findUnique({
@@ -64,6 +64,18 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res: Response)
       include: { contractor: true, enquiry: true },
     });
     if (!assessment) return res.status(404).json({ error: 'Assessment not found' });
+
+    const userRole = req.user!.role;
+    const userId = req.user!.id;
+    const userEmail = req.user!.email?.toLowerCase();
+    const isStaff = ['Administrator', 'Super Administrator', 'Dispatcher', 'ADMIN'].includes(userRole);
+    const isContractor = assessment.contractorId === userId;
+    const isCustomer = (assessment.enquiry && assessment.enquiry.email && assessment.enquiry.email.toLowerCase() === userEmail);
+
+    if (!isStaff && !isContractor && !isCustomer) {
+      return res.status(403).json({ error: 'Access denied: You do not have permission to view this assessment survey.' });
+    }
+
     return res.json(formatAssessment(assessment));
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve assessment' });

@@ -824,11 +824,16 @@ async function writeAuditLog(params) {
 
 // server/src/middleware/auth.ts
 function requireAuth(req, res, next) {
+  let token;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Authentication token required (Bearer)" });
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  } else if (req.query && typeof req.query.token === "string") {
+    token = req.query.token;
   }
-  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "Authentication token required (Bearer or query parameter)" });
+  }
   try {
     const decoded = verifyAccessToken(token);
     req.user = decoded;
@@ -1542,9 +1547,66 @@ async function getMembershipPaymentTimeline(userId) {
   };
 }
 
+// server/src/middleware/rateLimit.ts
+function createRateLimiter(options) {
+  const store = {};
+  const { windowMs, max, message = "Too many requests from this IP, please try again later." } = options;
+  setInterval(() => {
+    const now = Date.now();
+    for (const key in store) {
+      if (store[key].resetTime <= now) {
+        delete store[key];
+      }
+    }
+  }, 60 * 1e3).unref();
+  return (req, res, next) => {
+    const key = options.keyGenerator ? options.keyGenerator(req) : req.ip || req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || "unknown-ip";
+    const now = Date.now();
+    if (!store[key] || store[key].resetTime <= now) {
+      store[key] = {
+        count: 1,
+        resetTime: now + windowMs
+      };
+      res.setHeader("X-RateLimit-Limit", max);
+      res.setHeader("X-RateLimit-Remaining", max - 1);
+      res.setHeader("X-RateLimit-Reset", Math.ceil((now + windowMs) / 1e3));
+      return next();
+    }
+    store[key].count++;
+    const remaining = Math.max(0, max - store[key].count);
+    res.setHeader("X-RateLimit-Limit", max);
+    res.setHeader("X-RateLimit-Remaining", remaining);
+    res.setHeader("X-RateLimit-Reset", Math.ceil(store[key].resetTime / 1e3));
+    if (store[key].count > max) {
+      const retryAfterSeconds = Math.ceil((store[key].resetTime - now) / 1e3);
+      res.setHeader("Retry-After", retryAfterSeconds);
+      return res.status(429).json({
+        error: message,
+        retryAfterSeconds
+      });
+    }
+    next();
+  };
+}
+var authRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1e3,
+  max: 20,
+  message: "Too many authentication attempts from this IP address. Please wait 15 minutes before trying again."
+});
+var emergencyRateLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1e3,
+  max: 10,
+  message: "Too many emergency requests submitted from this IP. Please wait a few minutes or call our 24/7 hotline directly."
+});
+var publicApiRateLimiter = createRateLimiter({
+  windowMs: 5 * 60 * 1e3,
+  max: 300,
+  message: "Rate limit exceeded. Please slow down your requests."
+});
+
 // server/src/routes/auth.ts
 var router = Router();
-router.post("/login", validate(loginSchema), async (req, res) => {
+router.post("/login", authRateLimiter, validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
   const ipAddress = req.ip || "Unknown";
   const userAgent = req.headers["user-agent"] || "Unknown";
@@ -1611,12 +1673,26 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     return res.status(500).json({ error: "Server error during login" });
   }
 });
-router.post("/register", validate(registerSchema), async (req, res) => {
+router.post("/register", authRateLimiter, validate(registerSchema), async (req, res) => {
   const { name, email, phone, address, serviceCategory, notes, password, role, adminSecret } = req.body;
   const ipAddress = req.ip || "Unknown";
   const userAgent = req.headers["user-agent"] || "Unknown";
   try {
-    if (role === "Administrator") {
+    const effectiveRole = role || "Customer";
+    if (effectiveRole === "Dispatcher") {
+      const systemSecret = process.env.DISPATCHER_REGISTRATION_SECRET || process.env.ADMIN_REGISTRATION_SECRET;
+      if (!systemSecret || adminSecret !== systemSecret) {
+        await writeAuditLog({
+          userType: "Dispatcher",
+          action: "Failed Registration",
+          result: "Failed",
+          details: `Unauthorized attempt to register Dispatcher account for ${email}`,
+          ipAddress,
+          userAgent
+        });
+        return res.status(403).json({ error: "Invalid dispatcher security authorization key. Registration restricted." });
+      }
+    } else if (effectiveRole === "Administrator") {
       const systemSecret = process.env.ADMIN_REGISTRATION_SECRET;
       if (!systemSecret || adminSecret !== systemSecret) {
         await writeAuditLog({
@@ -1629,7 +1705,7 @@ router.post("/register", validate(registerSchema), async (req, res) => {
         });
         return res.status(403).json({ error: "Invalid admin authorization key. Registration restricted." });
       }
-    } else if (role === "Super Administrator") {
+    } else if (effectiveRole === "Super Administrator") {
       const systemSecret = process.env.SUPER_ADMIN_SECRET;
       if (!systemSecret || adminSecret !== systemSecret) {
         await writeAuditLog({
@@ -2159,7 +2235,7 @@ router.post("/logout", requireAuth, async (req, res) => {
   });
   return res.json({ message: "Logged out successfully" });
 });
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", authRateLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
   const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
@@ -2205,6 +2281,9 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 });
 router.post("/system/reseed", requireAuth, async (req, res) => {
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return res.status(403).json({ error: "System reseed is strictly disabled in production environments for safety." });
+  }
   const user = req.user;
   const { password } = req.body;
   const ipAddress = req.ip || "Unknown";
@@ -2413,6 +2492,15 @@ router3.get("/:id", requireAuth, async (req, res) => {
       include: { contractor: true, enquiry: true }
     });
     if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+    const userRole = req.user.role;
+    const userId = req.user.id;
+    const userEmail = req.user.email?.toLowerCase();
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isContractor = assessment.contractorId === userId;
+    const isCustomer = assessment.enquiry && assessment.enquiry.email && assessment.enquiry.email.toLowerCase() === userEmail;
+    if (!isStaff && !isContractor && !isCustomer) {
+      return res.status(403).json({ error: "Access denied: You do not have permission to view this assessment survey." });
+    }
     return res.json(formatAssessment(assessment));
   } catch (error) {
     return res.status(500).json({ error: "Failed to retrieve assessment" });
@@ -3972,7 +4060,7 @@ function createJobsRouter(io) {
       return res.status(500).json({ error: "Failed to create job request" });
     }
   });
-  router12.post("/emergency-non-member", async (req, res) => {
+  router12.post("/emergency-non-member", emergencyRateLimiter, async (req, res) => {
     const { name, phone, email, address, serviceType, description, urgency, additionalNotes, consentAgreed, photoUrl } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Full name is required for emergency dispatch." });
@@ -4412,6 +4500,33 @@ function createJobsRouter(io) {
       return res.status(500).json({ error: "Failed to assign contractor" });
     }
   });
+  router12.get("/:id", requireAuth, async (req, res) => {
+    try {
+      const job = await prisma.job.findUnique({
+        where: { id: req.params.id },
+        include: {
+          customer: { select: { id: true, name: true, phone: true, address: true, email: true } },
+          assignedContractor: { select: { id: true, name: true, phone: true, specialty: true, rating: true, lat: true, lng: true } },
+          claim: true,
+          invoice: true,
+          payments: true
+        }
+      });
+      if (!job) return res.status(404).json({ error: "Job not found" });
+      const userRole = req.user.role;
+      const userId = req.user.id;
+      const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+      const isOwner = job.customerId === userId;
+      const isAssignedContractor = job.assignedContractorId === userId;
+      if (!isStaff && !isOwner && !isAssignedContractor) {
+        return res.status(403).json({ error: "Access denied: You do not have permission to view this job request." });
+      }
+      return res.json(formatJob(job));
+    } catch (error) {
+      console.error("[Jobs/GetSingle]", error);
+      return res.status(500).json({ error: "Failed to retrieve job details" });
+    }
+  });
   router12.patch("/:id/status", requireAuth, async (req, res) => {
     const { status } = req.body;
     const progressMap = {
@@ -4447,6 +4562,47 @@ function createJobsRouter(io) {
     try {
       const job = await prisma.job.findUnique({ where: { id: req.params.id } });
       if (!job) return res.status(404).json({ error: "Job not found" });
+      const userRole = req.user.role;
+      const userId = req.user.id;
+      const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+      const isAssignedContractor = job.assignedContractorId === userId;
+      const isCustomerOwner = job.customerId === userId;
+      if (!isStaff && !isAssignedContractor && !isCustomerOwner) {
+        await writeAuditLog({
+          userId,
+          userType: userRole,
+          action: "Unauthorized Job Status Change Attempt",
+          result: "Failed",
+          details: `User ${userId} (${userRole}) attempted unauthorized status update to "${status}" on Job ${job.id}`,
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"]
+        });
+        return res.status(403).json({ error: "Access denied: You are not authorized to update this job status." });
+      }
+      if (isCustomerOwner && !isStaff && !isAssignedContractor) {
+        if (status !== "Cancelled") {
+          return res.status(403).json({ error: "Customers are only permitted to cancel their request." });
+        }
+        const cancellableStatuses = ["Payment Required", "Requested", "Request Under Review", "Accepted", "Awaiting Dispatch"];
+        if (!cancellableStatuses.includes(job.status)) {
+          return res.status(400).json({ error: `Cannot cancel request: Service team has already been dispatched (${job.status}).` });
+        }
+      }
+      if (isAssignedContractor && !isStaff) {
+        const contractorAllowedStatuses = [
+          "Preparing for Dispatch",
+          "Team En Route",
+          "En Route",
+          "Arrived",
+          "Assistance In Progress",
+          "Service In Progress",
+          "In Progress",
+          "Work Completed"
+        ];
+        if (!contractorAllowedStatuses.includes(status)) {
+          return res.status(403).json({ error: `Service providers cannot transition job status to "${status}".` });
+        }
+      }
       const DISPATCH_WORKFLOW_STATUSES = [
         "Service Provider Assigned",
         "Preparing for Dispatch",
@@ -4507,6 +4663,15 @@ function createJobsRouter(io) {
     const { lat, lng, estimatedArrivalMinutes, distanceRemainingKm } = req.body;
     if (lat === void 0 || lng === void 0) return res.status(400).json({ error: "lat and lng are required" });
     try {
+      const existingJob = await prisma.job.findUnique({ where: { id: req.params.id } });
+      if (!existingJob) return res.status(404).json({ error: "Job not found" });
+      const userRole = req.user.role;
+      const userId = req.user.id;
+      const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+      const isAssignedContractor = existingJob.assignedContractorId === userId;
+      if (!isStaff && !isAssignedContractor) {
+        return res.status(403).json({ error: "Access denied: Only the assigned responder or control room dispatch can broadcast GPS coordinates." });
+      }
       const job = await prisma.job.update({
         where: { id: req.params.id },
         data: {
@@ -5046,10 +5211,16 @@ router16.get("/balance", requireAuth, async (req, res) => {
   }
 });
 router16.post("/top-up", requireAuth, async (req, res) => {
-  const { amount, description } = req.body;
+  const { amount, description, gatewayReference, transactionRef } = req.body;
   const numAmount = parseFloat(amount);
   if (isNaN(numAmount) || numAmount <= 0) {
     return res.status(400).json({ error: "Valid positive top-up amount required" });
+  }
+  const isAdmin = req.user.role === "Administrator" || req.user.role === "Super Administrator";
+  if (!isAdmin && !gatewayReference && !transactionRef) {
+    return res.status(400).json({
+      error: "Unverified wallet top-up: A valid payment gateway transaction reference is required to credit funds."
+    });
   }
   try {
     let wallet = await prisma.wallet.findUnique({ where: { userId: req.user.id } });
@@ -5214,14 +5385,33 @@ router18.get("/my", requireAuth, requireRoles("Customer"), async (req, res) => {
 router18.post("/change-plan", requireAuth, async (req, res) => {
   const { planId, customerId, reason } = req.body;
   if (!planId) return res.status(400).json({ error: "planId is required" });
-  const targetUserId = customerId && (req.user.role === "Administrator" || req.user.role === "Super Administrator") ? customerId : req.user.id;
+  const isAdmin = req.user.role === "Administrator" || req.user.role === "Super Administrator";
+  if (!isAdmin && customerId && customerId !== req.user.id) {
+    return res.status(403).json({ error: "Access denied: You cannot change another customer's plan." });
+  }
+  const targetUserId = isAdmin && customerId ? customerId : req.user.id;
   try {
+    if (!isAdmin) {
+      const schedule = await initializeMembershipWithSchedule({
+        userId: targetUserId,
+        planId,
+        billingDay: 25,
+        autoProcessInitial: false,
+        startDate: /* @__PURE__ */ new Date()
+      });
+      return res.json({
+        success: true,
+        message: "Plan change initiated. Please complete the activation payment to unlock your new assistance benefits.",
+        requiresPayment: true,
+        schedule
+      });
+    }
     const newMembership = await changeCustomerPlan({
       userId: targetUserId,
       newPlanId: planId,
       actorId: req.user.id,
       actorRole: req.user.role,
-      reason
+      reason: reason || "Administrative authorization"
     });
     const summary = await getMemberBenefitSummary(targetUserId);
     return res.json({
@@ -5419,7 +5609,10 @@ router19.get("/:id", requireAuth, async (req, res) => {
       }
     });
     if (!claim) return res.status(404).json({ error: "Claim not found" });
-    if (req.user.role === "Customer" && claim.userId !== req.user.id) {
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isOwner = claim.userId === req.user.id;
+    if (!isStaff && !isOwner) {
       return res.status(403).json({ error: "Access denied. You can only view your own claims." });
     }
     return res.json(claim);
@@ -5684,7 +5877,10 @@ router20.get("/:id", requireAuth, async (req, res) => {
       }
     });
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isOwner = invoice.userId === req.user.id || invoice.customerEmail && req.user.email && invoice.customerEmail.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isOwner) {
       return res.status(403).json({ error: "Access denied. You can only view your own invoices." });
     }
     return res.json(invoice);
@@ -5704,8 +5900,11 @@ router20.get("/:id/pdf", requireAuth, async (req, res) => {
       }
     });
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
-      return res.status(403).json({ error: "Access denied." });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isOwner = invoice.userId === req.user.id || invoice.customerEmail && req.user.email && invoice.customerEmail.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: "Access denied. You can only download your own invoices." });
     }
     const pdfBuffer = await generateInvoicePDF({
       id: invoice.id,
@@ -5833,8 +6032,11 @@ router20.patch("/:id/pay", requireAuth, async (req, res) => {
       include: { user: true }
     });
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });
-    if (req.user.role === "Customer" && invoice.userId !== req.user.id) {
-      return res.status(403).json({ error: "Access denied." });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isOwner = invoice.userId === req.user.id || invoice.customerEmail && req.user.email && invoice.customerEmail.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: "Access denied. You can only settle your own invoices." });
     }
     if (invoice.paymentStatus === "Paid") {
       return res.status(400).json({ error: "Invoice is already paid in full." });
@@ -5893,13 +6095,45 @@ try {
   console.error("[Vercel DB Init]", e);
 }
 var app = express();
-app.use(cors({ origin: true, credentials: true }));
+app.disable("x-powered-by");
+var trustedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://same-day-assist.vercel.app",
+  "https://samedayassist.co.za",
+  "https://www.samedayassist.co.za",
+  process.env.CLIENT_URL,
+  process.env.APP_URL
+].filter(Boolean);
+var isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (trustedOrigins.includes(origin)) return true;
+  if (/^https:\/\/same-day-assist(-[a-zA-Z0-9_-]+)?\.vercel\.app$/.test(origin)) return true;
+  if (origin.startsWith("capacitor://") || origin.startsWith("ionic://") || origin === "http://localhost") return true;
+  return false;
+};
+app.use(cors({
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Cross-Origin Request Blocked by Same Day Assist Security Policy"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID", "X-Requested-With"]
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   next();
 });
 app.get("/health", async (req, res) => {
@@ -5938,7 +6172,7 @@ app.use("/api/wallet", wallet_default);
 app.use("/api/memberships", memberships_default);
 app.use("/api/claims", claims_default);
 app.use("/api/invoices", invoices_default);
-app.get("/api/pdf/quotation/:id", async (req, res) => {
+app.get("/api/pdf/quotation/:id", requireAuth, async (req, res) => {
   try {
     const { generateQuotationPDF: generateQuotationPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
     const quotation = await prisma.quotation.findUnique({
@@ -5946,6 +6180,12 @@ app.get("/api/pdf/quotation/:id", async (req, res) => {
       include: { enquiry: true }
     });
     if (!quotation) return res.status(404).json({ error: "Quotation not found" });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isOwner = quotation.enquiry && req.user.email && quotation.enquiry.email.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isOwner) {
+      return res.status(403).json({ error: "Access denied: You are not authorized to download this quotation document." });
+    }
     const lineItems = JSON.parse(quotation.lineItems);
     const pdfBuffer = await generateQuotationPDF2({
       id: quotation.id,
@@ -5964,14 +6204,20 @@ app.get("/api/pdf/quotation/:id", async (req, res) => {
     return res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
-app.get("/api/pdf/invoice/:id", async (req, res) => {
+app.get("/api/pdf/invoice/:id", requireAuth, async (req, res) => {
   try {
     const { generateInvoicePDF: generateInvoicePDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
     const invoice = await prisma.invoice.findFirst({
       where: { OR: [{ id: req.params.id }, { invoiceNumber: req.params.id }] },
       include: { user: true, claim: true }
     });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
     if (invoice) {
+      const isOwner = invoice.userId === req.user.id || invoice.customerEmail && req.user.email && invoice.customerEmail.toLowerCase() === req.user.email.toLowerCase();
+      if (!isStaff && !isOwner) {
+        return res.status(403).json({ error: "Access denied: You are not authorized to download this invoice." });
+      }
       const pdfBuffer2 = await generateInvoicePDF2({
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
@@ -6003,6 +6249,10 @@ app.get("/api/pdf/invoice/:id", async (req, res) => {
       include: { customer: true }
     });
     if (!payment) return res.status(404).json({ error: "Invoice record not found" });
+    const isPaymentOwner = payment.customerId === req.user.id || payment.customer?.email && req.user.email && payment.customer.email.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isPaymentOwner) {
+      return res.status(403).json({ error: "Access denied: You are not authorized to download this receipt." });
+    }
     const pdfBuffer = await generateInvoicePDF2({
       id: payment.id,
       customerName: payment.customerName,
@@ -6019,7 +6269,7 @@ app.get("/api/pdf/invoice/:id", async (req, res) => {
     return res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
-app.get("/api/pdf/completion/:id", async (req, res) => {
+app.get("/api/pdf/completion/:id", requireAuth, async (req, res) => {
   try {
     const { generateCompletionReportPDF: generateCompletionReportPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
     const job = await prisma.job.findUnique({
@@ -6030,6 +6280,13 @@ app.get("/api/pdf/completion/:id", async (req, res) => {
       }
     });
     if (!job || !job.completedAt) return res.status(404).json({ error: "Completed job not found" });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isJobCustomer = job.customerId === req.user.id;
+    const isAssignedContractor = job.assignedContractorId === req.user.id;
+    if (!isStaff && !isJobCustomer && !isAssignedContractor) {
+      return res.status(403).json({ error: "Access denied: You are not authorized to download this completion certificate." });
+    }
     const pdfBuffer = await generateCompletionReportPDF2({
       jobId: job.id,
       customerName: job.customer?.name || job.nonMemberName || "Customer",
@@ -6048,7 +6305,7 @@ app.get("/api/pdf/completion/:id", async (req, res) => {
     return res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
-app.get("/api/pdf/assessment/:id", async (req, res) => {
+app.get("/api/pdf/assessment/:id", requireAuth, async (req, res) => {
   try {
     const { generateAssessmentReportPDF: generateAssessmentReportPDF2 } = await Promise.resolve().then(() => (init_pdf(), pdf_exports));
     const assessment = await prisma.assessment.findUnique({
@@ -6059,6 +6316,13 @@ app.get("/api/pdf/assessment/:id", async (req, res) => {
       }
     });
     if (!assessment) return res.status(404).json({ error: "Assessment not found" });
+    const userRole = req.user.role;
+    const isStaff = ["Administrator", "Super Administrator", "Dispatcher", "ADMIN"].includes(userRole);
+    const isContractor = assessment.contractorId === req.user.id;
+    const isCustomer = assessment.enquiry && req.user.email && assessment.enquiry.email.toLowerCase() === req.user.email.toLowerCase();
+    if (!isStaff && !isContractor && !isCustomer) {
+      return res.status(403).json({ error: "Access denied: You are not authorized to download this technical assessment survey." });
+    }
     let parsedData = {};
     if (assessment.structuredData) {
       try {
