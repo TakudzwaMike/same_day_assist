@@ -200,38 +200,46 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         let updated = { ...prev };
         let idx = 0;
 
+        const toArray = (val: any): any[] => (Array.isArray(val) ? val : []);
+
         if (isClient) {
-          updated.jobs = (results[idx++] || []).map(normalizeJob);
-          updated.quotations = results[idx++] || [];
-          updated.assessments = results[idx++] || [];
+          const rawJobs = results[idx++];
+          updated.jobs = toArray(rawJobs).map(normalizeJob);
+          updated.quotations = toArray(results[idx++]);
+          updated.assessments = toArray(results[idx++]);
           const myPayRes = results[idx++];
-          updated.payments = Array.isArray(myPayRes) ? myPayRes : (myPayRes?.payments || []);
+          updated.payments = Array.isArray(myPayRes) ? myPayRes : toArray(myPayRes?.payments);
           updated.paymentTimeline = myPayRes?.timeline || null;
-          updated.vehicles = results[idx++] || [];
-          updated.benefitSummary = results[idx++] || undefined;
-          updated.claims = results[idx++] || [];
-          updated.invoices = results[idx++] || [];
+          updated.vehicles = toArray(results[idx++]);
+          const rawBenefit = results[idx++];
+          updated.benefitSummary = (rawBenefit && typeof rawBenefit === 'object' && !Array.isArray(rawBenefit) && rawBenefit.planName) ? rawBenefit : undefined;
+          updated.claims = toArray(results[idx++]);
+          updated.invoices = toArray(results[idx++]);
         } else if (isAdmin) {
-          updated.jobs = (results[idx++] || []).map(normalizeJob);
-          updated.enquiries = results[idx++] || [];
-          updated.quotations = results[idx++] || [];
-          updated.assessments = results[idx++] || [];
+          const rawJobs = results[idx++];
+          updated.jobs = toArray(rawJobs).map(normalizeJob);
+          updated.enquiries = toArray(results[idx++]);
+          updated.quotations = toArray(results[idx++]);
+          updated.assessments = toArray(results[idx++]);
           const allPayRes = results[idx++];
-          updated.payments = Array.isArray(allPayRes) ? allPayRes : (allPayRes?.payments || []);
-          updated.vehicles = results[idx++] || [];
-          updated.auditLogs = results[idx++]?.logs || [];
-          updated.claims = results[idx++] || [];
-          updated.invoices = results[idx++] || [];
+          updated.payments = Array.isArray(allPayRes) ? allPayRes : toArray(allPayRes?.payments);
+          updated.vehicles = toArray(results[idx++]);
+          const rawAudit = results[idx++];
+          updated.auditLogs = toArray(rawAudit?.logs || rawAudit);
+          updated.claims = toArray(results[idx++]);
+          updated.invoices = toArray(results[idx++]);
         } else if (isDispatcher) {
-          updated.jobs = (results[idx++] || []).map(normalizeJob);
-          updated.enquiries = results[idx++] || [];
-          updated.quotations = results[idx++] || [];
-          updated.assessments = results[idx++] || [];
-          updated.claims = results[idx++] || [];
-          updated.invoices = results[idx++] || [];
+          const rawJobs = results[idx++];
+          updated.jobs = toArray(rawJobs).map(normalizeJob);
+          updated.enquiries = toArray(results[idx++]);
+          updated.quotations = toArray(results[idx++]);
+          updated.assessments = toArray(results[idx++]);
+          updated.claims = toArray(results[idx++]);
+          updated.invoices = toArray(results[idx++]);
         } else if (isContractor) {
-          updated.jobs = (results[idx++] || []).map(normalizeJob);
-          updated.assessments = results[idx++] || [];
+          const rawJobs = results[idx++];
+          updated.jobs = toArray(rawJobs).map(normalizeJob);
+          updated.assessments = toArray(results[idx++]);
         }
 
         updated.selectedRole = user?.role as any;

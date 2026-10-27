@@ -13,7 +13,13 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma db push && tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "cap:sync": "vite build && cap sync",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "cap:run:android": "cap run android",
+    "cap:build:android": "vite build && cap copy android",
+    "cap:build:apk": "npm run cap:sync && cd android && gradlew.bat assembleDebug && cd .."
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -22,6 +28,7 @@
     "@capacitor/android": "^8.4.2",
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.5.3",
     "@google/genai": "^2.4.0",
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^7.8.0",

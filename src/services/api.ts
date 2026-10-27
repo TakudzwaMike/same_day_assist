@@ -1,12 +1,22 @@
 import { Capacitor } from '@capacitor/core';
 
-const getBaseUrl = () => {
+export const getBaseUrl = (): string => {
   const metaEnv = (import.meta as any).env;
-  if (metaEnv && metaEnv.VITE_API_URL && !metaEnv.VITE_API_URL.includes('loca.lt')) {
-    return metaEnv.VITE_API_URL;
-  }
+
+  // On native platforms (Android / iOS)
   if (Capacitor.isNativePlatform()) {
+    const custom = typeof window !== 'undefined' ? localStorage.getItem('sda_api_url') : null;
+    if (custom) return custom;
+    if (metaEnv && metaEnv.VITE_MOBILE_API_URL) return metaEnv.VITE_MOBILE_API_URL;
+    // Default to port 5000:
+    // With `adb reverse tcp:5000 tcp:5000` (USB) or emulator (10.0.2.2), connect to local dev server
+    // Wi-Fi fallback: 192.168.3.204
     return 'http://10.0.2.2:5000/api';
+  }
+
+  // Web browser environment
+  if (metaEnv && metaEnv.VITE_API_URL && metaEnv.VITE_API_URL !== '/api' && !metaEnv.VITE_API_URL.includes('loca.lt')) {
+    return metaEnv.VITE_API_URL;
   }
   return '/api';
 };
@@ -115,7 +125,20 @@ class ApiClient {
       }
     }
 
-    const data = await res.json().catch(() => ({}));
+    const contentType = res.headers.get('content-type') || '';
+    const rawText = await res.text().catch(() => '');
+    const isHtml = contentType.includes('text/html') || rawText.trim().startsWith('<!DOCTYPE') || rawText.trim().startsWith('<html');
+
+    if (isHtml) {
+      throw new Error(`Endpoint ${endpoint} returned HTML (SPA fallback or offline). Server may be offline or unreachable.`);
+    }
+
+    let data: any = {};
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      throw new Error(`Failed to parse response JSON from ${endpoint}`);
+    }
 
     if (!res.ok) {
       const serverMsg = data.error;
