@@ -33,7 +33,12 @@ export default function ContractorApp() {
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return true;
+  });
   const [contractorTab, setContractorTab] = useState<'jobs' | 'surveys' | 'chat' | 'earnings' | 'teamHub'>('jobs');
 
   const verificationStatus = user?.verificationStatus || 'Pending Review';
@@ -87,17 +92,17 @@ export default function ContractorApp() {
   ];
 
   return (
-    <div className={`w-full min-h-[700px] border rounded-3xl shadow-xl flex flex-col overflow-hidden animate-fadeIn transition-colors duration-200 ${
+    <div className={`w-full min-h-screen md:min-h-[700px] border-0 md:border rounded-none md:rounded-3xl shadow-none md:shadow-xl flex flex-col flex-1 overflow-hidden animate-fadeIn transition-colors duration-200 ${
       isDark 
         ? 'bg-[#050E20] border-[#142D59] text-slate-100' 
         : 'bg-slate-50 border-slate-200 text-slate-900'
     }`}>
       {/* BRANDING HEADER */}
-      <div className={`px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 border-b relative ${
+      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 ${
         isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-navy text-white border-navy-light'
       }`}>
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Sidebar toggle button */}
             <button
               type="button"
@@ -202,14 +207,24 @@ export default function ContractorApp() {
       </div>
 
       {/* TWO-COLUMN LAYOUT: VERTICAL NAVIGATION SIDEBAR + CONTENT VIEWS */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop Overlay when sidebar is open */}
+        {!isSidebarCollapsed && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-fadeIn"
+            onClick={() => setIsSidebarCollapsed(true)}
+          />
+        )}
+
         {/* VERTICAL SIDEBAR MENU */}
         <aside
-          className={`border-r transition-all duration-300 flex flex-col justify-between shrink-0 select-none ${
-            isSidebarCollapsed ? 'w-18' : 'w-64'
+          className={`border-r transition-all duration-300 flex flex-col justify-between shrink-0 select-none z-50 ${
+            isSidebarCollapsed 
+              ? 'hidden md:flex md:w-18' 
+              : 'fixed inset-y-0 left-0 w-72 max-w-[85vw] shadow-2xl md:shadow-none md:relative md:w-64'
           } ${
             isDark 
-              ? 'bg-[#091C3E]/80 border-[#142D59]' 
+              ? 'bg-[#091C3E] border-[#142D59]' 
               : 'bg-white border-slate-200'
           }`}
         >
@@ -238,6 +253,9 @@ export default function ContractorApp() {
                       tab.onClick();
                     } else {
                       setContractorTab(tab.id as any);
+                    }
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setIsSidebarCollapsed(true);
                     }
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer text-left relative group ${
@@ -300,10 +318,10 @@ export default function ContractorApp() {
         </aside>
 
         {/* MAIN VIEW CONTENT CONTAINER */}
-        <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 transition-colors duration-200 ${
+        <main className={`flex-1 overflow-y-auto p-2.5 sm:p-5 md:p-6 lg:p-8 transition-colors duration-200 ${
           isDark ? 'bg-[#050E20]/60' : 'bg-slate-50/50'
         }`}>
-          <div className="max-w-5xl mx-auto flex flex-col gap-6">
+          <div className="max-w-5xl mx-auto flex flex-col gap-6 w-full">
             {contractorTab === 'jobs' && <ContractorDashboard />}
             {contractorTab === 'surveys' && <InspectorSurveyPortal />}
             {contractorTab === 'teamHub' && <TechnicalTeamHub />}
@@ -312,6 +330,45 @@ export default function ContractorApp() {
           </div>
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <nav className={`md:hidden border-t px-2 py-1.5 flex items-center justify-around z-30 shrink-0 select-none ${
+        isDark ? 'bg-[#091C3E] border-[#142D59]' : 'bg-white border-slate-200'
+      }`}>
+        {tabs.filter(t => t.id !== 'settings').map((tab) => {
+          const isActive = contractorTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                if (tab.onClick) {
+                  tab.onClick();
+                } else {
+                  setContractorTab(tab.id as any);
+                }
+              }}
+              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
+                isActive 
+                  ? 'text-red font-bold' 
+                  : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-navy'
+              }`}
+            >
+              <div className="relative">
+                <tab.icon className="w-5 h-5" />
+                {tab.badge ? (
+                  <span className="absolute -top-1 -right-2 bg-red text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+                    {typeof tab.badge === 'number' ? tab.badge : '!'}
+                  </span>
+                ) : null}
+              </div>
+              <span className="text-[9px] mt-0.5 tracking-tight truncate max-w-[68px]">
+                {tab.label.split(' ')[0]}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* VETTING MODAL */}
       {showVettingModal && (

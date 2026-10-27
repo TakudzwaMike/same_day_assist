@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Same Day Assist',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true
   }
 };

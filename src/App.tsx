@@ -535,7 +535,7 @@ export default function App() {
 
   // 2. RENDER THE CORRESPONDING ACTIVE PORTAL IF AUTHENTICATED
   return (
-    <div className={`min-h-screen flex flex-col justify-between font-sans gap-8 transition-colors duration-200 ${
+    <div className={`min-h-screen flex flex-col justify-between font-sans gap-0 md:gap-8 transition-colors duration-200 ${
       theme === 'light' ? 'bg-[#F1F5F9] text-navy' : 'bg-slate-950 text-slate-100'
     }`}>
       {!isOnline && (
@@ -544,16 +544,20 @@ export default function App() {
           <span>TERMINAL CONNECTION LOST • OPERATING OFFLINE</span>
         </div>
       )}
-      {/* Dynamic Active Portal */}
-      <div className="flex-1 flex flex-col justify-center p-4 md:p-8">
+      {/* Dynamic Active Portal - Edge to edge full screen on mobile */}
+      <div className="flex-1 flex flex-col justify-start md:justify-center p-0 md:p-6 lg:p-8 w-full">
         {user?.role === 'Customer' && (
-          <div className="w-full">
+          <div className="w-full flex-1 flex flex-col">
             <CustomerApp />
           </div>
         )}
-        {user?.role === 'Contractor' && <ContractorApp />}
+        {user?.role === 'Contractor' && (
+          <div className="w-full flex-1 flex flex-col">
+            <ContractorApp />
+          </div>
+        )}
         {(user?.role === 'Dispatcher' || user?.role === 'Administrator' || user?.role === 'Super Administrator') && (
-          <div className="w-full text-slate-900">
+          <div className="w-full flex-1 flex flex-col text-slate-900">
             <AdminPortal />
           </div>
         )}
