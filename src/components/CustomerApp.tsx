@@ -151,12 +151,12 @@ export default function CustomerApp() {
             <div>
               <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
               <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">
-                CONSUMER COMMAND PORTAL • JOHANNESBURG DISPATCH
+                Member Emergency & Assist Portal
               </p>
             </div>
           </div>
 
-          <span className="text-[10px] text-slate-300 font-mono lg:hidden">
+          <span className="text-[10px] text-slate-300 font-medium lg:hidden">
             {activeCustomer?.package || 'Diamond'} Tier
           </span>
         </div>
@@ -165,25 +165,17 @@ export default function CustomerApp() {
         <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
           <div className="hidden sm:flex gap-4 text-right">
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Node Link</span>
-              <span className="text-xs font-bold text-emerald-400 font-mono">SECURE SSL</span>
-            </div>
-            <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Membership Tier</span>
-              <span className="text-xs font-bold text-white font-mono flex items-center gap-1 justify-end">
+              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Membership Tier</span>
+              <span className="text-xs font-bold text-white flex items-center gap-1 justify-end">
                 <Award className="w-3.5 h-3.5 text-amber-400" />
                 {activeCustomer?.package || 'Diamond'}
               </span>
             </div>
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Account Status</span>
-              <span className={`text-xs font-bold font-mono ${isFullyActive ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Account Status</span>
+              <span className={`text-xs font-bold ${isFullyActive ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {isFullyActive ? 'ACTIVE MEMBER' : 'PENDING ACTIVATION'}
               </span>
-            </div>
-            <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">SLA Standards</span>
-              <span className="text-xs font-bold text-red font-mono">24/7 RAPID DISPATCH</span>
             </div>
           </div>
 

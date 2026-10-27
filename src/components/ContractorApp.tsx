@@ -122,12 +122,12 @@ export default function ContractorApp() {
             <div>
               <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
               <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">
-                TECHNICAL RESPONDER TERMINAL • DISPATCH HUB
+                Contractor & Responder Portal
               </p>
             </div>
           </div>
 
-          <span className="text-[10px] text-slate-300 font-mono lg:hidden">
+          <span className="text-[10px] text-slate-300 font-medium lg:hidden">
             {user?.specialty || 'Certified Responder'}
           </span>
         </div>
@@ -136,15 +136,11 @@ export default function ContractorApp() {
         <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
           <div className="hidden sm:flex gap-4 text-right">
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Node Link</span>
-              <span className="text-xs font-bold text-emerald-400 font-mono">SECURE SSL</span>
-            </div>
-            <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Vetting Status</span>
+              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Vetting Status</span>
               <button
                 type="button"
                 onClick={() => setShowVettingModal(true)}
-                className={`text-xs font-bold font-mono cursor-pointer hover:underline ${
+                className={`text-xs font-bold cursor-pointer hover:underline ${
                   verificationStatus === 'Approved' ? 'text-emerald-400' : 'text-amber-400'
                 }`}
               >
@@ -152,22 +148,18 @@ export default function ContractorApp() {
               </button>
             </div>
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Availability</span>
+              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Availability</span>
               <button
                 type="button"
                 onClick={() => setIsOnline(!isOnline)}
-                className={`text-xs font-bold font-mono cursor-pointer flex items-center gap-1 justify-end ${
+                className={`text-xs font-bold cursor-pointer flex items-center gap-1 justify-end ${
                   isOnline ? 'text-emerald-400' : 'text-red'
                 }`}
                 title="Click to toggle availability"
               >
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-red'}`} />
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-red'}`} />
                 {isOnline ? 'ONLINE & READY' : 'OFFLINE'}
               </button>
-            </div>
-            <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">SLA Standards</span>
-              <span className="text-xs font-bold text-red font-mono">99.4% ON-TIME</span>
             </div>
           </div>
 

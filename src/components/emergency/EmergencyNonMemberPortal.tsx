@@ -199,8 +199,8 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans relative overflow-x-hidden">
-      {/* Background glow styling */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-red/10 rounded-full blur-[140px] pointer-events-none"></div>
+      {/* Subtle Navy Ambient Light */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-slate-900/60 rounded-full blur-[140px] pointer-events-none"></div>
 
       {/* HEADER */}
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
@@ -213,8 +213,8 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
               </h1>
               <span className="text-[9px] font-bold text-red uppercase tracking-widest font-mono">EMERGENCY</span>
             </div>
-            <p className="text-[9px] font-mono tracking-wider text-amber-400">
-              NON-MEMBER DISPATCH GATEWAY
+            <p className="text-[9px] tracking-wider text-slate-400 font-medium">
+              Non-Member Emergency Assist
             </p>
           </div>
         </div>
@@ -281,10 +281,12 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
         {viewMode === 'create' && (
           <div className="w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 animate-fadeIn">
             {/* Clear Non-Member Banner with Prompt Requirements */}
-            <div className="bg-gradient-to-r from-red/20 via-amber-500/10 to-red/10 border-2 border-red/40 rounded-2xl p-5 shadow-lg space-y-3">
-              <div className="flex items-center gap-2 text-red font-black text-sm uppercase tracking-wide">
-                <AlertTriangle className="w-5 h-5 animate-pulse shrink-0" />
-                <span>EMERGENCY ASSISTANCE FOR NON-MEMBERS</span>
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-md space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 bg-red text-white text-xs font-bold rounded-lg uppercase tracking-wide">
+                  Emergency Assistance
+                </span>
+                <span className="text-xs font-bold text-slate-300">Non-Member Dispatch</span>
               </div>
               <p className="text-xs text-slate-200 leading-relaxed font-medium">
                 Not a Same Day Assist monthly member? You can request immediate emergency assistance for our certified property and security services.
@@ -557,11 +559,13 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
               </div>
             </div>
 
-            {/* Locked Dispatch Notice */}
-            <div className="bg-red/10 border-2 border-red/40 rounded-2xl p-4 flex items-start gap-3 text-xs">
-              <AlertTriangle className="w-5 h-5 text-red shrink-0 mt-0.5 animate-pulse" />
+            {/* Dispatch Notice */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex items-start gap-3 text-xs">
+              <div className="p-2 bg-red text-white rounded-lg shrink-0 mt-0.5 shadow-sm">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
               <div>
-                <h5 className="font-bold text-red uppercase text-xs">Dispatch Status: Payment Required</h5>
+                <h5 className="font-bold text-white uppercase text-xs">Dispatch Status: Payment Required</h5>
                 <p className="text-slate-300 mt-1 leading-relaxed">
                   Our operations team has received your incident request for <strong>{trackedJob.serviceType}</strong> at <strong>{trackedJob.customerAddress}</strong>.
                   Per Same Day Assist safety protocol, the response unit is staged and ready, but <strong>will NOT be dispatched until the R650 call-out fee is verified</strong>.

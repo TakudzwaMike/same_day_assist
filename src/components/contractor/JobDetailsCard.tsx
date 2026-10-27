@@ -321,12 +321,14 @@ export default function JobDetailsCard({ activeJob, activeContractor }: JobDetai
       {(activeJob.status === 'Arrived' || isCompleted) && (
         <form onSubmit={handleCompletionSubmit} className="flex flex-col gap-4 border-t border-zinc-800 pt-4 animate-fadeIn">
           {/* PROTOCOL INSTRUCTION BANNER */}
-          <div className="bg-gradient-to-r from-red/10 via-zinc-900 to-zinc-900 border border-red/30 rounded-2xl p-3.5">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5">
             <div className="flex items-start gap-2.5">
-              <FileCheck className="w-5 h-5 text-red shrink-0 mt-0.5" />
+              <div className="p-1.5 bg-red text-white rounded-lg shrink-0 mt-0.5 shadow-sm">
+                <FileCheck className="w-4 h-4" />
+              </div>
               <div>
                 <h4 className="text-[11px] font-bold text-white uppercase tracking-wider font-brand-header">
-                  Compulsory Ground Handover Protocol
+                  Compulsory Handover Protocol
                 </h4>
                 <p className="text-[9.5px] text-zinc-300 mt-1 leading-relaxed">
                   Before signing off this job, service providers <strong className="text-white">MUST</strong> record verifiable photographic/video evidence:

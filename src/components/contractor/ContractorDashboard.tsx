@@ -148,8 +148,8 @@ export default function ContractorDashboard() {
       {!pendingAssessment && !activeJob && (
         <EmptyState 
           icon={Shield}
-          title="CRUISER DISPATCH STANDBY"
-          description="Operational channels verified. You are currently on standby for rapid dispatch panic assistance. Keep terminal connection open."
+          title="Standby for Dispatches"
+          description="You are currently on standby for rapid emergency response in your area. Keep your status online to receive incoming job dispatches."
         />
       )}
     </div>

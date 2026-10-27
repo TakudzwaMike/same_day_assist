@@ -142,24 +142,22 @@ export default function AdminPortal() {
         {/* STATS TRAY, THEME TOGGLE (Item 13), SETTINGS & LOGOUT */}
         <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
           <div className="hidden sm:flex gap-4 text-right">
-            <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Node Link</span>
-              <span className="text-xs font-bold text-emerald-400 font-mono">SECURE SSL</span>
-            </div>
             {role === 'Dispatcher' ? (
               <div>
-                <span className="text-[9px] text-slate-300/80 uppercase font-mono block">Active Enquiries</span>
+                <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Active Enquiries</span>
                 <span className="text-xs font-bold text-white font-mono">{state.enquiries.length}</span>
               </div>
             ) : (
               <div>
-                <span className="text-[9px] text-slate-300/80 uppercase font-mono block">ZAR Invoiced</span>
+                <span className="text-[9px] text-slate-300/80 uppercase font-medium block">ZAR Invoiced</span>
                 <span className="text-xs font-bold text-white font-mono">R{totalRevenue.toLocaleString()}</span>
               </div>
             )}
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-mono block">SLA Standards</span>
-              <span className="text-xs font-bold text-red font-mono">99.4% ON-TIME</span>
+              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Active Jobs</span>
+              <span className="text-xs font-bold text-emerald-400 font-mono">
+                {state.jobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled').length} Live
+              </span>
             </div>
           </div>
 
