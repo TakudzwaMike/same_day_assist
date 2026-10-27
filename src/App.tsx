@@ -128,6 +128,22 @@ export default function App() {
     }
   };
 
+  const handleDemoLogin = async (email: string, pass: string) => {
+    if (loginLoading || isLocked) return;
+    setLoginEmail(email);
+    setLoginPassword(pass);
+    setLoginLoading(true);
+    clearError();
+    try {
+      await login(email, pass);
+      setFailedAttempts(0);
+    } catch (err: any) {
+      console.warn('Demo login completed or error handled:', err);
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
@@ -414,85 +430,69 @@ export default function App() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         Demo Accounts
                       </span>
-                      <span className="text-[9px] text-slate-400">Tap to populate</span>
+                      <span className="text-[9px] text-slate-400">
+                        {loginLoading ? 'Signing in...' : 'Tap to sign in'}
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[10px]">
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('bright@samedayassist.co.za');
-                          setLoginPassword('12345');
-                          login('bright@samedayassist.co.za', '12345');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('bright@samedayassist.co.za', '12345')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">👤 Bright (Customer)</span>
+                        <span className="truncate font-medium">👤 Bright (Customer)</span>
                         <span className="text-[8px] font-mono text-slate-500">12345</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('lerato@molefefamily.co.za');
-                          setLoginPassword('demo-passcode');
-                          login('lerato@molefefamily.co.za', 'demo-passcode');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('lerato@molefefamily.co.za', 'demo-passcode')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">👤 Lerato (Customer)</span>
+                        <span className="truncate font-medium">👤 Lerato (Customer)</span>
                         <span className="text-[8px] font-mono text-slate-500">demo</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('sipho.ndlovu@samedayassist.co.za');
-                          setLoginPassword('demo-passcode');
-                          login('sipho.ndlovu@samedayassist.co.za', 'demo-passcode');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('sipho.ndlovu@samedayassist.co.za', 'demo-passcode')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">🛠️ Sipho (Security Provider)</span>
+                        <span className="truncate font-medium">🛠️ Sipho (Security)</span>
                         <span className="text-[8px] font-mono text-slate-500">demo</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('jan.deklerk@samedayassist.co.za');
-                          setLoginPassword('demo-passcode');
-                          login('jan.deklerk@samedayassist.co.za', 'demo-passcode');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('jan.deklerk@samedayassist.co.za', 'demo-passcode')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">🛠️ Jan (Electrical Provider)</span>
+                        <span className="truncate font-medium">🛠️ Jan (Electrical)</span>
                         <span className="text-[8px] font-mono text-slate-500">demo</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('controlroom@samedayassist.co.za');
-                          setLoginPassword('demo-passcode');
-                          login('controlroom@samedayassist.co.za', 'demo-passcode');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('controlroom@samedayassist.co.za', 'demo-passcode')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">🛡️ Control Room (Admin)</span>
+                        <span className="truncate font-medium">🛡️ Control Room</span>
                         <span className="text-[8px] font-mono text-slate-500">demo</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setLoginEmail('mike@samedayassist.co.za');
-                          setLoginPassword('12345');
-                          login('mike@samedayassist.co.za', '12345');
-                        }}
-                        className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
+                        disabled={loginLoading || isLocked}
+                        onClick={() => handleDemoLogin('mike@samedayassist.co.za', '12345')}
+                        className="px-2.5 py-2 bg-slate-950 hover:bg-slate-800 disabled:opacity-50 border border-slate-800 rounded-lg text-left text-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                       >
-                        <span className="truncate">⚡ Mike (Super Admin)</span>
+                        <span className="truncate font-medium">⚡ Mike (Super Admin)</span>
                         <span className="text-[8px] font-mono text-slate-500">12345</span>
                       </button>
                     </div>

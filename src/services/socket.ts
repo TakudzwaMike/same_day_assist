@@ -8,7 +8,7 @@ const getSocketUrl = () => {
   if (Capacitor.isNativePlatform()) {
     const custom = typeof window !== 'undefined' ? localStorage.getItem('sda_api_url') : null;
     if (custom) return custom.replace(/\/api\/?$/, '');
-    return 'http://10.0.2.2:5000';
+    return 'http://127.0.0.1:5000';
   }
   if (metaEnv && metaEnv.VITE_API_URL && metaEnv.VITE_API_URL !== '/api') {
     return metaEnv.VITE_API_URL.replace(/\/api\/?$/, '');

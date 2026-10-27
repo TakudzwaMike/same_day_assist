@@ -8,10 +8,8 @@ export const getBaseUrl = (): string => {
     const custom = typeof window !== 'undefined' ? localStorage.getItem('sda_api_url') : null;
     if (custom) return custom;
     if (metaEnv && metaEnv.VITE_MOBILE_API_URL) return metaEnv.VITE_MOBILE_API_URL;
-    // Default to port 5000:
-    // With `adb reverse tcp:5000 tcp:5000` (USB) or emulator (10.0.2.2), connect to local dev server
-    // Wi-Fi fallback: 192.168.3.204
-    return 'http://10.0.2.2:5000/api';
+    // With `adb reverse tcp:5000 tcp:5000` (physical device) or local port forwarding:
+    return 'http://127.0.0.1:5000/api';
   }
 
   // Web browser environment
@@ -78,14 +76,22 @@ class ApiClient {
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const maxRetries = 3;
+    const isAuthEndpoint = endpoint.startsWith('/auth/');
+    const maxRetries = isAuthEndpoint ? 1 : 2;
     let delay = 1000;
     let res: Response | null = null;
     let fetchError: any = null;
 
     for (let i = 0; i < maxRetries; i++) {
       try {
-        res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        res = await fetch(`${BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+          signal: options.signal || controller.signal,
+        });
+        clearTimeout(timeoutId);
         fetchError = null;
         if (res.ok || res.status < 500) {
           break;
