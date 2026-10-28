@@ -202,12 +202,8 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
 
   return (
     <div className={`min-h-screen flex flex-col justify-between font-sans relative overflow-x-hidden transition-colors ${
-      isDark ? 'bg-slate-950 text-slate-100' : 'bg-[#FAFAFA] text-slate-900'
+      isDark ? 'bg-[#050E20] text-slate-100' : 'bg-white text-slate-900'
     }`}>
-      {/* Subtle Navy Ambient Light */}
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 rounded-full blur-[140px] pointer-events-none ${
-        isDark ? 'bg-slate-900/60' : 'bg-red/5'
-      }`}></div>
 
       {/* HEADER */}
       <header className={`border-b py-4 px-6 md:px-12 flex justify-between items-center z-10 transition-colors ${

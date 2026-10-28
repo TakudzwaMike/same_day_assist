@@ -77,9 +77,8 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn pb-12">
       {/* BRANDING HEADER / COMMAND HUB TITLE */}
       <div className={`rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden border transition-colors ${
-        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+        isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-white border-slate-200 text-slate-900'
       }`}>
-        <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1.5">

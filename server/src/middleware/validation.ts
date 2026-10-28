@@ -39,10 +39,10 @@ export const registerSchema = z.object({
 export const enquirySchema = z.object({
   customerName: z.string().min(1).max(255),
   email: z.string().email(),
-  phone: z.string().min(5).max(30),
-  address: z.string().min(1).max(500),
-  serviceCategory: z.string().optional().default('Security'),
-  notes: z.string().max(1000).optional().default(''),
+  phone: z.string().min(3).max(40),
+  address: z.string().max(500).optional().default('Member Communications Hub'),
+  serviceCategory: z.string().optional().default('General Support'),
+  notes: z.string().max(10000).optional().default(''),
 });
 
 export const assessmentUploadSchema = z.object({

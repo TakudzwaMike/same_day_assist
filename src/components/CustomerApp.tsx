@@ -361,7 +361,7 @@ export default function CustomerApp() {
 
         {/* MAIN VIEW CONTENT CONTAINER */}
         <main className={`flex-1 overflow-y-auto p-2.5 sm:p-5 md:p-6 lg:p-8 transition-colors duration-200 ${
-          isDark ? 'bg-[#050E20]' : 'bg-[#FAFAFA]'
+          isDark ? 'bg-[#050E20]' : 'bg-white'
         }`}>
           <div className="max-w-5xl mx-auto flex flex-col gap-6 w-full">
             {activeDeviceTab === 'home' && (

@@ -9,6 +9,7 @@ import { PlanSelectionStep } from './PlanSelectionStep';
 import { PlanConfirmationStep } from './PlanConfirmationStep';
 import { getPlan } from '../../data/plans';
 import { calculatePaymentBreakdown } from '../../utils/paymentStructure';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface OnboardingWizardProps {
   onComplete: (data: any) => Promise<void>;
@@ -16,6 +17,7 @@ interface OnboardingWizardProps {
 }
 
 export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps) {
+  const { isDark } = useTheme();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -197,21 +199,38 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
   const chosenPlan = getPlan(formData.selectedPlanId);
 
+  const inputClass = `w-full rounded-xl px-4 py-3 text-sm font-medium focus:outline-none transition-colors border ${
+    isDark
+      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400 focus:border-red-500'
+      : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+  }`;
+  const labelClass = `block text-xs font-semibold uppercase tracking-wider mb-2 ${
+    isDark ? 'text-slate-400' : 'text-slate-600'
+  }`;
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 max-w-5xl mx-auto shadow-2xl text-slate-100" style={{ colorScheme: 'dark' }}>
+    <div className={`rounded-2xl p-6 md:p-8 max-w-5xl mx-auto shadow-2xl transition-colors border ${
+      isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+    }`}>
       {/* Header */}
-      <div className="flex justify-between items-center pb-6 border-b border-slate-800 mb-6">
+      <div className={`flex justify-between items-center pb-6 border-b mb-6 ${
+        isDark ? 'border-slate-800' : 'border-slate-200'
+      }`}>
         <div>
-          <div className="flex items-center gap-2.5 text-red-500 font-semibold tracking-wider text-xs uppercase mb-1">
-            <img src={logoImg} alt="Same Day Assist Logo" className="w-7 h-7 rounded-full object-contain bg-white p-0.5 shadow-md shrink-0" />
+          <div className="flex items-center gap-2.5 text-red font-semibold tracking-wider text-xs uppercase mb-1">
+            <img src={logoImg} alt="Same Day Assist Logo" className="w-7 h-7 rounded-full object-contain bg-white p-0.5 shadow-md shrink-0 border border-slate-200" />
             <span>Enterprise Customer Onboarding</span>
           </div>
-          <h2 className="text-2xl font-bold text-white">Complete Profile Generation</h2>
-          <p className="text-sm text-slate-400">Step {step} of 9 — {stepsList[step - 1].title}</p>
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy'}`}>Complete Profile Generation</h2>
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Step {step} of 9 — {stepsList[step - 1].title}</p>
         </div>
         <button
           onClick={onCancel}
-          className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer"
+          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
+            isDark 
+              ? 'text-slate-400 hover:text-white border-slate-800 hover:border-slate-700' 
+              : 'text-slate-600 hover:text-navy border-slate-200 hover:border-slate-300 bg-slate-50'
+          }`}
         >
           Cancel
         </button>
@@ -228,15 +247,17 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               <div
                 className={`w-8 h-8 sm:w-9 sm:h-9 mx-auto rounded-xl flex items-center justify-center transition-all ${
                   isDone
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                    ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/50'
                     : isActive
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
-                    : 'bg-slate-800 text-slate-500 border border-slate-700'
+                    ? 'bg-red text-white shadow-lg shadow-red/30'
+                    : isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <span className={`text-[8.5px] sm:text-[9.5px] mt-1.5 block font-medium leading-tight text-center ${isActive ? 'text-white font-bold' : 'text-slate-500 hidden sm:block'}`}>
+              <span className={`text-[8.5px] sm:text-[9.5px] mt-1.5 block font-medium leading-tight text-center ${
+                isActive ? (isDark ? 'text-white font-bold' : 'text-navy font-bold') : (isDark ? 'text-slate-500 hidden sm:block' : 'text-slate-400 hidden sm:block')
+              }`}>
                 {item.title}
               </span>
             </div>
@@ -257,62 +278,62 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         {step === 1 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Full Name *</label>
+              <label className={labelClass}>Full Name *</label>
               <input
                 type="text"
                 autoComplete="name"
                 value={formData.name}
                 onChange={e => handleChange('name', e.target.value)}
                 placeholder="e.g. Takudzwa Mike"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Email Address *</label>
+              <label className={labelClass}>Primary Email Address *</label>
               <input
                 type="email"
                 autoComplete="email"
                 value={formData.email}
                 onChange={e => handleChange('email', e.target.value)}
                 placeholder="mike@samedayassist.co.za"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Primary Phone Number *</label>
+              <label className={labelClass}>Primary Phone Number *</label>
               <input
                 type="tel"
                 autoComplete="tel"
                 value={formData.phone}
                 onChange={e => handleChange('phone', e.target.value)}
                 placeholder="+27 82 555 1234"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Secondary / Landline Phone</label>
+              <label className={labelClass}>Secondary / Landline Phone</label>
               <input
                 type="tel"
                 autoComplete="tel"
                 value={formData.secondaryPhone}
                 onChange={e => handleChange('secondaryPhone', e.target.value)}
                 placeholder="+27 11 555 0192"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">National ID / Passport Number</label>
+              <label className={labelClass}>National ID / Passport Number</label>
               <input
                 type="text"
                 autoComplete="off"
                 value={formData.idNumber}
                 onChange={e => handleChange('idNumber', e.target.value)}
                 placeholder="e.g. 9001015009087"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
           </div>
@@ -321,21 +342,21 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         {/* STEP 2: Account Type */}
         {step === 2 && (
           <div className="space-y-4">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Classification *</label>
+            <label className={labelClass}>Account Classification *</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 type="button"
                 onClick={() => handleChange('accountType', 'Residential')}
                 className={`p-4 rounded-xl border text-left flex items-start gap-4 transition-all cursor-pointer ${
                   formData.accountType === 'Residential'
-                    ? 'border-red-500 bg-red-600/10 text-white shadow-lg shadow-red-600/10'
-                    : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700'
+                    ? 'border-red-500 bg-red-600/10 ' + (isDark ? 'text-white' : 'text-navy') + ' shadow-md'
+                    : isDark ? 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <User className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-sm text-white">Residential / Individual Account</div>
-                  <p className="text-xs text-slate-400 mt-1">For single families, homeowners, tenants, and private residential properties.</p>
+                  <div className={`font-bold text-sm ${isDark ? 'text-white' : 'text-navy'}`}>Residential / Individual Account</div>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>For single families, homeowners, tenants, and private residential properties.</p>
                 </div>
               </button>
 
@@ -344,61 +365,61 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                 onClick={() => handleChange('accountType', 'Business')}
                 className={`p-4 rounded-xl border text-left flex items-start gap-4 transition-all cursor-pointer ${
                   formData.accountType === 'Business'
-                    ? 'border-red-500 bg-red-600/10 text-white shadow-lg shadow-red-600/10'
-                    : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700'
+                    ? 'border-red-500 bg-red-600/10 ' + (isDark ? 'text-white' : 'text-navy') + ' shadow-md'
+                    : isDark ? 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
                 }`}
               >
                 <Building2 className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <div className="font-bold text-sm text-white">Commercial / Corporate Business</div>
-                  <p className="text-xs text-slate-400 mt-1">For commercial offices, factories, retail outlets, and multi-tenant complexes.</p>
+                  <div className={`font-bold text-sm ${isDark ? 'text-white' : 'text-navy'}`}>Commercial / Corporate Business</div>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>For commercial offices, factories, retail outlets, and multi-tenant complexes.</p>
                 </div>
               </button>
             </div>
 
             {formData.accountType === 'Business' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+              <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Company Registered Name *</label>
+                  <label className={labelClass}>Company Registered Name *</label>
                   <input
                     type="text"
                     value={formData.companyName}
                     onChange={e => handleChange('companyName', e.target.value)}
                     placeholder="e.g. Apex Security Solutions (Pty) Ltd"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Company Registration Number</label>
+                  <label className={labelClass}>Company Registration Number</label>
                   <input
                     type="text"
                     value={formData.companyRegNumber}
                     onChange={e => handleChange('companyRegNumber', e.target.value)}
                     placeholder="e.g. 2021/123456/07"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">VAT Registration Number</label>
+                  <label className={labelClass}>VAT Registration Number</label>
                   <input
                     type="text"
                     value={formData.vatNumber}
                     onChange={e => handleChange('vatNumber', e.target.value)}
                     placeholder="e.g. 4010293847"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Industry Sector</label>
+                  <label className={labelClass}>Industry Sector</label>
                   <input
                     type="text"
                     value={formData.industry}
                     onChange={e => handleChange('industry', e.target.value)}
                     placeholder="e.g. Financial Services / Warehousing"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -410,24 +431,24 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         {step === 3 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Physical Address *</label>
+              <label className={labelClass}>Physical Address *</label>
               <input
                 type="text"
                 autoComplete="street-address"
                 value={formData.primaryAddress}
                 onChange={e => handleChange('primaryAddress', e.target.value)}
                 placeholder="e.g. 88 Grayston Drive, Sandton, Johannesburg"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                className={inputClass}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Address Label</label>
+                <label className={labelClass}>Address Label</label>
                 <select
                   value={formData.primaryLabel}
                   onChange={e => handleChange('primaryLabel', e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 text-sm font-medium"
+                  className={inputClass}
                 >
                   <option value="Home">Home</option>
                   <option value="Office">Office</option>
@@ -439,13 +460,13 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Site Access Instructions / Gate Code</label>
+                <label className={labelClass}>Site Access Instructions / Gate Code</label>
                 <input
                   type="text"
                   value={formData.accessNotes}
                   onChange={e => handleChange('accessNotes', e.target.value)}
                   placeholder="e.g. Gate code #4092, Guard house check-in required"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                  className={inputClass}
                 />
               </div>
             </div>
@@ -456,23 +477,23 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
         {step === 4 && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Services</h3>
-              <p className="text-xs text-slate-400 mb-3">Select from our available service offerings below:</p>
+              <h3 className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-white' : 'text-navy'}`}>Services</h3>
+              <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Select from our available service offerings below:</p>
             </div>
 
-            <div className="p-4 rounded-xl border border-red-500 bg-red-600/10 text-white flex items-center justify-between shadow-lg shadow-red-600/10">
+            <div className={`p-4 rounded-xl border border-red bg-red/10 flex items-center justify-between shadow-sm ${isDark ? 'text-white' : 'text-navy'}`}>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-red-500 shrink-0" />
-                  <span className="font-bold text-sm text-white tracking-wide uppercase">SECURITY SYSTEMS ASSISTANCE</span>
-                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
+                  <Shield className="w-5 h-5 text-red shrink-0" />
+                  <span className={`font-bold text-sm tracking-wide uppercase ${isDark ? 'text-white' : 'text-navy'}`}>SECURITY SYSTEMS ASSISTANCE</span>
+                  <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Active</span>
                 </div>
-                <p className="text-xs text-slate-400">Primary security infrastructure, surveillance & access control services.</p>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Primary security infrastructure, surveillance & access control services.</p>
               </div>
             </div>
 
             <div className="pt-2">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <label className={labelClass}>
                 Security Systems Assistance Services
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -492,12 +513,12 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                       onClick={() => toggleService(srv as ServiceCategory)}
                       className={`p-3 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
                         isChecked
-                          ? 'border-red-500 bg-red-600/10 text-white'
-                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700'
+                          ? 'border-red bg-red/10 ' + (isDark ? 'text-white' : 'text-navy')
+                          : isDark ? 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
                       }`}
                     >
                       <span className="text-xs font-semibold">{srv}</span>
-                      <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? 'bg-red-600 border-red-500 text-white' : 'border-slate-700 bg-slate-800'}`}>
+                      <div className={`w-4 h-4 rounded flex items-center justify-center border ${isChecked ? 'bg-red border-red text-white' : isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`}>
                         {isChecked && <Check className="w-3 h-3" />}
                       </div>
                     </button>
@@ -535,12 +556,12 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           <div className="space-y-6">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <label className={labelClass}>
                   Preferred Dispatch Contact Channels
                 </label>
-                <span className="text-[10px] text-cyan-400 font-mono">Multiple selection supported</span>
+                <span className="text-[10px] text-cyan-500 font-mono">Multiple selection supported</span>
               </div>
-              <p className="text-xs text-slate-400 mb-3">
+              <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Select one or more channels through which our control room and responders should notify you:
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -564,13 +585,13 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                       }}
                       className={`py-3 px-4 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
                         isSelected
-                          ? 'border-red-500 bg-red-600/15 text-white shadow-lg shadow-red-600/10'
-                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700 hover:text-slate-300'
+                          ? 'border-red bg-red/15 ' + (isDark ? 'text-white' : 'text-navy') + ' shadow-sm'
+                          : isDark ? 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700 hover:text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-slate-100'
                       }`}
                     >
                       <span>{method}</span>
                       <div className={`w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px] ${
-                        isSelected ? 'bg-red-600 border-red-500 text-white' : 'border-slate-700 bg-slate-900'
+                        isSelected ? 'bg-red border-red text-white' : isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-300 bg-white'
                       }`}>
                         {isSelected && <Check className="w-2.5 h-2.5" />}
                       </div>
@@ -580,29 +601,29 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
             </div>
 
-            <div className="border-t border-slate-800 pt-4">
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Emergency Contact / Next of Kin</h4>
+            <div className={`border-t pt-4 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-white' : 'text-navy'}`}>Emergency Contact / Next of Kin</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Name</label>
+                  <label className={labelClass}>Emergency Contact Name</label>
                   <input
                     type="text"
                     value={formData.emergencyContactName}
                     onChange={e => handleChange('emergencyContactName', e.target.value)}
                     placeholder="e.g. Sindi Molefe"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Emergency Contact Phone</label>
+                  <label className={labelClass}>Emergency Contact Phone</label>
                   <input
                     type="tel"
                     autoComplete="tel"
                     value={formData.emergencyContactPhone}
                     onChange={e => handleChange('emergencyContactPhone', e.target.value)}
                     placeholder="+27 83 555 8888"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                 </div>
               </div>
@@ -615,7 +636,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Account Passcode / Password *</label>
+                <label className={labelClass}>Account Passcode / Password *</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -623,12 +644,14 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
                     value={formData.password}
                     onChange={e => handleChange('password', e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-red-500 text-sm font-medium"
+                    className={inputClass}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white transition-colors p-0.5 rounded-md hover:bg-slate-700/50 cursor-pointer"
+                    className={`absolute right-3.5 top-3.5 transition-colors p-0.5 rounded-md cursor-pointer ${
+                      isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy'
+                    }`}
                     title={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -637,19 +660,21 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Confirm Passcode *</label>
+                <label className={labelClass}>Confirm Passcode *</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={e => handleChange('confirmPassword', e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-4 pr-12 py-3 text-white focus:outline-none focus:border-red-500 text-sm"
+                    className={inputClass}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-white transition-colors p-0.5 rounded-md hover:bg-slate-700/50 cursor-pointer"
+                    className={`absolute right-3.5 top-3.5 transition-colors p-0.5 rounded-md cursor-pointer ${
+                      isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy'
+                    }`}
                     title={showConfirmPassword ? "Hide password" : "Show password"}
                   >
                     {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -658,15 +683,15 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800">
+            <div className={`pt-4 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.termsAccepted}
                   onChange={e => handleChange('termsAccepted', e.target.checked)}
-                  className="mt-1 rounded bg-slate-800 border-slate-700 text-red-600 focus:ring-0 cursor-pointer"
+                  className="mt-1 rounded border-slate-300 text-red focus:ring-0 cursor-pointer"
                 />
-                <span className="text-xs text-slate-400">
+                <span className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   I agree to Same Day Assist Service Terms, Emergency Dispatch Protocols, and membership benefit ledger policies.
                 </span>
               </label>
@@ -676,12 +701,14 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
 
         {/* STEP 9: Review & Submit */}
         {step === 9 && (
-          <div className="space-y-5 bg-slate-950/60 p-4 md:p-6 rounded-2xl border border-slate-800 animate-fadeIn">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+          <div className={`space-y-5 p-4 md:p-6 rounded-2xl border animate-fadeIn ${
+            isDark ? 'bg-slate-950/60 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900'
+          }`}>
+            <div className={`flex justify-between items-center pb-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+              <h3 className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-navy'}`}>
                 Onboarding Profile & Subscription Summary
               </h3>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">
                 READY TO INITIALIZE
               </span>
             </div>
@@ -691,47 +718,55 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
               const bd = calculatePaymentBreakdown(chosenPlan.monthlyPrice);
               return (
                 <div className="space-y-3">
-                  <div className="bg-gradient-to-r from-slate-900 to-slate-950 border border-red-500/60 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className={`border rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+                    isDark 
+                      ? 'bg-gradient-to-r from-slate-900 to-slate-950 border-red/60 text-white' 
+                      : 'bg-white border-red/40 text-navy shadow-sm'
+                  }`}>
                     <div>
-                      <span className="text-[10px] font-mono uppercase text-red-400 font-bold tracking-widest block">
+                      <span className="text-[10px] font-mono uppercase text-red font-bold tracking-widest block">
                         CHOSEN MEMBERSHIP PLAN
                       </span>
-                      <h4 className="text-xl font-black text-white font-brand-header tracking-wide mt-0.5">
+                      <h4 className={`text-xl font-black font-brand-header tracking-wide mt-0.5 ${isDark ? 'text-white' : 'text-navy'}`}>
                         {chosenPlan.name}
                       </h4>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Monthly Subscription: <strong className="text-white font-mono">R{chosenPlan.monthlyPrice.toLocaleString()}/month</strong>
+                      <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Monthly Subscription: <strong className={`font-mono ${isDark ? 'text-white' : 'text-navy'}`}>R{chosenPlan.monthlyPrice.toLocaleString()}/month</strong>
                       </p>
                     </div>
 
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 text-right shrink-0">
-                      <span className="text-[9.5px] font-mono uppercase text-slate-400 block">
+                    <div className={`border rounded-xl px-4 py-2.5 text-right shrink-0 ${
+                      isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-slate-50 border-slate-200'
+                    }`}>
+                      <span className={`text-[9.5px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         Annual Assistance Benefit
                       </span>
-                      <span className={`text-base font-black font-mono ${chosenPlan.annualBenefit === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      <span className={`text-base font-black font-mono ${chosenPlan.annualBenefit === 0 ? 'text-amber-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         {chosenPlan.partsBenefitDescription}
                       </span>
                     </div>
                   </div>
 
                   {/* Payment Activation Summary */}
-                  <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className={`border rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
+                    isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-2xs'
+                  }`}>
                     <div>
-                      <span className="text-[10px] font-mono uppercase text-slate-400 font-bold tracking-wider block">
+                      <span className={`text-[10px] font-mono uppercase font-bold tracking-wider block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         Today's Initial Payment (20%)
                       </span>
-                      <div className="text-2xl font-black font-mono text-emerald-400">
+                      <div className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
                         R{bd.initialPayment.toFixed(2)}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        Initial membership status: <strong className="text-amber-300 font-mono">Pending Activation</strong>
+                      <p className={`text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Initial membership status: <strong className="text-amber-600 dark:text-amber-300 font-mono">Pending Activation</strong>
                       </p>
                     </div>
 
-                    <div className="text-xs text-slate-400 text-left sm:text-right space-y-0.5">
-                      <div>1st Billing (40%): <strong className="text-white font-mono">R{bd.firstBillingPayment.toFixed(2)}</strong></div>
-                      <div>2nd Billing (40%): <strong className="text-white font-mono">R{bd.secondBillingPayment.toFixed(2)}</strong></div>
-                      <div className="text-[10px] text-red-400 font-medium">Active status granted upon 2nd billing completion</div>
+                    <div className={`text-xs text-left sm:text-right space-y-0.5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                      <div>1st Billing (40%): <strong className={`font-mono ${isDark ? 'text-white' : 'text-navy'}`}>R{bd.firstBillingPayment.toFixed(2)}</strong></div>
+                      <div>2nd Billing (40%): <strong className={`font-mono ${isDark ? 'text-white' : 'text-navy'}`}>R{bd.secondBillingPayment.toFixed(2)}</strong></div>
+                      <div className="text-[10px] text-red font-medium">Active status granted upon 2nd billing completion</div>
                     </div>
                   </div>
                 </div>
@@ -739,39 +774,39 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             })()}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-xs">
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Name</span>
-                <span className="font-semibold text-white break-words">{formData.name}</span>
+              <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Name</span>
+                <span className={`font-semibold break-words ${isDark ? 'text-white' : 'text-navy'}`}>{formData.name}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Email</span>
-                <span className="font-semibold text-white break-all">{formData.email}</span>
+              <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Email</span>
+                <span className={`font-semibold break-all ${isDark ? 'text-white' : 'text-navy'}`}>{formData.email}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Phone</span>
-                <span className="font-semibold text-white break-words">{formData.phone}</span>
+              <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Phone</span>
+                <span className={`font-semibold break-words ${isDark ? 'text-white' : 'text-navy'}`}>{formData.phone}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Account Type</span>
-                <span className="font-semibold text-red-400 break-words">{formData.accountType === 'Business' ? 'Business Account' : 'Residential Account'}</span>
+              <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Account Type</span>
+                <span className="font-semibold text-red break-words">{formData.accountType === 'Business' ? 'Business Account' : 'Residential Account'}</span>
               </div>
               {formData.accountType === 'Business' && (
-                <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                  <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Company</span>
-                  <span className="font-semibold text-white break-words">{formData.companyName}</span>
+                <div className={`p-3 rounded-lg border ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                  <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Company</span>
+                  <span className={`font-semibold break-words ${isDark ? 'text-white' : 'text-navy'}`}>{formData.companyName}</span>
                 </div>
               )}
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 sm:col-span-2 md:col-span-1">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Address</span>
-                <span className="font-semibold text-white break-words leading-relaxed">{formData.primaryAddress}</span>
+              <div className={`p-3 rounded-lg border sm:col-span-2 md:col-span-1 ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Address</span>
+                <span className={`font-semibold break-words leading-relaxed ${isDark ? 'text-white' : 'text-navy'}`}>{formData.primaryAddress}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-2">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Selected Services</span>
-                <span className="font-semibold text-slate-300 break-words leading-relaxed">{formData.preferredServices.join(', ')}</span>
+              <div className={`p-3 rounded-lg border col-span-1 sm:col-span-2 ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Selected Services</span>
+                <span className={`font-semibold break-words leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{formData.preferredServices.join(', ')}</span>
               </div>
-              <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 col-span-1 sm:col-span-1">
-                <span className="text-slate-500 block font-mono text-[10px] uppercase mb-0.5">Contact Channels</span>
-                <span className="font-semibold text-emerald-400 break-words leading-relaxed">{formData.preferredContactMethods.join(', ')}</span>
+              <div className={`p-3 rounded-lg border col-span-1 sm:col-span-1 ${isDark ? 'bg-slate-900/60 border-slate-800/80' : 'bg-white border-slate-200'}`}>
+                <span className={`block font-mono text-[10px] uppercase mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Contact Channels</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 break-words leading-relaxed">{formData.preferredContactMethods.join(', ')}</span>
               </div>
             </div>
           </div>
@@ -779,12 +814,16 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
       </div>
 
       {/* Navigation Buttons */}
-      <div className="flex justify-between items-center pt-6 border-t border-slate-800 mt-8">
+      <div className={`flex justify-between items-center pt-6 border-t mt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
         {step > 1 ? (
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold cursor-pointer"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${
+              isDark 
+                ? 'border-slate-700 text-slate-300 hover:bg-slate-800' 
+                : 'border-slate-200 text-slate-700 hover:bg-slate-100 bg-slate-50'
+            }`}
           >
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
@@ -794,7 +833,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
           <button
             type="button"
             onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red hover:bg-red/90 text-white text-xs font-bold shadow-md cursor-pointer transition-all"
           >
             Next Step <ChevronRight className="w-4 h-4" />
           </button>
@@ -803,7 +842,7 @@ export function OnboardingWizard({ onComplete, onCancel }: OnboardingWizardProps
             type="button"
             disabled={isSubmitting}
             onClick={handleSubmit}
-            className="flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md disabled:opacity-50 cursor-pointer transition-all"
           >
             {isSubmitting
               ? 'Initializing Profile & Payment...'

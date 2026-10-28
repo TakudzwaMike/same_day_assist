@@ -216,7 +216,7 @@ export default function App() {
                 }`}>
                   SAME DAY ASSIST
                 </h1>
-                <span className="text-[9px] font-bold text-red uppercase tracking-widest font-mono">SA</span>
+                <span className="text-[9px] font-bold text-red uppercase tracking-widest font-mono">ZA</span>
               </div>
               <p className={`text-[9px] tracking-wider ${
                 isDark ? 'text-slate-400' : 'text-slate-500'
@@ -361,7 +361,7 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={loginLoading || isLocked}
-                    className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 mt-1.5 bg-red text-white hover:bg-red/90 disabled:opacity-50"
+                    className="w-full font-brand-header py-3 rounded-xl text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 mt-1.5 bg-navy text-white hover:bg-navy-light disabled:opacity-50"
                   >
                     {loginLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'SIGN IN'}
                   </button>

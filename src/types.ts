@@ -421,8 +421,8 @@ export interface Enquiry {
   address: string;
   accountType?: 'Individual' | 'Business';
   serviceCategory: ServiceCategory | string;
-  notes: string;
-  status: CustomerStatus | 'Pending' | 'Scheduled' | 'Assessed' | 'Quoted' | 'Approved' | 'Completed';
+  notes?: string;
+  status: CustomerStatus | 'Pending' | 'Scheduled' | 'Assessed' | 'Quoted' | 'Approved' | 'Completed' | 'Contacted' | 'Under Investigation' | 'Under Review' | 'Reviewed' | 'Resolved' | string;
   surveyRequested?: boolean;
   surveyInspectorId?: string;
   surveyInspectorName?: string;

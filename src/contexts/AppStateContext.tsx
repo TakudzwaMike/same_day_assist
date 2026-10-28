@@ -10,7 +10,8 @@ interface AppStateContextType {
   isLoading: boolean;
   error: string | null;
   refreshData: () => Promise<void>;
-  createEnquiry: (payload: { name: string; email: string; phone: string; address: string; serviceCategory: any; notes?: string }) => Promise<void>;
+  createEnquiry: (payload: { name: string; email: string; phone: string; address?: string; serviceCategory?: any; notes?: string }) => Promise<void>;
+  updateEnquiryStatus: (enquiryId: string, status: string, notes?: string) => Promise<void>;
   scheduleAssessment: (enquiryId: string, contractorId: string) => Promise<void>;
   startAssessment: (assessmentId: string) => Promise<void>;
   uploadAssessment: (assessmentId: string, payload: {
@@ -314,41 +315,47 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, refreshData]);
 
   // Mutations
-  const createEnquiry = async (payload: { name: string; email: string; phone: string; address: string; serviceCategory: any; notes?: string }) => {
+  const createEnquiry = async (payload: { name: string; email: string; phone: string; address?: string; serviceCategory?: any; notes?: string }) => {
     setError(null);
     try {
-      await api.register({
-        name: payload.name,
+      await api.createEnquiry({
+        customerName: payload.name,
         email: payload.email,
         phone: payload.phone,
-        address: payload.address,
-        serviceCategory: payload.serviceCategory || 'Security Systems Assistance',
-        notes: payload.notes,
-        password: 'demo-passcode',
-        role: 'Customer',
+        address: payload.address || 'Member Communications Hub',
+        serviceCategory: payload.serviceCategory || 'General Support',
+        notes: payload.notes || '',
       });
       await refreshData();
     } catch (err: any) {
-      if (err.message?.includes('Connection failed') || err.message?.includes('network') || err.message?.includes('fetch')) {
-        const newEnquiry = {
-          id: 'enq-' + Date.now(),
-          customerName: payload.name,
-          email: payload.email,
-          phone: payload.phone,
-          address: payload.address,
-          serviceCategory: payload.serviceCategory || 'Security Systems Assistance',
-          status: 'Pending' as const,
-          notes: payload.notes || 'Onboarding compliance survey requested',
-          createdAt: new Date().toISOString(),
-        };
-        updateState({
-          enquiries: [newEnquiry, ...state.enquiries],
-          currentStep: 'INTERESTED',
-        });
-        return;
-      }
-      setError(err.message || 'Failed to submit enquiry');
-      throw err;
+      console.warn('[createEnquiry] API call failed, falling back to local state:', err);
+      const newEnquiry = {
+        id: 'enq-' + Date.now(),
+        customerName: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        address: payload.address || 'Member Communications Hub',
+        serviceCategory: payload.serviceCategory || 'General Support',
+        status: 'Pending' as const,
+        notes: payload.notes || 'Customer communication request',
+        createdAt: new Date().toISOString(),
+      };
+      updateState({
+        enquiries: [newEnquiry, ...(state.enquiries || [])],
+      });
+    }
+  };
+
+  const updateEnquiryStatus = async (enquiryId: string, status: string, notes?: string) => {
+    setError(null);
+    try {
+      await api.updateEnquiryStatus(enquiryId, status, notes);
+      await refreshData();
+    } catch (err: any) {
+      console.warn('[updateEnquiryStatus] API call failed, falling back to local update:', err);
+      updateState({
+        enquiries: (state.enquiries || []).map(e => e.id === enquiryId ? { ...e, status: status as any, ...(notes ? { notes: `${e.notes}\n[Update]: ${notes}` } : {}) } : e),
+      });
     }
   };
 
@@ -981,6 +988,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       payInvoice,
       changePlan,
       createEnquiry,
+      updateEnquiryStatus,
       scheduleAssessment,
       startAssessment,
       uploadAssessment,

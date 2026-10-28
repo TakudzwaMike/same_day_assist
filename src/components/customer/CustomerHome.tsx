@@ -817,16 +817,24 @@ export default function CustomerHome({
       )}
 
       {/* 4. CUSTOMER COMMUNICATION & CONTACT OPTIONS (Item 05) */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-3">
+      <div className={`rounded-3xl p-6 shadow-xs space-y-4 border transition-colors ${
+        isDark ? 'bg-[#091C3E] border-[#142D59]' : 'bg-white border-slate-200'
+      }`}>
+        <div className={`flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3 transition-colors ${
+          isDark ? 'border-[#142D59]' : 'border-slate-100'
+        }`}>
           <div>
-            <h3 className="text-sm font-bold text-navy uppercase tracking-wide flex items-center gap-2">
+            <h3 className={`text-sm font-bold uppercase tracking-wide flex items-center gap-2 ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}>
               <Headphones className="w-4 h-4 text-red" />
               <span>Customer Communication & Support Center</span>
             </h3>
-            <p className="text-xs text-slate-500">Need help, want to suggest improvements, or submit a request?</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Need help, want to suggest improvements, or submit a request?
+            </p>
           </div>
-          <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+          <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
             Direct Support Hub
           </span>
         </div>
@@ -835,56 +843,88 @@ export default function CustomerHome({
           <button
             type="button"
             onClick={() => setContactModalTab('callback')}
-            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+            className={`p-3.5 rounded-2xl border transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] hover:border-red hover:bg-[#0d2754]' 
+                : 'bg-white border-slate-200 hover:border-red hover:bg-slate-50'
+            }`}
           >
             <div className="w-8 h-8 rounded-xl bg-red/10 text-red flex items-center justify-center">
               <PhoneCall className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-navy block group-hover:text-red">Request a Callback</span>
-              <span className="text-[10px] text-slate-500">We'll call you back</span>
+              <span className={`text-xs font-bold block group-hover:text-red ${isDark ? 'text-white' : 'text-navy'}`}>
+                Request a Callback
+              </span>
+              <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                We'll call you back
+              </span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setContactModalTab('suggestions')}
-            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+            className={`p-3.5 rounded-2xl border transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] hover:border-red hover:bg-[#0d2754]' 
+                : 'bg-white border-slate-200 hover:border-red hover:bg-slate-50'
+            }`}
           >
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
               <Lightbulb className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-navy block group-hover:text-red">Suggestions</span>
-              <span className="text-[10px] text-slate-500">Submit ideas & feedback</span>
+              <span className={`text-xs font-bold block group-hover:text-red ${isDark ? 'text-white' : 'text-navy'}`}>
+                Suggestions
+              </span>
+              <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Submit ideas & feedback
+              </span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setContactModalTab('complaints')}
-            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+            className={`p-3.5 rounded-2xl border transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] hover:border-red hover:bg-[#0d2754]' 
+                : 'bg-white border-slate-200 hover:border-red hover:bg-slate-50'
+            }`}
           >
             <div className="w-8 h-8 rounded-xl bg-red/10 text-red flex items-center justify-center">
               <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-navy block group-hover:text-red">Complaints</span>
-              <span className="text-[10px] text-slate-500">Formal investigation</span>
+              <span className={`text-xs font-bold block group-hover:text-red ${isDark ? 'text-white' : 'text-navy'}`}>
+                Complaints
+              </span>
+              <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Formal investigation
+              </span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => setContactModalTab('directory')}
-            className="p-3.5 rounded-2xl border border-slate-200 hover:border-red hover:bg-slate-50 transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group"
+            className={`p-3.5 rounded-2xl border transition-all text-left flex flex-col justify-between gap-2 cursor-pointer group ${
+              isDark 
+                ? 'bg-[#050E20] border-[#142D59] hover:border-red hover:bg-[#0d2754]' 
+                : 'bg-white border-slate-200 hover:border-red hover:bg-slate-50'
+            }`}
           >
             <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center">
               <Phone className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-navy block group-hover:text-red">Contact Us</span>
-              <span className="text-[10px] text-slate-500">Direct phone directory</span>
+              <span className={`text-xs font-bold block group-hover:text-red ${isDark ? 'text-white' : 'text-navy'}`}>
+                Contact Us
+              </span>
+              <span className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Direct phone directory
+              </span>
             </div>
           </button>
         </div>

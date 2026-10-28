@@ -5,6 +5,7 @@ import {
   DollarSign, Check, ExternalLink
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 import { Invoice } from '../../types';
 import EmptyState from '../shared/EmptyState';
@@ -17,6 +18,7 @@ interface CustomerInvoicesProps {
 
 export default function CustomerInvoices({ activeCustomer, onNavigateTab }: CustomerInvoicesProps) {
   const { state, approveQuotation, declineQuotation, payInvoice, addAuditLogLocal } = useAppState();
+  const { isDark } = useTheme();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
@@ -101,19 +103,27 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
   return (
     <div className="flex flex-col gap-6 animate-fadeIn">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-3">
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3 ${
+        isDark ? 'border-slate-800' : 'border-slate-200'
+      }`}>
         <div>
-          <h2 className="text-xl font-black italic tracking-wide uppercase font-brand-header text-navy">
+          <h2 className={`text-xl font-black italic tracking-wide uppercase font-brand-header ${
+            isDark ? 'text-white' : 'text-navy'
+          }`}>
             My Invoices & Billing
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className={`text-xs mt-0.5 ${
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          }`}>
             Transparent breakdown of services, Annual Assistance Benefit coverage, and customer-payable balances
           </p>
         </div>
         {state.benefitSummary && (
-          <div className="bg-navy/5 border border-navy/10 px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-navy" />
-            <span className="text-[11px] font-mono font-bold text-navy">
+          <div className={`border px-3.5 py-1.5 rounded-xl flex items-center gap-2 ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-navy/5 border-navy/10'
+          }`}>
+            <Shield className={`w-3.5 h-3.5 ${isDark ? 'text-red-400' : 'text-navy'}`} />
+            <span className={`text-[11px] font-mono font-bold ${isDark ? 'text-white' : 'text-navy'}`}>
               Plan: {state.benefitSummary.planName}
             </span>
           </div>
@@ -122,38 +132,44 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
 
       {/* FINANCIAL SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Billed</span>
-          <span className="text-xl sm:text-2xl font-black font-brand-header text-navy mt-1 block">
+        <div className={`p-4 sm:p-5 rounded-2xl border shadow-2xs ${
+          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+        }`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Billed</span>
+          <span className={`text-xl sm:text-2xl font-black font-brand-header mt-1 block ${isDark ? 'text-white' : 'text-navy'}`}>
             {fmt(totalInvoiced)}
           </span>
-          <span className="text-[10px] text-slate-400 mt-1 block">Across {realInvoices.length} invoices</span>
+          <span className={`text-[10px] mt-1 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Across {realInvoices.length} invoices</span>
         </div>
 
-        <div className="bg-emerald-50/60 p-4 sm:p-5 rounded-2xl border border-emerald-200/80 shadow-2xs">
-          <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Covered By Benefit</span>
-          <span className="text-xl sm:text-2xl font-black font-brand-header text-emerald-700 mt-1 block">
+        <div className={`p-4 sm:p-5 rounded-2xl border shadow-2xs ${
+          isDark ? 'bg-emerald-950/40 border-emerald-900/60' : 'bg-emerald-50/60 border-emerald-200/80'
+        }`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider block ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>Covered By Benefit</span>
+          <span className={`text-xl sm:text-2xl font-black font-brand-header mt-1 block ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
             {fmt(totalBenefitCovered)}
           </span>
-          <span className="text-[10px] text-emerald-700 font-medium mt-1 block">Directly absorbed by plan</span>
+          <span className={`text-[10px] font-medium mt-1 block ${isDark ? 'text-emerald-400/80' : 'text-emerald-700'}`}>Directly absorbed by plan</span>
         </div>
 
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Customer Settled</span>
-          <span className="text-xl sm:text-2xl font-black font-brand-header text-navy mt-1 block">
+        <div className={`p-4 sm:p-5 rounded-2xl border shadow-2xs ${
+          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+        }`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Customer Settled</span>
+          <span className={`text-xl sm:text-2xl font-black font-brand-header mt-1 block ${isDark ? 'text-white' : 'text-navy'}`}>
             {fmt(totalCustomerPaid)}
           </span>
-          <span className="text-[10px] text-slate-400 mt-1 block">Excess/uncovered portions</span>
+          <span className={`text-[10px] mt-1 block ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Excess/uncovered portions</span>
         </div>
 
         <div className={`p-4 sm:p-5 rounded-2xl border shadow-2xs ${
           outstandingPayable > 0 
-            ? 'bg-red-50/70 border-red-200 text-red-900' 
-            : 'bg-slate-50 border-slate-200 text-slate-700'
+            ? isDark ? 'bg-red-950/40 border-red-900/60 text-red-200' : 'bg-red-50/70 border-red-200 text-red-900' 
+            : isDark ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
         }`}>
           <span className="text-[10px] font-bold uppercase tracking-wider block">Outstanding Due</span>
           <span className={`text-xl sm:text-2xl font-black font-brand-header mt-1 block ${
-            outstandingPayable > 0 ? 'text-red-700' : 'text-slate-700'
+            outstandingPayable > 0 ? isDark ? 'text-red-400' : 'text-red-700' : isDark ? 'text-slate-300' : 'text-slate-700'
           }`}>
             {fmt(outstandingPayable)}
           </span>
@@ -166,11 +182,11 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
       {/* REAL SERVICE INVOICES LIST */}
       <div className="space-y-3">
         <div className="flex justify-between items-center">
-          <h3 className="text-xs font-bold text-navy uppercase tracking-wider flex items-center gap-1.5">
+          <h3 className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-navy'}`}>
             <FileText className="w-4 h-4 text-red" />
             <span>Official Tax Invoices</span>
           </h3>
-          <span className="text-[10px] font-mono text-slate-400">
+          <span className={`text-[10px] font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             {realInvoices.length} {realInvoices.length === 1 ? 'record' : 'records'}
           </span>
         </div>
@@ -191,13 +207,19 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
               return (
                 <div
                   key={invoice.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all p-4 sm:p-5 flex flex-col gap-4"
+                  className={`rounded-2xl border shadow-2xs hover:shadow-xs transition-all p-4 sm:p-5 flex flex-col gap-4 ${
+                    isDark 
+                      ? 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-100' 
+                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900'
+                  }`}
                 >
                   {/* Top Bar */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100">
+                  <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b ${
+                    isDark ? 'border-slate-800' : 'border-slate-100'
+                  }`}>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black font-brand-header text-navy">
+                        <span className={`text-sm font-black font-brand-header ${isDark ? 'text-white' : 'text-navy'}`}>
                           {invoice.invoiceNumber}
                         </span>
                         <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full font-mono tracking-wider ${
@@ -221,7 +243,7 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
                       <button
                         type="button"
                         onClick={() => setSelectedInvoice(invoice)}
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-navy text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                        className={`px-3 py-1.5 ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-navy'} text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer`}
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>View Details</span>
@@ -229,7 +251,7 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
                       <button
                         type="button"
                         onClick={() => handleDownloadPDF('invoice', invoice.id)}
-                        className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-navy border border-slate-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                        className={`px-3 py-1.5 ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-navy border-slate-200'} border text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer`}
                         title="Download Tax PDF"
                       >
                         <Download className="w-3.5 h-3.5" />
@@ -239,10 +261,10 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
                   </div>
 
                   {/* Financial Breakdown Grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                  <div className={`grid grid-cols-2 md:grid-cols-4 gap-2.5 p-3.5 rounded-xl border ${isDark ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-50/70 border-slate-100'}`}>
                     <div>
-                      <span className="text-[10px] text-slate-500 font-mono uppercase block">Total Service</span>
-                      <span className="text-sm font-bold text-slate-800 font-mono mt-0.5 block">
+                      <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Service</span>
+                      <span className={`text-sm font-bold font-mono mt-0.5 block ${isDark ? 'text-white' : 'text-slate-800'}`}>
                         {fmt(invoice.totalAmount)}
                       </span>
                     </div>
@@ -391,24 +413,30 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
       {/* INVOICE DETAIL MODAL */}
       {selectedInvoice && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto animate-scaleUp">
+          <div className={`rounded-3xl max-w-2xl w-full border shadow-2xl max-h-[90vh] overflow-y-auto animate-scaleUp ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-200 flex justify-between items-start bg-slate-50/50 rounded-t-3xl">
+            <div className={`p-6 border-b flex justify-between items-start rounded-t-3xl ${
+              isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-200 bg-slate-50/50'
+            }`}>
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-red-600 tracking-wider block">
+                <span className="text-[10px] font-mono font-bold uppercase text-red tracking-wider block">
                   Same Day Assist • Tax Invoice
                 </span>
-                <h3 className="text-xl font-black font-brand-header text-navy mt-0.5">
+                <h3 className={`text-xl font-black font-brand-header mt-0.5 ${isDark ? 'text-white' : 'text-navy'}`}>
                   {selectedInvoice.invoiceNumber}
                 </h3>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Issued: {selectedInvoice.issueDate || selectedInvoice.date ? new Date(selectedInvoice.issueDate || selectedInvoice.date || '').toLocaleDateString('en-ZA', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedInvoice(null)}
-                className="p-2 hover:bg-slate-200/80 rounded-full text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-slate-200/80 text-slate-400 hover:text-slate-700'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -417,23 +445,25 @@ export default function CustomerInvoices({ activeCustomer, onNavigateTab }: Cust
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Customer & Plan Info */}
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs">
+              <div className={`grid grid-cols-2 gap-4 p-4 rounded-2xl border text-xs ${
+                isDark ? 'bg-slate-950/70 border-slate-800' : 'bg-slate-50 border-slate-100'
+              }`}>
                 <div>
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Billed To</span>
-                  <span className="font-bold text-slate-800 block mt-0.5">{selectedInvoice.customerName}</span>
-                  <span className="text-slate-500 block">{selectedInvoice.customerEmail}</span>
+                  <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Billed To</span>
+                  <span className={`font-bold block mt-0.5 ${isDark ? 'text-white' : 'text-slate-800'}`}>{selectedInvoice.customerName}</span>
+                  <span className={`block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{selectedInvoice.customerEmail}</span>
                   {selectedInvoice.customerAddress && (
-                    <span className="text-slate-500 block text-[11px] mt-0.5">{selectedInvoice.customerAddress}</span>
+                    <span className={`block text-[11px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{selectedInvoice.customerAddress}</span>
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Membership & Plan</span>
-                  <span className="font-bold text-navy block mt-0.5">{selectedInvoice.membershipPlan}</span>
+                  <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Membership & Plan</span>
+                  <span className={`font-bold block mt-0.5 ${isDark ? 'text-white' : 'text-navy'}`}>{selectedInvoice.membershipPlan}</span>
                   {selectedInvoice.serviceType && (
-                    <span className="text-slate-600 block mt-0.5">Service: {selectedInvoice.serviceType}</span>
+                    <span className={`block mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Service: {selectedInvoice.serviceType}</span>
                   )}
                   {selectedInvoice.contractorName && (
-                    <span className="text-slate-600 block">Technician: {selectedInvoice.contractorName}</span>
+                    <span className={`block ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Technician: {selectedInvoice.contractorName}</span>
                   )}
                 </div>
               </div>

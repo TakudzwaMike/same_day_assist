@@ -101,4 +101,39 @@ router.patch('/:id/schedule', requireAuth, requireRoles('Administrator', 'Super 
   }
 });
 
+// PATCH /api/enquiries/:id/status — Admin/Dispatcher: update status (e.g., Contacted, Resolved, Under Review)
+router.patch('/:id/status', requireAuth, requireRoles('Administrator', 'Super Administrator', 'Dispatcher'), async (req: AuthenticatedRequest, res: Response) => {
+  const { status, notes } = req.body;
+  if (!status) return res.status(400).json({ error: 'status is required' });
+
+  try {
+    const existing = await prisma.enquiry.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Enquiry not found' });
+
+    const updated = await prisma.enquiry.update({
+      where: { id: req.params.id },
+      data: {
+        status,
+        ...(notes ? { notes: `${existing.notes}\n[Update ${new Date().toLocaleDateString()}]: ${notes}` } : {}),
+      },
+    });
+
+    await writeAuditLog({
+      userId: req.user!.id,
+      userType: req.user!.role,
+      action: 'Enquiry Status Updated',
+      details: `${req.user!.role} updated support request ${existing.customerName} (${existing.serviceCategory}) to ${status}`,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      previousValue: { status: existing.status },
+      newValue: { status },
+    });
+
+    return res.json(updated);
+  } catch (error) {
+    console.error('[Enquiries/Status]', error);
+    return res.status(500).json({ error: 'Failed to update enquiry status' });
+  }
+});
+
 export default router;

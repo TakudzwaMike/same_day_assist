@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Claim, BenefitSummary } from '../../types';
 import { useAppState } from '../../contexts/AppStateContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { api } from '../../services/api';
 
 interface CustomerClaimsProps {
@@ -21,6 +22,7 @@ export function CustomerClaims({
   onNavigateTab,
 }: CustomerClaimsProps = {}) {
   const { state, createClaim } = useAppState();
+  const { isDark } = useTheme();
   const claims = propClaims || state.claims || [];
   const benefitSummary = propBenefitSummary || state.benefitSummary;
 
@@ -110,17 +112,17 @@ export function CustomerClaims({
     switch (status.toLowerCase()) {
       case 'approved':
       case 'completed':
-        return <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Approved / Completed</span>;
+        return <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Approved / Completed</span>;
       case 'submitted':
       case 'under review':
-        return <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Under Review</span>;
+        return <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Under Review</span>;
       case 'in progress':
-        return <span className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">In Progress</span>;
+        return <span className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">In Progress</span>;
       case 'rejected':
       case 'declined':
-        return <span className="bg-red-500/20 text-red-400 border border-red-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Rejected</span>;
+        return <span className="bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">Rejected</span>;
       default:
-        return <span className="bg-slate-700 text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">{status}</span>;
+        return <span className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase font-mono">{status}</span>;
     }
   };
 
@@ -129,15 +131,19 @@ export function CustomerClaims({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header with Title and Submit Button */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200">
+      <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b ${
+        isDark ? 'border-slate-800' : 'border-slate-200'
+      }`}>
         <div>
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-red-600" />
-            <h3 className="text-lg font-black text-slate-900 uppercase font-brand-header tracking-wide">
+            <Shield className="w-5 h-5 text-red" />
+            <h3 className={`text-lg font-black uppercase font-brand-header tracking-wide ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}>
               My Claims & Assistance History
             </h3>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Track all repairs, services, and claims affecting your annual assistance benefit allowance.
           </p>
         </div>
@@ -145,7 +151,7 @@ export function CustomerClaims({
         <button
           type="button"
           onClick={() => setShowSubmitModal(true)}
-          className="px-4 py-2.5 bg-navy hover:bg-navy-light text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
+          className="px-4 py-2.5 bg-red hover:bg-red/90 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Submit Assistance Claim</span>
@@ -161,7 +167,11 @@ export function CustomerClaims({
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search claims by claim number, service, description..."
-            className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-navy"
+            className={`w-full border rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none transition-colors ${
+              isDark 
+                ? 'bg-slate-900 border-slate-800 text-white placeholder-slate-500 focus:border-red' 
+                : 'bg-white border-slate-200 text-slate-900 focus:border-navy'
+            }`}
           />
         </div>
 
@@ -170,7 +180,11 @@ export function CustomerClaims({
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-navy"
+            className={`border rounded-xl px-3 py-2 text-xs font-medium focus:outline-none transition-colors ${
+              isDark 
+                ? 'bg-slate-900 border-slate-800 text-slate-200 focus:border-red' 
+                : 'bg-white border-slate-200 text-slate-700 focus:border-navy'
+            }`}
           >
             <option value="all">All Statuses</option>
             <option value="completed">Completed / Approved</option>
@@ -184,10 +198,12 @@ export function CustomerClaims({
       {/* Claims List */}
       <div className="space-y-3">
         {filteredClaims.length === 0 ? (
-          <div className="bg-white p-12 text-center rounded-3xl border border-slate-200 shadow-xs">
-            <Shield className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-bold text-slate-700">No Assistance Claims Found</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+          <div className={`p-12 text-center rounded-3xl border transition-colors ${
+            isDark ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white border-slate-200 shadow-xs text-slate-700'
+          }`}>
+            <Shield className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+            <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>No Assistance Claims Found</p>
+            <p className={`text-xs mt-1 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Any repair, emergency service, or hardware maintenance logged against your membership will be tracked here.
             </p>
           </div>
@@ -195,22 +211,30 @@ export function CustomerClaims({
           filteredClaims.map(claim => (
             <div
               key={claim.id}
-              className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              className={`border rounded-2xl p-5 shadow-xs transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
+                isDark 
+                  ? 'bg-slate-900/90 border-slate-800 hover:border-slate-700' 
+                  : 'bg-white border-slate-200 hover:border-slate-300'
+              }`}
             >
               {/* Claim Details Left */}
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="font-mono font-black text-sm text-navy">{claim.claimNumber}</span>
+                  <span className={`font-mono font-black text-sm ${isDark ? 'text-red-400' : 'text-navy'}`}>
+                    {claim.claimNumber}
+                  </span>
                   {getStatusBadge(claim.status)}
                   <span className="text-[10px] text-slate-400 font-mono">
                     {claim.submittedAt || claim.createdAt ? new Date(claim.submittedAt || claim.createdAt || '').toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                   </span>
                 </div>
 
-                <h4 className="text-sm font-bold text-slate-900">{claim.serviceType}</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">{claim.description}</p>
+                <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{claim.serviceType}</h4>
+                <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{claim.description}</p>
 
-                <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-500 pt-1 font-mono">
+                <div className={`flex flex-wrap items-center gap-4 text-[11px] pt-1 font-mono ${
+                  isDark ? 'text-slate-400' : 'text-slate-500'
+                }`}>
                   {claim.vehicleOrProperty && (
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -227,27 +251,29 @@ export function CustomerClaims({
               </div>
 
               {/* Financial Deductions Right */}
-              <div className="flex md:flex-col items-end justify-between md:justify-center w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 gap-2 shrink-0">
+              <div className={`flex md:flex-col items-end justify-between md:justify-center w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 gap-2 shrink-0 ${
+                isDark ? 'border-slate-800' : 'border-slate-100'
+              }`}>
                 <div className="text-right">
                   <span className="text-[9.5px] font-mono text-slate-400 uppercase block">Total Claimed</span>
-                  <span className="text-sm font-bold text-slate-700 font-mono">{fmt(claim.amountClaimed)}</span>
+                  <span className={`text-sm font-bold font-mono ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{fmt(claim.amountClaimed)}</span>
                 </div>
 
                 <div className="text-right">
                   <span className="text-[9.5px] font-mono text-emerald-600 uppercase block font-bold">
                     Benefit Deducted
                   </span>
-                  <span className="text-base font-black text-emerald-600 font-mono">
+                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
                     {fmt(claim.amountDeductedFromBenefit)}
                   </span>
                 </div>
 
                 {claim.customerResponsibility > 0 && (
                   <div className="text-right">
-                    <span className="text-[9.5px] font-mono text-red-500 uppercase block font-bold">
+                    <span className="text-[9.5px] font-mono text-red uppercase block font-bold">
                       Customer Paid
                     </span>
-                    <span className="text-xs font-bold text-red-600 font-mono">
+                    <span className="text-xs font-bold text-red font-mono">
                       {fmt(claim.customerResponsibility)}
                     </span>
                   </div>
@@ -258,8 +284,11 @@ export function CustomerClaims({
                   <button
                     type="button"
                     onClick={() => setSelectedClaim(claim)}
-                    className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1 cursor-pointer"
-                    title="View Claim Details"
+                    className={`p-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 cursor-pointer transition-colors ${
+                      isDark 
+                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' 
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Details</span>
@@ -269,7 +298,11 @@ export function CustomerClaims({
                     <button
                       type="button"
                       onClick={() => onOpenInvoice(claim.invoice!.id)}
-                      className="p-1.5 bg-navy/5 hover:bg-navy/10 text-navy rounded-lg text-xs font-bold border border-navy/20 flex items-center gap-1 cursor-pointer"
+                      className={`p-1.5 rounded-lg text-xs font-bold border flex items-center gap-1 cursor-pointer transition-colors ${
+                        isDark 
+                          ? 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 border-blue-500/30' 
+                          : 'bg-navy/5 hover:bg-navy/10 text-navy border-navy/20'
+                      }`}
                       title="Open Linked Tax Invoice"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -286,73 +319,97 @@ export function CustomerClaims({
       {/* Claim Detail Modal */}
       {selectedClaim && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
+          <div className={`rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border transition-colors ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className={`flex justify-between items-start border-b pb-3 ${
+              isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}>
               <div>
                 <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
                   Claim Reference Record
                 </span>
-                <h3 className="text-lg font-black text-navy font-mono">{selectedClaim.claimNumber}</h3>
+                <h3 className={`text-lg font-black font-mono ${isDark ? 'text-white' : 'text-navy'}`}>{selectedClaim.claimNumber}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedClaim(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                className={`p-1 rounded-lg cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-600'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <span className="font-bold text-slate-500">Status</span>
+              <div className={`flex justify-between items-center p-3 rounded-xl border ${
+                isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'
+              }`}>
+                <span className={`font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</span>
                 {getStatusBadge(selectedClaim.status)}
               </div>
 
               <div>
-                <span className="font-bold text-slate-500 block">Service Requested</span>
-                <span className="text-sm font-semibold text-slate-900">{selectedClaim.serviceType}</span>
+                <span className={`font-bold block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Service Requested</span>
+                <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedClaim.serviceType}</span>
               </div>
 
               <div>
-                <span className="font-bold text-slate-500 block">Description</span>
-                <p className="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed">
+                <span className={`font-bold block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Description</span>
+                <p className={`p-2.5 rounded-xl border leading-relaxed ${
+                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-100 text-slate-700'
+                }`}>
                   {selectedClaim.description}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'
+                }`}>
                   <span className="text-[10px] font-mono text-slate-400 uppercase block">Amount Claimed</span>
-                  <span className="text-sm font-bold font-mono text-slate-800">{fmt(selectedClaim.amountClaimed)}</span>
+                  <span className={`text-sm font-bold font-mono ${isDark ? 'text-white' : 'text-slate-800'}`}>{fmt(selectedClaim.amountClaimed)}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'
+                }`}>
                   <span className="text-[10px] font-mono text-slate-400 uppercase block">Amount Approved</span>
-                  <span className="text-sm font-bold font-mono text-slate-800">{fmt(selectedClaim.amountApproved)}</span>
+                  <span className={`text-sm font-bold font-mono ${isDark ? 'text-white' : 'text-slate-800'}`}>{fmt(selectedClaim.amountApproved)}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                  <span className="text-[10px] font-mono text-emerald-700 uppercase block font-bold">Benefit Deducted</span>
-                  <span className="text-base font-black font-mono text-emerald-700">{fmt(selectedClaim.amountDeductedFromBenefit)}</span>
+                <div className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-100'
+                }`}>
+                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 uppercase block font-bold">Benefit Deducted</span>
+                  <span className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">{fmt(selectedClaim.amountDeductedFromBenefit)}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className={`p-3 rounded-xl border ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-100'
+                }`}>
                   <span className="text-[10px] font-mono text-slate-400 uppercase block font-bold">Customer Responsibility</span>
-                  <span className="text-base font-black font-mono text-slate-900">{fmt(selectedClaim.customerResponsibility)}</span>
+                  <span className={`text-base font-black font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmt(selectedClaim.customerResponsibility)}</span>
                 </div>
               </div>
 
               {selectedClaim.rejectionReason && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
+                <div className={`p-3 rounded-xl border text-xs ${
+                  isDark ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-red-50 border-red-200 text-red-700'
+                }`}>
                   <span className="font-bold block">Rejection Reason:</span>
                   {selectedClaim.rejectionReason}
                 </div>
               )}
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className={`pt-3 border-t flex justify-end ${
+              isDark ? 'border-slate-800' : 'border-slate-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => setSelectedClaim(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                className={`px-4 py-2 font-bold text-xs rounded-xl cursor-pointer ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
               >
                 Close
               </button>
@@ -364,21 +421,27 @@ export function CustomerClaims({
       {/* Submit New Assistance Claim Modal */}
       {showSubmitModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl text-slate-100 space-y-5">
-            <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+          <div className={`border rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl space-y-5 transition-colors ${
+            isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className={`flex justify-between items-start border-b pb-3 ${
+              isDark ? 'border-slate-800' : 'border-slate-200'
+            }`}>
               <div>
-                <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest block">
+                <span className="text-[10px] font-mono font-bold text-red uppercase tracking-widest block">
                   NEW ASSISTANCE CLAIM
                 </span>
-                <h3 className="text-xl font-black text-white mt-0.5">Submit Assistance Claim</h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
+                <h3 className={`text-xl font-black mt-0.5 ${isDark ? 'text-white' : 'text-navy'}`}>Submit Assistance Claim</h3>
+                <p className={`text-xs font-mono mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Available Benefit: {benefitSummary ? fmt(benefitSummary.remainingBenefit) : 'Loading...'}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSubmitModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+                className={`p-1.5 rounded-lg cursor-pointer ${
+                  isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -386,13 +449,19 @@ export function CustomerClaims({
 
             <form onSubmit={handleClaimSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
                   Service Category *
                 </label>
                 <select
                   value={serviceType}
                   onChange={e => setServiceType(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-red-500"
+                  className={`w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-white focus:border-red' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-navy'
+                  }`}
                 >
                   <option value="Intercom Systems">Intercom Systems (Audio & Video, Gate Stations)</option>
                   <option value="Security Services">Security Services (Gate, Fence, CCTV, Alarm)</option>
@@ -405,7 +474,9 @@ export function CustomerClaims({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
                   Property / Site Location Involved *
                 </label>
                 <input
@@ -413,13 +484,19 @@ export function CustomerClaims({
                   value={vehicleOrProperty}
                   onChange={e => setVehicleOrProperty(e.target.value)}
                   placeholder="e.g. Main Residence Front Gate / Office Perimeter"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-red-500"
+                  className={`w-full border rounded-xl px-4 py-2.5 text-xs focus:outline-none ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-white focus:border-red' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-navy'
+                  }`}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${
+                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
                     Estimated / Claimed Service Amount (ZAR) *
                   </label>
                   <input
@@ -429,12 +506,18 @@ export function CustomerClaims({
                     value={amountClaimed}
                     onChange={e => handleAmountChange(e.target.value, partsAmount)}
                     placeholder="e.g. 2500"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-red-500"
+                    className={`w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-red' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-navy'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${
+                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
                     Hardware / Parts Portion (ZAR)
                   </label>
                   <input
@@ -443,40 +526,54 @@ export function CustomerClaims({
                     value={partsAmount}
                     onChange={e => handleAmountChange(amountClaimed, e.target.value)}
                     placeholder="e.g. 1500"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-red-500"
+                    className={`w-full border rounded-xl px-4 py-2.5 text-xs font-mono focus:outline-none ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white focus:border-red' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-navy'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Live Coverage Preview Calculation */}
               {coveragePreview && (
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs animate-fadeIn">
-                  <div className="flex justify-between items-center pb-2 border-b border-slate-800 font-mono">
-                    <span className="font-bold text-slate-300">Live Benefit Coverage Preview:</span>
+                <div className={`border rounded-2xl p-4 space-y-2 text-xs animate-fadeIn ${
+                  isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className={`flex justify-between items-center pb-2 border-b font-mono ${
+                    isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'
+                  }`}>
+                    <span className="font-bold">Live Benefit Coverage Preview:</span>
                     <span className="text-[10px] text-slate-400">Calculated Against Current Balance</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Covered by Plan:</span>
-                      <span className="text-emerald-400 font-bold text-sm">
+                    <div className={`p-2.5 rounded-lg border ${
+                      isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+                    }`}>
+                      <span className={`block text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Covered by Plan:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                         {fmt(coveragePreview.amountCoveredByBenefit)}
                       </span>
                     </div>
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                      <span className="text-slate-400 block text-[10px]">Your Responsibility:</span>
-                      <span className="text-white font-bold text-sm">
+                    <div className={`p-2.5 rounded-lg border ${
+                      isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+                    }`}>
+                      <span className={`block text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Your Responsibility:</span>
+                      <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-navy'}`}>
                         {fmt(coveragePreview.amountPayableByCustomer)}
                       </span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug pt-1">
+                  <p className={`text-[11px] leading-snug pt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {coveragePreview.explanation}
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
                   Detailed Fault / Incident Description *
                 </label>
                 <textarea
@@ -485,22 +582,30 @@ export function CustomerClaims({
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   placeholder="Describe the issue, work completed or required..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-xs focus:outline-none focus:border-red-500 leading-relaxed"
+                  className={`w-full border rounded-xl p-3 text-xs focus:outline-none leading-relaxed ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-white focus:border-red' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white focus:border-navy'
+                  }`}
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <div className={`pt-3 border-t flex justify-end gap-2 ${
+                isDark ? 'border-slate-800' : 'border-slate-200'
+              }`}>
                 <button
                   type="button"
                   onClick={() => setShowSubmitModal(false)}
-                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl cursor-pointer"
+                  className={`px-4 py-2.5 text-xs font-bold rounded-xl cursor-pointer ${
+                    isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 bg-red hover:bg-red/90 text-white text-xs font-bold rounded-xl shadow-lg shadow-red/20 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Claim'}
                 </button>

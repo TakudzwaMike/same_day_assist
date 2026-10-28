@@ -134,9 +134,8 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
 
       {/* MEMBERSHIP HEADER CARD */}
       <div className={`rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden transition-colors border ${
-        isDark ? 'bg-gradient-to-br from-slate-950 via-[#091C3E] to-slate-950 border-slate-800' : 'bg-white border-slate-200'
+        isDark ? 'bg-[#091C3E] border-[#142D59]' : 'bg-white border-slate-200'
       }`}>
-        <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className={`relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b ${
           isDark ? 'border-slate-800' : 'border-slate-200'

@@ -60,7 +60,7 @@ export default function AdminPortal() {
     tabs.push({ id: 'technicalAssessments', label: 'Technical Registers', icon: ClipboardCheck, badge: assessmentsCount });
     tabs.push({ id: 'claims', label: 'Service Claims', icon: ShieldAlert, badge: pendingClaimsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'enquiries', label: 'Client Support & Requests', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'dispatcherEarnings', label: 'My Compensation & Earnings', icon: Wallet });
   } else if (role === 'Administrator') {
     tabs.push({ id: 'overview', label: 'Command Overview', icon: Activity });
@@ -71,7 +71,7 @@ export default function AdminPortal() {
     tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
     tabs.push({ id: 'onboarding', label: 'Onboarding Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'enquiries', label: 'Client Support & Requests', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency Dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
@@ -84,7 +84,7 @@ export default function AdminPortal() {
     tabs.push({ id: 'invoices', label: 'Tax Invoices', icon: FileText, badge: unpaidInvoicesCount });
     tabs.push({ id: 'onboarding', label: 'Onboarding Requests', icon: ShieldCheck, badge: onboardingRequestsCount });
     tabs.push({ id: 'vetting', label: 'Provider Vetting', icon: FileCheck });
-    tabs.push({ id: 'enquiries', label: 'Assessments & Quotes', icon: FileText, badge: pendingEnquiries });
+    tabs.push({ id: 'enquiries', label: 'Client Support & Requests', icon: FileText, badge: pendingEnquiries });
     tabs.push({ id: 'jobs', label: 'Emergency Dispatch', icon: Shield, badge: criticalAlarms });
     tabs.push({ id: 'profileRequests', label: 'Profile Approvals', icon: UserCheck });
     tabs.push({ id: 'reports', label: 'Analytics Suite', icon: Users });
@@ -325,7 +325,7 @@ export default function AdminPortal() {
 
         {/* MAIN RENDER VIEWS (Item 13: Persistent Theme Styling) */}
         <main className={`flex-1 p-2.5 sm:p-5 md:p-6 lg:p-8 overflow-y-auto transition-colors duration-200 ${
-          isDark ? 'bg-[#061229]/60 text-slate-100' : 'bg-slate-50/70 text-slate-900'
+          isDark ? 'bg-[#050E20] text-slate-100' : 'bg-white text-slate-900'
         }`}>
           {activeTab === 'overview' && <AdminDashboard />}
           {activeTab === 'completedJobs' && <AdminCompletedJobsViewer />}

@@ -50,14 +50,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.setAttribute('data-theme', theme);
     if (theme === 'dark') {
-      root.classList.remove('theme-light');
-      root.classList.add('theme-dark');
+      root.classList.remove('theme-light', 'light');
+      root.classList.add('theme-dark', 'dark');
       root.style.colorScheme = 'dark';
       document.body.style.backgroundColor = '#050E20'; // Brand Navy Dark
       document.body.style.color = '#F8FAFC';
     } else {
-      root.classList.remove('theme-dark');
-      root.classList.add('theme-light');
+      root.classList.remove('theme-dark', 'dark');
+      root.classList.add('theme-light', 'light');
       root.style.colorScheme = 'light';
       document.body.style.backgroundColor = '#FFFFFF'; // Clean White Main Theme
       document.body.style.color = '#091C3E';

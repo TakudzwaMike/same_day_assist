@@ -318,12 +318,24 @@ class ApiClient {
   }
 
 
-  // Enquiries
+  // Enquiries & Customer Feedback (Callbacks, Suggestions, Complaints)
   async getEnquiries() { return this.request<any[]>('/enquiries'); }
+  async createEnquiry(payload: { customerName: string; email: string; phone: string; address?: string; serviceCategory?: string; notes?: string }) {
+    return this.request<any>('/enquiries', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
   async scheduleAssessment(enquiryId: string, contractorId: string) {
     return this.request(`/enquiries/${enquiryId}/schedule`, {
       method: 'PATCH',
       body: JSON.stringify({ contractorId }),
+    });
+  }
+  async updateEnquiryStatus(enquiryId: string, status: string, notes?: string) {
+    return this.request(`/enquiries/${enquiryId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes }),
     });
   }
 

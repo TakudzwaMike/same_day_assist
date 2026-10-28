@@ -741,10 +741,10 @@ var registerSchema = z.object({
 var enquirySchema = z.object({
   customerName: z.string().min(1).max(255),
   email: z.string().email(),
-  phone: z.string().min(5).max(30),
-  address: z.string().min(1).max(500),
-  serviceCategory: z.string().optional().default("Security"),
-  notes: z.string().max(1e3).optional().default("")
+  phone: z.string().min(3).max(40),
+  address: z.string().max(500).optional().default("Member Communications Hub"),
+  serviceCategory: z.string().optional().default("General Support"),
+  notes: z.string().max(1e4).optional().default("")
 });
 var assessmentUploadSchema = z.object({
   enquiryId: z.string().uuid(),
@@ -2434,6 +2434,36 @@ router2.patch("/:id/schedule", requireAuth, requireRoles("Administrator", "Super
   } catch (error) {
     console.error("[Enquiries/Schedule]", error);
     return res.status(500).json({ error: "Failed to schedule assessment" });
+  }
+});
+router2.patch("/:id/status", requireAuth, requireRoles("Administrator", "Super Administrator", "Dispatcher"), async (req, res) => {
+  const { status, notes } = req.body;
+  if (!status) return res.status(400).json({ error: "status is required" });
+  try {
+    const existing = await prisma.enquiry.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Enquiry not found" });
+    const updated = await prisma.enquiry.update({
+      where: { id: req.params.id },
+      data: {
+        status,
+        ...notes ? { notes: `${existing.notes}
+[Update ${(/* @__PURE__ */ new Date()).toLocaleDateString()}]: ${notes}` } : {}
+      }
+    });
+    await writeAuditLog({
+      userId: req.user.id,
+      userType: req.user.role,
+      action: "Enquiry Status Updated",
+      details: `${req.user.role} updated support request ${existing.customerName} (${existing.serviceCategory}) to ${status}`,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      previousValue: { status: existing.status },
+      newValue: { status }
+    });
+    return res.json(updated);
+  } catch (error) {
+    console.error("[Enquiries/Status]", error);
+    return res.status(500).json({ error: "Failed to update enquiry status" });
   }
 });
 var enquiries_default = router2;
