@@ -6,8 +6,6 @@ import {
   MessageSquare, 
   Wallet, 
   Settings, 
-  Sun, 
-  Moon, 
   BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
@@ -29,7 +27,7 @@ import logoImg from '../assets/logo.png';
 export default function ContractorApp() {
   const { user, logout, refreshUser } = useAuth();
   const { state } = useAppState();
-  const { toggleTheme, isDark } = useTheme();
+  const { isDark } = useTheme();
   const [isOnline, setIsOnline] = useState(true);
   const [showVettingModal, setShowVettingModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -95,11 +93,13 @@ export default function ContractorApp() {
     <div className={`w-full min-h-screen md:min-h-[700px] border-0 md:border rounded-none md:rounded-3xl shadow-none md:shadow-xl flex flex-col flex-1 overflow-hidden animate-fadeIn transition-colors duration-200 ${
       isDark 
         ? 'bg-[#050E20] border-[#142D59] text-slate-100' 
-        : 'bg-slate-50 border-slate-200 text-slate-900'
+        : 'bg-white border-slate-200 text-slate-900'
     }`}>
       {/* BRANDING HEADER */}
-      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 ${
-        isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-navy text-white border-navy-light'
+      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 transition-colors ${
+        isDark 
+          ? 'bg-[#091C3E] border-[#142D59] text-white' 
+          : 'bg-white border-slate-200 text-navy shadow-2xs'
       }`}>
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -107,7 +107,11 @@ export default function ContractorApp() {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
               title={isSidebarCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu"}
             >
               {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -117,17 +121,23 @@ export default function ContractorApp() {
               src={logoImg} 
               alt="Same Day Assist Logo" 
               onClick={() => setContractorTab('jobs')}
-              className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-md" 
+              className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-md border border-slate-200" 
             />
             <div>
-              <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
+              <h1 className={`text-lg font-brand-header tracking-wide uppercase leading-tight ${
+                isDark ? 'text-white' : 'text-navy'
+              }`}>
+                SAME DAY ASSIST
+              </h1>
               <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">
                 Contractor & Responder Portal
               </p>
             </div>
           </div>
 
-          <span className="text-[10px] text-slate-300 font-medium lg:hidden">
+          <span className={`text-[10px] font-medium lg:hidden ${
+            isDark ? 'text-slate-300' : 'text-slate-600'
+          }`}>
             {user?.specialty || 'Certified Responder'}
           </span>
         </div>
@@ -136,50 +146,51 @@ export default function ContractorApp() {
         <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
           <div className="hidden sm:flex gap-4 text-right">
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Vetting Status</span>
+              <span className={`text-[9px] uppercase font-medium block ${
+                isDark ? 'text-slate-300/80' : 'text-slate-500'
+              }`}>
+                Vetting Status
+              </span>
               <button
                 type="button"
                 onClick={() => setShowVettingModal(true)}
                 className={`text-xs font-bold cursor-pointer hover:underline ${
-                  verificationStatus === 'Approved' ? 'text-emerald-400' : 'text-amber-400'
+                  verificationStatus === 'Approved' ? 'text-emerald-500' : 'text-amber-500'
                 }`}
               >
                 {verificationStatus === 'Approved' ? 'VERIFIED' : 'PENDING REVIEW'}
               </button>
             </div>
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Availability</span>
+              <span className={`text-[9px] uppercase font-medium block ${
+                isDark ? 'text-slate-300/80' : 'text-slate-500'
+              }`}>
+                Availability
+              </span>
               <button
                 type="button"
                 onClick={() => setIsOnline(!isOnline)}
                 className={`text-xs font-bold cursor-pointer flex items-center gap-1 justify-end ${
-                  isOnline ? 'text-emerald-400' : 'text-red'
+                  isOnline ? 'text-emerald-500' : 'text-red'
                 }`}
                 title="Click to toggle availability"
               >
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-red'}`} />
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red'}`} />
                 {isOnline ? 'ONLINE & READY' : 'OFFLINE'}
               </button>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Theme Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center gap-1.5 text-xs font-bold"
-              title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-blue-300" />}
-              <span className="hidden xl:inline text-[11px] font-mono">{isDark ? 'Light' : 'Dark'}</span>
-            </button>
-
             {/* Provider Settings */}
             <button
               type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-center shrink-0 ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800 shadow-2xs'
+              }`}
               title="Provider Account Settings"
             >
               <Settings className="w-4 h-4" />
@@ -189,7 +200,11 @@ export default function ContractorApp() {
             <button
               type="button"
               onClick={() => logout()}
-              className="p-2 rounded-xl bg-white/10 hover:bg-red/30 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-center shrink-0 ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-red/30 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-red/10 hover:text-red border-slate-200 text-slate-700'
+              }`}
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />

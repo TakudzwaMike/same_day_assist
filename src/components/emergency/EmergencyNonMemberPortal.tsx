@@ -4,11 +4,13 @@ import {
   Clock, DollarSign, CreditCard, ChevronRight, ArrowLeft,
   FileText, Camera, Radio, Lock, RefreshCw, UserCheck,
   Zap, DoorClosed, ShieldAlert, KeyRound, Power, Droplets,
-  AlertCircle, Download, ExternalLink, HelpCircle, Video, Package
+  AlertCircle, Download, ExternalLink, HelpCircle, Video, Package,
+  Sun, Moon
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { getSocket } from '../../services/socket';
 import { EMERGENCY_SERVICES, EMERGENCY_CALL_OUT_FEE } from '../../config/emergencyServices';
+import { useTheme } from '../../contexts/ThemeContext';
 import logoImg from '../../assets/logo.png';
 
 interface Props {
@@ -19,6 +21,7 @@ interface Props {
 const LOCAL_STORAGE_KEY = 'sda_emergency_job_id';
 
 export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props) {
+  const { isDark, toggleTheme } = useTheme();
   // Check local storage or initialJobId for existing emergency request
   const storedJobId = initialJobId || localStorage.getItem(LOCAL_STORAGE_KEY) || '';
 
@@ -198,49 +201,65 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
   const selectedServiceObj = EMERGENCY_SERVICES.find(s => s.name === serviceType) || EMERGENCY_SERVICES[0];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans relative overflow-x-hidden">
+    <div className={`min-h-screen flex flex-col justify-between font-sans relative overflow-x-hidden transition-colors ${
+      isDark ? 'bg-slate-950 text-slate-100' : 'bg-[#FAFAFA] text-slate-900'
+    }`}>
       {/* Subtle Navy Ambient Light */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-slate-900/60 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 rounded-full blur-[140px] pointer-events-none ${
+        isDark ? 'bg-slate-900/60' : 'bg-red/5'
+      }`}></div>
 
       {/* HEADER */}
-      <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md py-4 px-6 md:px-12 flex justify-between items-center z-10">
+      <header className={`border-b py-4 px-6 md:px-12 flex justify-between items-center z-10 transition-colors ${
+        isDark ? 'border-slate-800 bg-slate-950/90 backdrop-blur-md' : 'border-slate-200 bg-white/95 backdrop-blur-md shadow-2xs'
+      }`}>
         <div className="flex items-center gap-3">
           <img src={logoImg} alt="Same Day Assist" className="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-md" />
           <div>
             <div className="flex items-baseline gap-1.5">
-              <h1 className="text-sm font-black italic tracking-wide leading-none uppercase font-brand-header text-white">
+              <h1 className={`text-sm font-black italic tracking-wide leading-none uppercase font-brand-header ${
+                isDark ? 'text-white' : 'text-[#091C3E]'
+              }`}>
                 SAME DAY ASSIST
               </h1>
               <span className="text-[9px] font-bold text-red uppercase tracking-widest font-mono">EMERGENCY</span>
             </div>
-            <p className="text-[9px] tracking-wider text-slate-400 font-medium">
+            <p className={`text-[9px] tracking-wider font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Non-Member Emergency Assist
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onBackToLogin}
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Member Login</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onBackToLogin}
+            className={`px-4 py-2 border rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              isDark
+                ? 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-navy'
+            }`}
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Login</span>
+          </button>
+        </div>
       </header>
 
       {/* MAIN CONTAINER */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 max-w-4xl mx-auto w-full">
         {/* Navigation Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 w-full mb-6">
-          <div className="flex bg-slate-900 border border-slate-800 p-1 rounded-2xl shadow-md">
+          <div className={`flex p-1 rounded-2xl shadow-md border transition-colors ${
+            isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'
+          }`}>
             <button
               type="button"
               onClick={() => setViewMode('create')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'create'
                   ? 'bg-red text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+                  : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-navy'
               }`}
             >
               🚨 1. Request Emergency Assistance
@@ -257,7 +276,7 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 ['pay', 'track'].includes(viewMode)
                   ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white'
+                  : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-navy'
               }`}
             >
               📍 2. Pay Call-Out & Track Dispatch
@@ -268,7 +287,9 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
             <button
               type="button"
               onClick={handleStartNewRequest}
-              className="text-xs text-slate-400 hover:text-amber-400 underline font-mono flex items-center gap-1 cursor-pointer"
+              className={`text-xs underline font-mono flex items-center gap-1 cursor-pointer ${
+                isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-red'
+              }`}
             >
               <span>+ New Emergency Request</span>
             </button>
@@ -279,34 +300,40 @@ export function EmergencyNonMemberPortal({ onBackToLogin, initialJobId }: Props)
         {/* VIEW 1: CREATE EMERGENCY REQUEST                                          */}
         {/* ========================================================================= */}
         {viewMode === 'create' && (
-          <div className="w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 animate-fadeIn">
+          <div className={`w-full rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 animate-fadeIn border transition-colors ${
+            isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
             {/* Clear Non-Member Banner with Prompt Requirements */}
-            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-md space-y-3">
+            <div className={`rounded-2xl p-5 shadow-md space-y-3 border transition-colors ${
+              isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+            }`}>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 bg-red text-white text-xs font-bold rounded-lg uppercase tracking-wide">
                   Emergency Assistance
                 </span>
-                <span className="text-xs font-bold text-slate-300">Non-Member Dispatch</span>
+                <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Non-Member Dispatch</span>
               </div>
-              <p className="text-xs text-slate-200 leading-relaxed font-medium">
+              <p className={`text-xs leading-relaxed font-medium ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
                 Not a Same Day Assist monthly member? You can request immediate emergency assistance for our certified property and security services.
                 A certified technician/response team will be dispatched immediately once the fixed call-out fee is confirmed.
               </p>
               
               {/* Call-Out Fee Badge */}
-              <div className="bg-slate-950/80 border border-amber-500/40 rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div className={`border rounded-xl p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors ${
+                isDark ? 'bg-slate-950/80 border-amber-500/40' : 'bg-amber-50/60 border-amber-300'
+              }`}>
                 <div>
-                  <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest block font-bold">
+                  <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest block font-bold">
                     MANDATORY NON-MEMBER CALL-OUT FEE
                   </span>
-                  <span className="text-base font-black text-white font-mono">
+                  <span className={`text-base font-black font-mono ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                     Emergency Assistance Call-Out Fee: R650
                   </span>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     Fixed call-out fee. Payment must happen before technician dispatch. No monthly membership created.
                   </p>
                 </div>
-                <div className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-mono font-bold shrink-0">
+                <div className="bg-amber-500/20 text-amber-500 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-mono font-bold shrink-0">
                   FIXED R650
                 </div>
               </div>

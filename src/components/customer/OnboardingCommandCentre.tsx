@@ -4,6 +4,7 @@ import {
   CreditCard, ArrowRight, UserCheck, MapPin, Phone, Award, Lock, Sparkles, Building2
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Customer, CustomerStatus } from '../../types';
 import { SERVICE_PACKAGES } from '../../data/staticData';
 
@@ -13,6 +14,7 @@ interface OnboardingCommandCentreProps {
 
 export default function OnboardingCommandCentre({ customer }: OnboardingCommandCentreProps) {
   const { state, processInitialPayment, activateCustomerAccount } = useAppState();
+  const { isDark } = useTheme();
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'eft' | 'snapscan'>('card');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -74,26 +76,34 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn pb-12">
       {/* BRANDING HEADER / COMMAND HUB TITLE */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl text-white relative overflow-hidden">
+      <div className={`rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden border transition-colors ${
+        isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+      }`}>
         <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-red-500 text-xs font-mono font-bold tracking-widest uppercase">
-              <ShieldCheck className="w-4 h-4 text-red-500" />
+            <div className="flex items-center gap-2 text-red text-xs font-mono font-bold tracking-widest uppercase">
+              <ShieldCheck className="w-4 h-4 text-red" />
               <span>Onboarding Command Centre • Account Portal</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black italic tracking-wide">
+            <h1 className={`text-2xl md:text-3xl font-black italic tracking-wide ${
+              isDark ? 'text-white' : 'text-[#091C3E]'
+            }`}>
               {customer.name || 'Member Account'}
             </h1>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {customer.address} • {customer.package || 'Platinum'} Assist Coverage Plan
             </p>
           </div>
 
-          <div className="bg-slate-800/80 border border-slate-700 rounded-2xl px-5 py-3 text-right">
-            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400 block mb-0.5">Current Lifecycle Status</span>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+          <div className={`border rounded-2xl px-5 py-3 text-right transition-colors ${
+            isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className={`text-[10px] uppercase font-mono tracking-wider block mb-0.5 ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>Current Lifecycle Status</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/40">
               <Clock className="w-3.5 h-3.5 animate-spin" />
               <span>{status.replace(/_/g, ' ')}</span>
             </div>
@@ -101,26 +111,28 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
         </div>
 
         {/* PROGRESS LIFECYCLE BAR */}
-        <div className="mt-8 pt-6 border-t border-slate-800">
+        <div className={`mt-8 pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             {stages.map((st, idx) => (
               <div 
                 key={st.key} 
                 className={`p-3 rounded-2xl border text-center transition-all ${
                   st.done 
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-bold' 
                     : idx === 1 && status === 'WAITING_FOR_SURVEY'
-                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 ring-2 ring-amber-500/30'
+                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 ring-2 ring-amber-500/30 font-bold'
                     : status === st.key
-                    ? 'bg-red-500/10 border-red-500/50 text-red-400 ring-2 ring-red-500/30'
-                    : 'bg-slate-800/40 border-slate-800 text-slate-500'
+                    ? 'bg-red-500/10 border-red-500/50 text-red ring-2 ring-red/30 font-bold'
+                    : isDark ? 'bg-slate-800/40 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-400'
                 }`}
               >
                 <div className="flex items-center justify-center mb-1.5">
                   {st.done ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   ) : (
-                    <span className="w-4 h-4 rounded-full border border-slate-600 text-[10px] font-mono flex items-center justify-center">
+                    <span className={`w-4 h-4 rounded-full border text-[10px] font-mono flex items-center justify-center ${
+                      isDark ? 'border-slate-600' : 'border-slate-300'
+                    }`}>
                       {idx + 1}
                     </span>
                   )}
@@ -136,32 +148,36 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 1: WAITING FOR SURVEY */}
       {(status === 'WAITING_FOR_SURVEY' || status === 'APPLICATION_SUBMITTED') && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 text-slate-100 shadow-xl">
+        <div className={`rounded-3xl p-6 md:p-8 space-y-6 shadow-xl border transition-colors ${
+          isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-500 shrink-0">
               <Clock className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <div className="text-xs font-bold text-amber-400 uppercase tracking-widest">Stage 1 of 4 — Assessment Pending</div>
-              <h2 className="text-xl font-bold text-white mt-0.5">Waiting For Property Safety & Compliance Survey</h2>
-              <p className="text-sm text-slate-400 leading-relaxed mt-2">
-                Your Same Day Assist application has been successfully submitted. Our certified surveying team will conduct an initial property safety and compliance assessment of your residence/business at <span className="text-white font-medium">{customer.address}</span> before full account approval.
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-widest">Stage 1 of 4 — Assessment Pending</div>
+              <h2 className={`text-xl font-bold mt-0.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Waiting For Property Safety & Compliance Survey</h2>
+              <p className={`text-sm leading-relaxed mt-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Your Same Day Assist application has been successfully submitted. Our certified surveying team will conduct an initial property safety and compliance assessment of your residence/business at <span className={`font-medium ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{customer.address}</span> before full account approval.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-800 text-xs">
-            <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-800">
-              <div className="text-slate-400 mb-1">Requested Services</div>
-              <div className="font-semibold text-white">{customer.package || 'Platinum'} Package Assistance</div>
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t text-xs ${
+            isDark ? 'border-slate-800' : 'border-slate-200'
+          }`}>
+            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Requested Services</div>
+              <div className={`font-semibold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{customer.package || 'Platinum'} Package Assistance</div>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-800">
-              <div className="text-slate-400 mb-1">Inspector Status</div>
-              <div className="font-semibold text-amber-400">Awaiting Admin Inspector Assignment</div>
+            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Inspector Status</div>
+              <div className="font-semibold text-amber-500">Awaiting Admin Inspector Assignment</div>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-800">
-              <div className="text-slate-400 mb-1">Expected Turnaround</div>
-              <div className="font-semibold text-white">24 - 48 Hours</div>
+            <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Expected Turnaround</div>
+              <div className={`font-semibold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>24 - 48 Hours</div>
             </div>
           </div>
         </div>
@@ -169,26 +185,28 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 2: SURVEY ASSIGNED / SCHEDULED / IN PROGRESS */}
       {['SURVEY_ASSIGNED', 'SURVEY_SCHEDULED', 'SURVEY_IN_PROGRESS'].includes(status) && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 text-slate-100 shadow-xl">
+        <div className={`rounded-3xl p-6 md:p-8 space-y-6 shadow-xl border transition-colors ${
+          isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-500 shrink-0">
               <UserCheck className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xs font-bold text-blue-400 uppercase tracking-widest">Stage 2 of 4 — Survey Scheduled</div>
-              <h2 className="text-xl font-bold text-white mt-0.5">Certified Inspector Assigned</h2>
-              <p className="text-sm text-slate-400 leading-relaxed mt-2">
-                Inspector <span className="text-white font-semibold">{customer.surveyInspectorName || 'Certified Same Day Assist Inspector'}</span> has been assigned to inspect your property at <span className="text-white font-medium">{customer.address}</span>.
+              <div className="text-xs font-bold text-blue-500 uppercase tracking-widest">Stage 2 of 4 — Survey Scheduled</div>
+              <h2 className={`text-xl font-bold mt-0.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Certified Inspector Assigned</h2>
+              <p className={`text-sm leading-relaxed mt-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Inspector <span className={`font-semibold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{customer.surveyInspectorName || 'Certified Same Day Assist Inspector'}</span> has been assigned to inspect your property at <span className={`font-medium ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{customer.address}</span>.
               </p>
             </div>
           </div>
 
           <div className="p-5 rounded-2xl bg-blue-500/10 border border-blue-500/30 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-blue-300 font-bold">
+            <div className="flex items-center justify-between text-blue-500 font-bold">
               <span>Inspection Schedule</span>
               <span>{customer.surveyScheduledDate || 'Today / Tomorrow'}</span>
             </div>
-            <p className="text-slate-400">
+            <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>
               Please ensure gate access instructions and Next of Kin contacts are up to date. The inspector will present official Same Day Assist ID credentials upon arrival.
             </p>
           </div>
@@ -197,30 +215,34 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 3: SURVEY COMPLETED / ADMIN REVIEW */}
       {['SURVEY_COMPLETED', 'ADMIN_REVIEW'].includes(status) && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 text-slate-100 shadow-xl">
+        <div className={`rounded-3xl p-6 md:p-8 space-y-6 shadow-xl border transition-colors ${
+          isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-500 shrink-0">
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xs font-bold text-purple-400 uppercase tracking-widest">Stage 3 of 4 — Administrative Audit</div>
-              <h2 className="text-xl font-bold text-white mt-0.5">Survey Completed — Under Admin Review</h2>
-              <p className="text-sm text-slate-400 leading-relaxed mt-2">
+              <div className="text-xs font-bold text-purple-500 uppercase tracking-widest">Stage 3 of 4 — Administrative Audit</div>
+              <h2 className={`text-xl font-bold mt-0.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Survey Completed — Under Admin Review</h2>
+              <p className={`text-sm leading-relaxed mt-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Your property safety inspection report has been uploaded by the inspector and is currently under review by our Operations Administrator.
               </p>
             </div>
           </div>
 
           {surveyReport && (
-            <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
+            <div className={`p-5 rounded-2xl border space-y-3 text-xs ${
+              isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
+            }`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-white">Inspector Safety Summary</span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className={`font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Inspector Safety Summary</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
                   {surveyReport.recommendation?.replace(/_/g, ' ')}
                 </span>
               </div>
-              <p className="text-slate-300 italic">"{surveyReport.safetyObservations}"</p>
-              <div className="text-[11px] text-slate-400">Inspector: {surveyReport.inspectorName} • Date: {surveyReport.inspectionDate}</div>
+              <p className={`italic ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>"{surveyReport.safetyObservations}"</p>
+              <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Inspector: {surveyReport.inspectorName} • Date: {surveyReport.inspectionDate}</div>
             </div>
           )}
         </div>
@@ -228,32 +250,38 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 4: PAYMENT REQUIRED (ADMIN APPROVED) */}
       {(status === 'PAYMENT_REQUIRED' || status === 'APPLICATION_APPROVED') && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 text-slate-100 shadow-2xl relative overflow-hidden">
+        <div className={`rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl relative overflow-hidden border transition-colors ${
+          isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-500 shrink-0">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Application Approved!</div>
-              <h2 className="text-xl md:text-2xl font-black text-white mt-0.5">50% Initial Activation Fee Required</h2>
-              <p className="text-sm text-slate-300 leading-relaxed mt-1">
-                Your property compliance survey has been fully reviewed and <span className="text-emerald-400 font-bold">APPROVED</span> by Same Day Assist Operations. Please complete your 50% initial activation payment below to initiate your activation waiting period.
+              <div className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Application Approved!</div>
+              <h2 className={`text-xl md:text-2xl font-black mt-0.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>50% Initial Activation Fee Required</h2>
+              <p className={`text-sm leading-relaxed mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Your property compliance survey has been fully reviewed and <span className="text-emerald-500 font-bold">APPROVED</span> by Same Day Assist Operations. Please complete your 50% initial activation payment below to initiate your activation waiting period.
               </p>
             </div>
           </div>
 
           {/* FEE BREAKDOWN CARD */}
-          <div className="p-6 rounded-2xl bg-slate-800/80 border border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3 border-b md:border-b-0 md:border-r border-slate-700 pb-4 md:pb-0 md:pr-6">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Selected Assist Package</div>
+          <div className={`p-6 rounded-2xl border grid grid-cols-1 md:grid-cols-2 gap-6 ${
+            isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className={`space-y-3 border-b md:border-b-0 md:border-r pb-4 md:pb-0 md:pr-6 ${
+              isDark ? 'border-slate-700' : 'border-slate-200'
+            }`}>
+              <div className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Selected Assist Package</div>
               <div className="flex items-baseline justify-between">
-                <span className="text-lg font-bold text-white">{pkg.name}</span>
-                <span className="text-sm font-mono text-slate-400">R{pkg.price} / month</span>
+                <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{pkg.name}</span>
+                <span className={`text-sm font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>R{pkg.price} / month</span>
               </div>
-              <ul className="space-y-1.5 text-xs text-slate-300">
+              <ul className={`space-y-1.5 text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 {pkg.benefits.map((b, i) => (
                   <li key={i} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-red shrink-0" />
                     <span>{b}</span>
                   </li>
                 ))}
@@ -262,26 +290,28 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
             <div className="space-y-4 flex flex-col justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Initial Activation Payment (50%)</div>
-                <div className="text-3xl font-black text-red-500 font-mono">
-                  R{initialFee} <span className="text-xs font-sans text-slate-400 font-normal">Once-off Initial Fee</span>
+                <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Initial Activation Payment (50%)</div>
+                <div className="text-3xl font-black text-red font-mono">
+                  R{initialFee} <span className={`text-xs font-sans font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Once-off Initial Fee</span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Covers initial admin processing, verified GPS beacon allocation, and property compliance certification.
                 </p>
               </div>
 
               {/* PAYMENT METHOD SELECTOR */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Select Payment Method</label>
+                <label className={`block text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Select Payment Method</label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('card')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       paymentMethod === 'card' 
-                        ? 'bg-red-600 text-white border-red-500 shadow-md' 
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        ? 'bg-red text-white border-red shadow-md' 
+                        : isDark
+                        ? 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        : 'bg-white text-slate-600 border-slate-200 hover:text-navy'
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5" />
@@ -290,10 +320,12 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('eft')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       paymentMethod === 'eft' 
-                        ? 'bg-red-600 text-white border-red-500 shadow-md' 
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        ? 'bg-red text-white border-red shadow-md' 
+                        : isDark
+                        ? 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        : 'bg-white text-slate-600 border-slate-200 hover:text-navy'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
@@ -302,10 +334,12 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('snapscan')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       paymentMethod === 'snapscan' 
-                        ? 'bg-red-600 text-white border-red-500 shadow-md' 
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        ? 'bg-red text-white border-red shadow-md' 
+                        : isDark
+                        ? 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
+                        : 'bg-white text-slate-600 border-slate-200 hover:text-navy'
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -318,7 +352,7 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
                 type="button"
                 onClick={handlePayInitialFee}
                 disabled={isProcessingPayment}
-                className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-red hover:bg-red/90 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-red/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isProcessingPayment ? (
                   <>
@@ -339,29 +373,33 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 5: WAITING FOR ACTIVATION (POST-PAYMENT) */}
       {status === 'WAITING_FOR_ACTIVATION' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 text-slate-100 shadow-2xl">
+        <div className={`rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl border transition-colors ${
+          isDark ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-500 shrink-0">
               <Clock className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <div className="text-xs font-bold text-amber-400 uppercase tracking-widest">Initial Payment Received ✓</div>
-              <h2 className="text-xl md:text-2xl font-black text-white mt-0.5">Account In Activation Waiting Period</h2>
-              <p className="text-sm text-slate-300 leading-relaxed mt-1">
-                Your initial payment of <span className="text-emerald-400 font-bold">R{customer.initialPaymentAmount || initialFee}</span> has cleared. Your Same Day Assist account is currently in the mandatory onboarding waiting period and will reach <span className="text-white font-bold">FULL SERVICE ACTIVATION</span> in Month 2.
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-widest">Initial Payment Received ✓</div>
+              <h2 className={`text-xl md:text-2xl font-black mt-0.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Account In Activation Waiting Period</h2>
+              <p className={`text-sm leading-relaxed mt-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Your initial payment of <span className="text-emerald-500 font-bold">R{customer.initialPaymentAmount || initialFee}</span> has cleared. Your Same Day Assist account is currently in the mandatory onboarding waiting period and will reach <span className={`font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>FULL SERVICE ACTIVATION</span> in Month 2.
               </p>
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-800/80 border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className={`p-6 rounded-2xl border flex flex-col md:flex-row items-center justify-between gap-6 ${
+            isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-slate-50 border-slate-200'
+          }`}>
             <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Scheduled Full Service Activation Date</div>
-              <div className="text-2xl font-black text-white font-mono">
+              <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Scheduled Full Service Activation Date</div>
+              <div className={`text-2xl font-black font-mono ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                 {customer.activationScheduledDate 
                   ? new Date(customer.activationScheduledDate).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' })
                   : '30 Days From Today'}
               </div>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Upon reaching Month 2, your account status will automatically switch to ACTIVE, enabling 24/7 priority emergency dispatch.
               </p>
             </div>
@@ -380,12 +418,12 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* STAGE 6: ACTIVE */}
       {status === 'ACTIVE' && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 md:p-8 space-y-4 text-emerald-200">
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-6 md:p-8 space-y-4 text-emerald-700">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-8 h-8 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-8 h-8 text-emerald-500 shrink-0" />
             <div>
-              <h2 className="text-xl font-bold text-white">Full Service Active</h2>
-              <p className="text-xs text-emerald-300">Your Same Day Assist account is 100% active with 24/7 priority emergency response.</p>
+              <h2 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Full Service Active</h2>
+              <p className="text-xs text-emerald-600">Your Same Day Assist account is 100% active with 24/7 priority emergency response.</p>
             </div>
           </div>
         </div>
@@ -393,17 +431,19 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* MORE INFORMATION REQUIRED */}
       {status === 'MORE_INFORMATION_REQUIRED' && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 md:p-8 text-amber-200 space-y-4 shadow-xl">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-6 md:p-8 text-amber-700 space-y-4 shadow-xl">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-7 h-7 text-amber-400 shrink-0" />
+            <AlertCircle className="w-7 h-7 text-amber-500 shrink-0" />
             <div>
-              <h2 className="text-lg font-bold text-white">More Information Required for Onboarding Approval</h2>
-              <p className="text-xs text-amber-300/80">Action required: Our Operations Administrator requested additional property details or safety revisions.</p>
+              <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>More Information Required for Onboarding Approval</h2>
+              <p className="text-xs text-amber-600">Action required: Our Operations Administrator requested additional property details or safety revisions.</p>
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs space-y-2">
-            <div className="font-bold text-white uppercase tracking-wider text-[11px]">Administrator Revision Prompt:</div>
-            <p className="text-slate-300 italic">"{customer.adminReviewNotes || 'Please provide updated site entry directions or secondary emergency contact numbers.'}"</p>
+          <div className={`p-4 rounded-2xl border text-xs space-y-2 ${
+            isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-amber-200'
+          }`}>
+            <div className={`font-bold uppercase tracking-wider text-[11px] ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Administrator Revision Prompt:</div>
+            <p className={`italic ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>"{customer.adminReviewNotes || 'Please provide updated site entry directions or secondary emergency contact numbers.'}"</p>
           </div>
           <div className="flex items-center gap-3 pt-2">
             <button
@@ -419,16 +459,16 @@ export default function OnboardingCommandCentre({ customer }: OnboardingCommandC
 
       {/* REJECTED */}
       {status === 'APPLICATION_REJECTED' && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-3xl p-6 md:p-8 text-red-300 space-y-3 shadow-xl">
+        <div className="bg-red/10 border border-red/30 rounded-3xl p-6 md:p-8 text-red space-y-3 shadow-xl">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-7 h-7 text-red-400 shrink-0" />
-            <h2 className="text-lg font-bold text-white">Application Unsuccessful</h2>
+            <AlertCircle className="w-7 h-7 text-red shrink-0" />
+            <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Application Unsuccessful</h2>
           </div>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             {customer.adminReviewNotes || 'Your property compliance survey did not meet the required safety threshold for automatic dispatch.'}
           </p>
-          <div className="text-xs text-slate-400 pt-2 border-t border-red-500/20">
-            Platform services remain locked. Contact <a href="mailto:compliance@samedayassist.co.za" className="text-red-400 underline font-semibold">compliance@samedayassist.co.za</a> for administrative appeal.
+          <div className="text-xs text-slate-400 pt-2 border-t border-red/20">
+            Platform services remain locked. Contact <a href="mailto:compliance@samedayassist.co.za" className="text-red underline font-semibold">compliance@samedayassist.co.za</a> for administrative appeal.
           </div>
         </div>
       )}

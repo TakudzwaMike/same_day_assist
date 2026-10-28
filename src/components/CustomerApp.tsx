@@ -9,8 +9,6 @@ import {
   ShieldAlert, 
   CreditCard, 
   Settings, 
-  Sun, 
-  Moon, 
   Building2, 
   Headphones,
   PanelLeftClose,
@@ -36,7 +34,7 @@ import logoImg from '../assets/logo.png';
 export default function CustomerApp() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const { toggleTheme, isDark } = useTheme();
+  const { isDark } = useTheme();
   const [activeDeviceTab, setActiveDeviceTab] = useState<'home' | 'settings' | 'invoices' | 'claims' | 'properties' | 'locations' | 'contacts' | 'wallet' | 'payments'>('home');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -124,11 +122,13 @@ export default function CustomerApp() {
     <div className={`w-full min-h-screen md:min-h-[700px] border-0 md:border rounded-none md:rounded-3xl shadow-none md:shadow-xl flex flex-col flex-1 overflow-hidden animate-fadeIn transition-colors duration-200 ${
       isDark 
         ? 'bg-[#050E20] border-[#142D59] text-slate-100' 
-        : 'bg-slate-50 border-slate-200 text-slate-900'
+        : 'bg-white border-slate-200 text-slate-900'
     }`}>
       {/* BRANDING HEADER */}
-      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 ${
-        isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-navy text-white border-navy-light'
+      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 transition-colors ${
+        isDark 
+          ? 'bg-[#091C3E] border-[#142D59] text-white' 
+          : 'bg-white border-slate-200 text-navy shadow-2xs'
       }`}>
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -136,7 +136,11 @@ export default function CustomerApp() {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
               title={isSidebarCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu"}
             >
               {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -146,17 +150,23 @@ export default function CustomerApp() {
               src={logoImg} 
               alt="Same Day Assist Logo" 
               onClick={() => setActiveDeviceTab('home')}
-              className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-md" 
+              className="w-10 h-10 object-contain shrink-0 cursor-pointer rounded-full bg-white p-0.5 shadow-md border border-slate-200" 
             />
             <div>
-              <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
+              <h1 className={`text-lg font-brand-header tracking-wide uppercase leading-tight ${
+                isDark ? 'text-white' : 'text-navy'
+              }`}>
+                SAME DAY ASSIST
+              </h1>
               <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">
                 Member Emergency & Assist Portal
               </p>
             </div>
           </div>
 
-          <span className="text-[10px] text-slate-300 font-medium lg:hidden">
+          <span className={`text-[10px] font-medium lg:hidden ${
+            isDark ? 'text-slate-300' : 'text-slate-600'
+          }`}>
             {activeCustomer?.package || 'Diamond'} Tier
           </span>
         </div>
@@ -165,15 +175,29 @@ export default function CustomerApp() {
         <div className="flex items-center gap-4 flex-wrap lg:flex-nowrap justify-end w-full lg:w-auto">
           <div className="hidden sm:flex gap-4 text-right">
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Membership Tier</span>
-              <span className="text-xs font-bold text-white flex items-center gap-1 justify-end">
-                <Award className="w-3.5 h-3.5 text-amber-400" />
+              <span className={`text-[9px] uppercase font-medium block ${
+                isDark ? 'text-slate-300/80' : 'text-slate-500'
+              }`}>
+                Membership Tier
+              </span>
+              <span className={`text-xs font-bold flex items-center gap-1 justify-end ${
+                isDark ? 'text-white' : 'text-navy'
+              }`}>
+                <Award className="w-3.5 h-3.5 text-amber-500" />
                 {activeCustomer?.package || 'Diamond'}
               </span>
             </div>
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Account Status</span>
-              <span className={`text-xs font-bold ${isFullyActive ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <span className={`text-[9px] uppercase font-medium block ${
+                isDark ? 'text-slate-300/80' : 'text-slate-500'
+              }`}>
+                Account Status
+              </span>
+              <span className={`text-xs font-bold ${
+                isFullyActive 
+                  ? (isDark ? 'text-emerald-400' : 'text-emerald-600') 
+                  : (isDark ? 'text-amber-400' : 'text-amber-600')
+              }`}>
                 {isFullyActive ? 'ACTIVE MEMBER' : 'PENDING ACTIVATION'}
               </span>
             </div>
@@ -181,21 +205,15 @@ export default function CustomerApp() {
 
           <div className="flex items-center gap-2">
             {/* Theme Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center gap-1.5 text-xs font-bold"
-              title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-blue-300" />}
-              <span className="hidden xl:inline text-[11px] font-mono">{isDark ? 'Light' : 'Dark'}</span>
-            </button>
-
             {/* Support & Contact Modal Button */}
             <button
               type="button"
               onClick={() => setIsContactModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              className={`flex items-center gap-1.5 px-3 py-2 border text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800 shadow-2xs'
+              }`}
               title="Customer Support, Callback & Enquiries"
             >
               <Headphones className="w-3.5 h-3.5 text-red" />
@@ -216,7 +234,11 @@ export default function CustomerApp() {
             <button
               type="button"
               onClick={() => logout()}
-              className="p-2 rounded-xl bg-white/10 hover:bg-red/30 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-center shrink-0 ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-red/30 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-red/10 hover:text-red border-slate-200 text-slate-700'
+              }`}
               title="Log Out"
             >
               <LogOut className="w-4 h-4" />
@@ -319,11 +341,15 @@ export default function CustomerApp() {
             }`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-mono font-bold uppercase text-slate-400">
+                <span className={`text-[10px] font-mono font-bold uppercase ${
+                  isDark ? 'text-slate-400' : 'text-slate-600'
+                }`}>
                   Dispatch Connected
                 </span>
               </div>
-              <p className="text-[10.5px] font-bold truncate text-slate-300">
+              <p className={`text-[10.5px] font-bold truncate ${
+                isDark ? 'text-slate-300' : 'text-navy'
+              }`}>
                 {activeCustomer?.name || 'Customer Account'}
               </p>
               <span className="text-[9.5px] text-slate-500 font-mono truncate block">
@@ -335,7 +361,7 @@ export default function CustomerApp() {
 
         {/* MAIN VIEW CONTENT CONTAINER */}
         <main className={`flex-1 overflow-y-auto p-2.5 sm:p-5 md:p-6 lg:p-8 transition-colors duration-200 ${
-          isDark ? 'bg-[#050E20]/60' : 'bg-slate-50/50'
+          isDark ? 'bg-[#050E20]' : 'bg-[#FAFAFA]'
         }`}>
           <div className="max-w-5xl mx-auto flex flex-col gap-6 w-full">
             {activeDeviceTab === 'home' && (

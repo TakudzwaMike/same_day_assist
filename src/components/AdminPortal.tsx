@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Shield, Clipboard, Activity, FileText, Users, LogOut, UserCheck, 
   FileCheck, ShieldCheck, ShieldAlert, Award, Receipt, Settings, 
-  CheckCircle2, ClipboardCheck, Sun, Moon, Menu, ChevronLeft, ChevronRight,
+  CheckCircle2, ClipboardCheck, Menu, ChevronLeft, ChevronRight,
   PanelLeftClose, PanelLeftOpen, Wallet
 } from 'lucide-react';
 import { useAppState } from '../contexts/AppStateContext';
@@ -28,7 +28,7 @@ import logoImg from '../assets/logo.png';
 export default function AdminPortal() {
   const { state } = useAppState();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { theme, isDark } = useTheme();
   const role = user?.role || 'Dispatcher';
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -107,11 +107,13 @@ export default function AdminPortal() {
     <div className={`w-full min-h-screen md:min-h-[700px] border-0 md:border rounded-none md:rounded-3xl shadow-none md:shadow-xl flex flex-col flex-1 overflow-hidden animate-fadeIn transition-colors duration-200 ${
       isDark 
         ? 'bg-[#050E20] border-[#142D59] text-slate-100' 
-        : 'bg-slate-50 border-slate-200 text-slate-900'
+        : 'bg-white border-slate-200 text-slate-900'
     }`}>
       {/* ADMIN HEADER */}
-      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 ${
-        isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-navy text-white border-navy-light'
+      <div className={`px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col lg:flex-row items-center justify-between gap-3 border-b relative shrink-0 transition-colors ${
+        isDark 
+          ? 'bg-[#091C3E] border-[#142D59] text-white' 
+          : 'bg-white border-slate-200 text-navy shadow-2xs'
       }`}>
         <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-start">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -119,7 +121,11 @@ export default function AdminPortal() {
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
               title={isSidebarCollapsed ? "Expand Navigation Menu" : "Collapse Navigation Menu"}
             >
               {isSidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
@@ -128,15 +134,23 @@ export default function AdminPortal() {
             <img 
               src={logoImg} 
               alt="Same Day Assist Logo" 
-              className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md" 
+              className="w-10 h-10 object-contain shrink-0 rounded-full bg-white p-0.5 shadow-md border border-slate-200" 
             />
             <div>
-              <h1 className="text-lg font-brand-header tracking-wide uppercase leading-tight">SAME DAY ASSIST</h1>
+              <h1 className={`text-lg font-brand-header tracking-wide uppercase leading-tight ${
+                isDark ? 'text-white' : 'text-navy'
+              }`}>
+                SAME DAY ASSIST
+              </h1>
               <p className="text-[10px] font-brand-sub text-red font-bold uppercase tracking-widest">{getSubTitle()}</p>
             </div>
           </div>
 
-          <span className="text-[10px] text-slate-300 font-mono lg:hidden">{getRoleIndicator()}</span>
+          <span className={`text-[10px] font-mono lg:hidden ${
+            isDark ? 'text-slate-300' : 'text-slate-600'
+          }`}>
+            {getRoleIndicator()}
+          </span>
         </div>
         
         {/* STATS TRAY, THEME TOGGLE (Item 13), SETTINGS & LOGOUT */}
@@ -144,18 +158,38 @@ export default function AdminPortal() {
           <div className="hidden sm:flex gap-4 text-right">
             {role === 'Dispatcher' ? (
               <div>
-                <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Active Enquiries</span>
-                <span className="text-xs font-bold text-white font-mono">{state.enquiries.length}</span>
+                <span className={`text-[9px] uppercase font-medium block ${
+                  isDark ? 'text-slate-300/80' : 'text-slate-500'
+                }`}>
+                  Active Enquiries
+                </span>
+                <span className={`text-xs font-bold font-mono ${
+                  isDark ? 'text-white' : 'text-navy'
+                }`}>
+                  {state.enquiries.length}
+                </span>
               </div>
             ) : (
               <div>
-                <span className="text-[9px] text-slate-300/80 uppercase font-medium block">ZAR Invoiced</span>
-                <span className="text-xs font-bold text-white font-mono">R{totalRevenue.toLocaleString()}</span>
+                <span className={`text-[9px] uppercase font-medium block ${
+                  isDark ? 'text-slate-300/80' : 'text-slate-500'
+                }`}>
+                  ZAR Invoiced
+                </span>
+                <span className={`text-xs font-bold font-mono ${
+                  isDark ? 'text-white' : 'text-navy'
+                }`}>
+                  R{totalRevenue.toLocaleString()}
+                </span>
               </div>
             )}
             <div>
-              <span className="text-[9px] text-slate-300/80 uppercase font-medium block">Active Jobs</span>
-              <span className="text-xs font-bold text-emerald-400 font-mono">
+              <span className={`text-[9px] uppercase font-medium block ${
+                isDark ? 'text-slate-300/80' : 'text-slate-500'
+              }`}>
+                Active Jobs
+              </span>
+              <span className="text-xs font-bold text-emerald-500 font-mono">
                 {state.jobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled').length} Live
               </span>
             </div>
@@ -165,18 +199,12 @@ export default function AdminPortal() {
             {/* Theme Toggle Button (Item 13) */}
             <button
               type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center gap-1.5 text-xs font-bold"
-              title={`Switch to ${isDark ? 'Clean Light Theme' : 'Navy Dark Theme'}`}
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-300" />}
-              <span className="hidden md:inline text-[11px]">{isDark ? 'Light' : 'Dark'}</span>
-            </button>
-            
-            <button
-              type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-center shrink-0 ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800 shadow-2xs'
+              }`}
               title="System & Account Settings"
             >
               <Settings className="w-4 h-4" />
@@ -185,7 +213,11 @@ export default function AdminPortal() {
             <button
               type="button"
               onClick={() => logout()}
-              className="p-2 rounded-xl bg-white/10 hover:bg-red/30 border border-white/20 cursor-pointer text-white transition-all flex items-center justify-center shrink-0"
+              className={`p-2 rounded-xl border cursor-pointer transition-all flex items-center justify-center shrink-0 ${
+                isDark 
+                  ? 'bg-white/10 hover:bg-red/30 border-white/20 text-white' 
+                  : 'bg-slate-100 hover:bg-red/10 hover:text-red border-slate-200 text-slate-700'
+              }`}
               title="Log Out"
             >
               <LogOut className="w-4 h-4" />

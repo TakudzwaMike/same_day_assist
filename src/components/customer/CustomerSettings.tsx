@@ -592,7 +592,49 @@ export default function CustomerSettings({ activeCustomer, onNavigateTab, initia
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Dark Theme Option (Original Navy-Blue Branding) */}
+            {/* Light Theme Option (Main Default Version) */}
+            <div 
+              onClick={() => setTheme('light')}
+              className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col gap-3 relative overflow-hidden ${
+                !isDark 
+                  ? 'border-red shadow-lg bg-white text-slate-900 ring-2 ring-red/30' 
+                  : 'border-slate-700 bg-white text-slate-900 opacity-85 hover:opacity-100'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-slate-100 text-slate-800 border border-slate-200">
+                    <Sun className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-navy">Light Theme (Clean White)</h4>
+                    <span className="text-[10px] font-mono text-emerald-600 font-bold">Default Main Version</span>
+                  </div>
+                </div>
+                {!isDark && (
+                  <span className="p-1.5 bg-red text-white rounded-full">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                The standard Same Day Assist appearance: a clean, pure white background (<span className="font-mono text-slate-700">#FFFFFF</span>), high-contrast dark navy typography (<span className="font-mono text-slate-700">#091C3E</span>), and signature red accents.
+              </p>
+
+              {/* Swatch palette preview */}
+              <div className="mt-2 pt-3 border-t border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-white border border-slate-300" title="Pure White Background (#FFFFFF)" />
+                  <span className="w-5 h-5 rounded-full bg-[#F8FAFC] border border-slate-300" title="Elevated Surface (#F8FAFC)" />
+                  <span className="w-5 h-5 rounded-full bg-[#091C3E] border border-slate-300" title="Brand Navy Text (#091C3E)" />
+                  <span className="w-5 h-5 rounded-full bg-[#CC322C] border border-slate-300" title="Brand Red (#CC322C)" />
+                </div>
+                <span className="text-[10px] font-mono text-slate-500 font-bold">DEFAULT MAIN</span>
+              </div>
+            </div>
+
+            {/* Dark Theme Option (Authentic Navy-Blue Branding) */}
             <div 
               onClick={() => setTheme('dark')}
               className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col gap-3 relative overflow-hidden ${
@@ -607,8 +649,8 @@ export default function CustomerSettings({ activeCustomer, onNavigateTab, initia
                     <Moon className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-white">Dark Theme (Original Navy-Blue)</h4>
-                    <span className="text-[10px] font-mono text-blue-300">Default Brand Theme</span>
+                    <h4 className="font-bold text-sm text-white">Dark Theme (Navy-Blue)</h4>
+                    <span className="text-[10px] font-mono text-blue-300">Alternative Dark Version</span>
                   </div>
                 </div>
                 {isDark && (
@@ -630,49 +672,7 @@ export default function CustomerSettings({ activeCustomer, onNavigateTab, initia
                   <span className="w-5 h-5 rounded-full bg-[#183366] border border-slate-700" title="Navy Light (#183366)" />
                   <span className="w-5 h-5 rounded-full bg-[#CC322C] border border-slate-700" title="Brand Red (#CC322C)" />
                 </div>
-                <span className="text-[10px] font-mono text-slate-400">AUTHENTIC NAVY</span>
-              </div>
-            </div>
-
-            {/* Light Theme Option */}
-            <div 
-              onClick={() => setTheme('light')}
-              className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col gap-3 relative overflow-hidden ${
-                !isDark 
-                  ? 'border-red shadow-lg bg-white text-slate-900 ring-2 ring-red/30' 
-                  : 'border-slate-700 bg-white text-slate-900 opacity-85 hover:opacity-100'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-slate-100 text-slate-800 border border-slate-200">
-                    <Sun className="w-5 h-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-navy">Light Theme</h4>
-                    <span className="text-[10px] font-mono text-slate-500">Daylight Contrast</span>
-                  </div>
-                </div>
-                {!isDark && (
-                  <span className="p-1.5 bg-red text-white rounded-full">
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-slate-600 leading-relaxed">
-                A clean, crisp light background (<span className="font-mono text-slate-700">#F8FAFC</span>) with pure white cards, high-contrast dark navy typography, and brand-red interactive elements for daytime readability.
-              </p>
-
-              {/* Swatch palette preview */}
-              <div className="mt-2 pt-3 border-t border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-[#F8FAFC] border border-slate-300" title="Light Page (#F8FAFC)" />
-                  <span className="w-5 h-5 rounded-full bg-white border border-slate-300" title="White Card (#FFFFFF)" />
-                  <span className="w-5 h-5 rounded-full bg-[#091C3E] border border-slate-300" title="Brand Navy Text (#091C3E)" />
-                  <span className="w-5 h-5 rounded-full bg-[#CC322C] border border-slate-300" title="Brand Red (#CC322C)" />
-                </div>
-                <span className="text-[10px] font-mono text-slate-500">CLEAN CONTRAST</span>
+                <span className="text-[10px] font-mono text-slate-400 font-bold">NAVY DARK</span>
               </div>
             </div>
           </div>

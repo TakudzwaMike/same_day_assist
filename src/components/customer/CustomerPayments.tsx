@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Payment, PaymentTimeline, ActivationTimelineStep } from '../../types';
 import { formatZAR } from '../../utils/paymentStructure';
 
@@ -15,6 +16,7 @@ interface CustomerPaymentsProps {
 
 export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const { paymentTimeline, refreshPaymentTimeline, payActivationStage, retryPayment } = useAppState();
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -131,30 +133,36 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
       )}
 
       {/* MEMBERSHIP HEADER CARD */}
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden">
+      <div className={`rounded-3xl p-6 sm:p-7 shadow-xl relative overflow-hidden transition-colors border ${
+        isDark ? 'bg-gradient-to-br from-slate-950 via-[#091C3E] to-slate-950 border-slate-800' : 'bg-white border-slate-200'
+      }`}>
         <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-800">
+        <div className={`relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b ${
+          isDark ? 'border-slate-800' : 'border-slate-200'
+        }`}>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-red-500 uppercase">
+              <span className="text-[10px] font-mono font-bold tracking-widest text-red uppercase">
                 MEMBERSHIP BILLING & ACTIVATION
               </span>
               {isActive ? (
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono">
+                <span className="bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono">
                   ● ACTIVE
                 </span>
               ) : (
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono">
+                <span className="bg-amber-500/20 text-amber-500 border border-amber-500/40 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono">
                   ● PENDING ACTIVATION ({timeline?.activationPercentage || 20}%)
                 </span>
               )}
             </div>
             <div className="flex items-baseline gap-2.5 mt-1">
-              <h2 className="text-2xl font-black italic tracking-wide uppercase font-brand-header text-white">
+              <h2 className={`text-2xl font-black italic tracking-wide uppercase font-brand-header ${
+                isDark ? 'text-white' : 'text-[#091C3E]'
+              }`}>
                 {timeline?.planName || 'Assist Plus'}
               </h2>
-              <span className="text-xs font-mono text-slate-400">
+              <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 ({formatZAR(timeline?.monthlyPrice || 1499)} / month)
               </span>
             </div>
@@ -165,7 +173,11 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
               type="button"
               disabled={isProcessing}
               onClick={() => refreshPaymentTimeline()}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+              className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border ${
+                isDark
+                  ? 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isProcessing ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -175,18 +187,22 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
 
         {/* 3-STAGE ACTIVATION PROGRESS BAR */}
         {isPendingActivation && (
-          <div className="mt-5 space-y-3 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4">
+          <div className={`mt-5 space-y-3 rounded-2xl p-4 border transition-colors ${
+            isDark ? 'bg-slate-900/80 border-slate-800/80' : 'bg-slate-50 border-slate-200'
+          }`}>
             <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-white flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-amber-400" />
+              <span className={`font-bold flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
+                <Zap className="w-4 h-4 text-amber-500" />
                 Activation Payment Progress
               </span>
-              <span className="font-mono font-bold text-amber-300 text-sm">
+              <span className="font-mono font-bold text-amber-500 text-sm">
                 {timeline?.activationPercentage || 20}% Complete
               </span>
             </div>
 
-            <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+            <div className={`w-full h-3 rounded-full overflow-hidden border p-0.5 ${
+              isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-200 border-slate-300'
+            }`}>
               <div
                 className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 rounded-full transition-all duration-700"
                 style={{ width: `${timeline?.activationPercentage || 20}%` }}
@@ -194,18 +210,18 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
             </div>
 
             <div className="grid grid-cols-3 text-center text-[10px] font-mono pt-1">
-              <div className={(timeline?.activationPercentage || 0) >= 20 ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+              <div className={(timeline?.activationPercentage || 0) >= 20 ? 'text-emerald-500 font-bold' : isDark ? 'text-slate-500' : 'text-slate-400'}>
                 ✓ Initial 20% (Onboarding)
               </div>
-              <div className={(timeline?.activationPercentage || 0) >= 60 ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+              <div className={(timeline?.activationPercentage || 0) >= 60 ? 'text-emerald-500 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}>
                 {(timeline?.activationPercentage || 0) >= 60 ? '✓' : '○'} First 40% (Billing 1)
               </div>
-              <div className={(timeline?.activationPercentage || 0) >= 100 ? 'text-emerald-400 font-bold' : 'text-slate-400'}>
+              <div className={(timeline?.activationPercentage || 0) >= 100 ? 'text-emerald-500 font-bold' : isDark ? 'text-slate-400' : 'text-slate-500'}>
                 {(timeline?.activationPercentage || 0) >= 100 ? '✓' : '○'} Second 40% (Active Status)
               </div>
             </div>
 
-            <p className="text-[11px] text-amber-200/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 leading-relaxed">
+            <p className="text-[11px] text-amber-700 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 leading-relaxed">
               <strong>Notice:</strong> Your membership status is <strong>Pending Activation</strong>. Per Same Day Assist policy, full assistance benefits and claims unlock once 100% of the activation structure is collected (after the second 40% billing).
             </p>
           </div>
@@ -213,32 +229,40 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
 
         {/* METRICS ROW */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">Monthly Subscription</span>
-            <span className="text-base font-black font-mono text-white mt-0.5 block">
+          <div className={`rounded-2xl p-3.5 border transition-colors ${
+            isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Monthly Subscription</span>
+            <span className={`text-base font-black font-mono mt-0.5 block ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
               {formatZAR(timeline?.monthlyPrice || 1499)}
             </span>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">Total Collected</span>
-            <span className="text-base font-black font-mono text-emerald-400 mt-0.5 block">
+          <div className={`rounded-2xl p-3.5 border transition-colors ${
+            isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Collected</span>
+            <span className="text-base font-black font-mono text-emerald-500 mt-0.5 block">
               {formatZAR(timeline?.totalCollected || 0)}
             </span>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">Billing Day</span>
-            <span className="text-base font-black font-mono text-white mt-0.5 block">
+          <div className={`rounded-2xl p-3.5 border transition-colors ${
+            isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Billing Day</span>
+            <span className={`text-base font-black font-mono mt-0.5 block ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
               {timeline?.billingDayOfMonth ? `${timeline.billingDayOfMonth}th of month` : '25th of month'}
             </span>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5">
-            <span className="text-[10px] font-mono text-slate-400 uppercase block">
+          <div className={`rounded-2xl p-3.5 border transition-colors ${
+            isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
+            <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {isActive ? 'Activated On' : 'Status'}
             </span>
-            <span className={`text-base font-black font-mono mt-0.5 block ${isActive ? 'text-emerald-400' : 'text-amber-300'}`}>
+            <span className={`text-base font-black font-mono mt-0.5 block ${isActive ? 'text-emerald-500' : 'text-amber-500'}`}>
               {isActive && timeline?.activationDate
                 ? new Date(timeline.activationDate).toLocaleDateString('en-ZA')
                 : 'Pending Activation'}
@@ -248,28 +272,36 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
       </div>
 
       {/* UPCOMING PAYMENT CARD (Specification Section 18) */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-lg">
+      <div className={`rounded-3xl p-6 shadow-lg border transition-colors ${
+        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+      }`}>
         <div className="flex justify-between items-start mb-4">
           <div>
-            <span className="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase block">
+            <span className={`text-[10px] font-mono font-bold tracking-widest uppercase block ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>
               UPCOMING SCHEDULED PAYMENT
             </span>
-            <h3 className="text-lg font-black text-white uppercase font-brand-header mt-0.5">
+            <h3 className={`text-lg font-black uppercase font-brand-header mt-0.5 ${
+              isDark ? 'text-white' : 'text-[#091C3E]'
+            }`}>
               {timeline?.nextPayment?.description || (isPendingActivation ? 'Next Activation Payment' : 'Monthly Membership')}
             </h3>
           </div>
-          <span className="bg-blue-500/10 text-blue-400 border border-blue-500/30 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
+          <span className="bg-blue-500/10 text-blue-500 border border-blue-500/30 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase">
             {timeline?.nextPayment?.status || 'Scheduled'}
           </span>
         </div>
 
         {timeline?.nextPayment ? (
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-950 p-4 rounded-2xl border border-slate-800 gap-4">
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-2xl border gap-4 transition-colors ${
+            isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+          }`}>
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Calendar className="w-4 h-4 text-red-400" />
+              <div className={`flex items-center gap-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                <Calendar className="w-4 h-4 text-red" />
                 <span>Scheduled Date: </span>
-                <strong className="text-white font-mono">
+                <strong className={`font-mono ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                   {new Date(timeline.nextPayment.dueDate).toLocaleDateString('en-ZA', {
                     day: 'numeric',
                     month: 'long',
@@ -277,15 +309,15 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                   })}
                 </strong>
               </div>
-              <div className="text-xs text-slate-400">
-                Stage: <strong className="text-slate-200">{timeline.nextPayment.description}</strong>
+              <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                Stage: <strong className={isDark ? 'text-slate-200' : 'text-slate-900'}>{timeline.nextPayment.description}</strong>
               </div>
             </div>
 
             <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
               <div className="text-right">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">Amount Due</span>
-                <span className="text-2xl font-black font-mono text-white">
+                <span className={`text-[10px] font-mono uppercase block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Amount Due</span>
+                <span className={`text-2xl font-black font-mono ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                   {formatZAR(timeline.nextPayment.amount)}
                 </span>
               </div>
@@ -303,24 +335,34 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
             </div>
           </div>
         ) : (
-          <div className="text-xs text-slate-400 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+          <div className={`text-xs p-4 rounded-2xl border ${
+            isDark ? 'text-slate-400 bg-slate-950 border-slate-800' : 'text-slate-500 bg-slate-50 border-slate-200'
+          }`}>
             No upcoming payments currently scheduled.
           </div>
         )}
       </div>
 
       {/* PAYMENT HISTORY TABLE (Specification Section 17 & 19) */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-lg space-y-4">
-        <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+      <div className={`rounded-3xl p-6 shadow-lg space-y-4 border transition-colors ${
+        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+      }`}>
+        <div className={`flex justify-between items-center border-b pb-4 ${
+          isDark ? 'border-slate-800' : 'border-slate-200'
+        }`}>
           <div>
-            <span className="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase block">
+            <span className={`text-[10px] font-mono font-bold tracking-widest uppercase block ${
+              isDark ? 'text-slate-400' : 'text-slate-500'
+            }`}>
               TRANSACTION AUDIT LEDGER
             </span>
-            <h3 className="text-lg font-black text-white uppercase font-brand-header mt-0.5">
+            <h3 className={`text-lg font-black uppercase font-brand-header mt-0.5 ${
+              isDark ? 'text-white' : 'text-[#091C3E]'
+            }`}>
               Payment History
             </h3>
           </div>
-          <span className="text-xs font-mono text-slate-400">
+          <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             {timeline?.payments?.length || 0} Transactions
           </span>
         </div>
@@ -328,7 +370,9 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left min-w-[650px]">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-mono text-[11px] uppercase">
+              <tr className={`border-b font-mono text-[11px] uppercase ${
+                isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500 bg-slate-50/50'
+              }`}>
                 <th className="py-3 px-3">Date</th>
                 <th className="py-3 px-3">Description</th>
                 <th className="py-3 px-3">Amount</th>
@@ -337,13 +381,15 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                 <th className="py-3 px-3 text-right">Receipt / Invoice</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-850">
+            <tbody className={`divide-y ${isDark ? 'divide-slate-850' : 'divide-slate-200'}`}>
               {timeline?.payments && timeline.payments.length > 0 ? (
                 timeline.payments.map((p) => {
                   const dateStr = p.paidAt || p.dueDate || p.createdAt;
                   return (
-                    <tr key={p.id} className="text-slate-300 hover:bg-slate-850/60 transition-colors">
-                      <td className="py-3.5 px-3 font-mono text-slate-300">
+                    <tr key={p.id} className={`transition-colors ${
+                      isDark ? 'text-slate-300 hover:bg-slate-850/60' : 'text-slate-700 hover:bg-slate-50'
+                    }`}>
+                      <td className={`py-3.5 px-3 font-mono ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         {dateStr ? new Date(dateStr).toLocaleDateString('en-ZA', {
                           day: 'numeric',
                           month: 'short',
@@ -351,20 +397,20 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                         }) : '—'}
                       </td>
                       <td className="py-3.5 px-3">
-                        <div className="font-bold text-white">
+                        <div className={`font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                           {p.description || getStageLabel(p.paymentStage)}
                         </div>
-                        <span className="text-[10px] font-mono text-slate-400 uppercase">
+                        <span className={`text-[10px] font-mono uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                           {getStageLabel(p.paymentStage)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 font-mono font-bold text-white text-sm">
+                      <td className={`py-3.5 px-3 font-mono font-bold text-sm ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                         {formatZAR(p.amount)}
                       </td>
                       <td className="py-3.5 px-3">
                         {getStatusBadge(p.status)}
                       </td>
-                      <td className="py-3.5 px-3 font-mono text-slate-400 text-[11px]">
+                      <td className={`py-3.5 px-3 font-mono text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {p.transactionRef || p.id.slice(0, 12)}
                       </td>
                       <td className="py-3.5 px-3 text-right">
@@ -373,7 +419,7 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                             type="button"
                             disabled={isProcessing}
                             onClick={() => handleRetry(p.id)}
-                            className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 rounded-lg text-xs font-bold cursor-pointer transition-all"
+                            className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red border border-red/40 rounded-lg text-xs font-bold cursor-pointer transition-all"
                           >
                             Retry
                           </button>
@@ -381,9 +427,13 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                           <button
                             type="button"
                             onClick={() => setSelectedReceipt(p)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all border ${
+                              isDark
+                                ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                            }`}
                           >
-                            <FileText className="w-3.5 h-3.5 text-blue-400" />
+                            <FileText className="w-3.5 h-3.5 text-blue-500" />
                             <span>Receipt</span>
                           </button>
                         )}
@@ -393,7 +443,7 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500 font-mono">
+                  <td colSpan={6} className={`py-8 text-center font-mono ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     No payment transactions recorded yet.
                   </td>
                 </tr>
@@ -405,55 +455,65 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
 
       {/* RECEIPT / INVOICE MODAL (Specification Section 19) */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-scaleUp text-white space-y-6">
-            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative animate-scaleUp space-y-6 border transition-colors ${
+            isDark ? 'bg-[#091C3E] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className={`flex justify-between items-start border-b pb-4 ${
+              isDark ? 'border-slate-800' : 'border-slate-200'
+            }`}>
               <div>
-                <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-widest block">
+                <span className="text-[10px] font-mono font-bold text-red uppercase tracking-widest block">
                   OFFICIAL PAYMENT RECEIPT
                 </span>
-                <h3 className="text-xl font-black uppercase font-brand-header mt-0.5">
+                <h3 className={`text-xl font-black uppercase font-brand-header mt-0.5 ${
+                  isDark ? 'text-white' : 'text-[#091C3E]'
+                }`}>
                   Same Day Assist
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedReceipt(null)}
-                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800'
+                }`}
               >
                 ✕
               </button>
             </div>
 
             {/* Receipt Summary Grid */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-850 space-y-3 text-xs">
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Payment Reference:</span>
-                <span className="font-mono font-bold text-white">
+            <div className={`p-4 rounded-2xl border space-y-3 text-xs ${
+              isDark ? 'bg-slate-950 border-slate-850' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Payment Reference:</span>
+                <span className={`font-mono font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                   {selectedReceipt.transactionRef || selectedReceipt.id}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Customer:</span>
-                <span className="font-bold text-white">{user?.name || user?.email}</span>
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Customer:</span>
+                <span className={`font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{user?.name || user?.email}</span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Plan:</span>
-                <span className="font-bold text-white">{timeline?.planName || 'Assist Plus'}</span>
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Plan:</span>
+                <span className={`font-bold ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>{timeline?.planName || 'Assist Plus'}</span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Payment Stage:</span>
-                <span className="font-mono font-bold text-emerald-400">
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Payment Stage:</span>
+                <span className="font-mono font-bold text-emerald-500">
                   {getStageLabel(selectedReceipt.paymentStage)}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Date:</span>
-                <span className="font-mono text-white">
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Date:</span>
+                <span className={`font-mono ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>
                   {selectedReceipt.paidAt
                     ? new Date(selectedReceipt.paidAt).toLocaleDateString('en-ZA', {
                         day: 'numeric',
@@ -466,28 +526,28 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
                 </span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Payment Method:</span>
-                <span className="font-mono text-slate-300">
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Payment Method:</span>
+                <span className={`font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   {selectedReceipt.paymentMethod || 'Credit / Debit Card (PayFast)'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                <span className="text-slate-400">Status:</span>
+              <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Status:</span>
                 <span>{getStatusBadge(selectedReceipt.status)}</span>
               </div>
 
               {selectedReceipt.invoiceId && (
-                <div className="flex justify-between items-center border-b border-slate-850 pb-2.5">
-                  <span className="text-slate-400">Related Invoice:</span>
-                  <span className="font-mono text-blue-400">{selectedReceipt.invoiceId}</span>
+                <div className={`flex justify-between items-center border-b pb-2.5 ${isDark ? 'border-slate-850' : 'border-slate-200'}`}>
+                  <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Related Invoice:</span>
+                  <span className="font-mono text-blue-500">{selectedReceipt.invoiceId}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center pt-2">
-                <span className="text-sm font-bold text-white uppercase">Amount Paid:</span>
-                <span className="text-xl font-black font-mono text-emerald-400">
+                <span className={`text-sm font-bold uppercase ${isDark ? 'text-white' : 'text-[#091C3E]'}`}>Amount Paid:</span>
+                <span className="text-xl font-black font-mono text-emerald-500">
                   {formatZAR(selectedReceipt.amount)}
                 </span>
               </div>
@@ -497,7 +557,9 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                className={`px-4 py-2 border rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors ${
+                  isDark ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                }`}
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print Receipt</span>
@@ -505,7 +567,7 @@ export function CustomerPayments({ onNavigateTab }: CustomerPaymentsProps) {
               <button
                 type="button"
                 onClick={() => setSelectedReceipt(null)}
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
+                className="px-5 py-2 bg-red hover:bg-red/90 text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
               >
                 Close
               </button>

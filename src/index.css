@@ -53,30 +53,41 @@
 /* Base style resets */
 body {
   font-family: var(--font-sans);
-  background-color: #050E20; /* Restored original brand navy background by default */
-  color: #f8fafc;
+  background-color: #FFFFFF; /* Clean white main version */
+  color: #091C3E;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Theme variables and classes */
 :root {
+  --bg-page: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F8FAFC;
+  --border-color: #E2E8F0;
+  --text-primary: #091C3E;
+  --text-secondary: #475569;
+  --brand-navy: #091C3E;
+  --brand-red: #CC322C;
+}
+
+[data-theme="light"], .theme-light {
+  --bg-page: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F8FAFC;
+  --border-color: #E2E8F0;
+  --text-primary: #091C3E;
+  --text-secondary: #475569;
+  --brand-navy: #091C3E;
+  --brand-red: #CC322C;
+}
+
+[data-theme="dark"], .theme-dark {
   --bg-page: #050E20;
   --bg-surface: #091C3E;
   --bg-surface-elevated: #0C2145;
   --border-color: #142D59;
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
-  --brand-navy: #091C3E;
-  --brand-red: #CC322C;
-}
-
-[data-theme="light"], .theme-light {
-  --bg-page: #F1F5F9;
-  --bg-surface: #FFFFFF;
-  --bg-surface-elevated: #F8FAFC;
-  --border-color: #E2E8F0;
-  --text-primary: #091C3E;
-  --text-secondary: #64748B;
   --brand-navy: #091C3E;
   --brand-red: #CC322C;
 }

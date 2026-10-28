@@ -13,7 +13,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
-const STORAGE_KEY = 'sda_theme_preference';
+const STORAGE_KEY = 'sda_theme_preference_v2';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -24,8 +24,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (stored === 'dark' || stored === 'light') {
       return stored;
     }
-    // 2. Default to Dark Theme (Original Navy-Blue Branding)
-    return 'dark';
+    // 2. Default to Light Theme (Clean White Branding as main version)
+    return 'light';
   });
 
   // Sync when user logs in with saved account theme preference
@@ -59,7 +59,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.classList.remove('theme-dark');
       root.classList.add('theme-light');
       root.style.colorScheme = 'light';
-      document.body.style.backgroundColor = '#F1F5F9';
+      document.body.style.backgroundColor = '#FFFFFF'; // Clean White Main Theme
       document.body.style.color = '#091C3E';
     }
   }, [theme]);

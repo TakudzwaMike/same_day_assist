@@ -17,6 +17,7 @@ import { BenefitBalanceCard } from './BenefitBalanceCard';
 import { BenefitHistoryModal } from './BenefitHistoryModal';
 import { MemberEquipmentRegisterView } from '../assessment/MemberEquipmentRegisterView';
 import { CustomerContactModal } from './CustomerContactModal';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface CustomerHomeProps {
   activeCustomer: any;
@@ -32,6 +33,7 @@ export default function CustomerHome({
   onNavigateTab,
 }: CustomerHomeProps) {
   const { state, createEnquiry, createJob, initiatePayment, addAuditLogLocal } = useAppState();
+  const { isDark } = useTheme();
   
   // Onboarding Form
   const [enquiryName, setEnquiryName] = useState(activeCustomer?.name || '');
@@ -232,7 +234,11 @@ export default function CustomerHome({
           </div>
 
           <div>
-            <h3 className="text-xs font-bold text-navy uppercase tracking-wider mb-2">Package Offerings</h3>
+            <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}>
+              Package Offerings
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {SERVICE_PACKAGES.map(pkg => (
                 <div 
@@ -240,20 +246,23 @@ export default function CustomerHome({
                   onClick={() => setSelectedPkgId(pkg.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                     selectedPkgId === pkg.id 
-                      ? 'bg-navy/5 border-navy shadow-xs' 
-                      : 'bg-white border-slate-200 hover:border-slate-300'
+                      ? (isDark ? 'bg-[#091C3E] border-red shadow-md ring-2 ring-red/30' : 'bg-red/5 border-red shadow-sm') 
+                      : (isDark ? 'bg-[#091C3E]/80 border-[#142D59] hover:border-slate-600' : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs')
                   }`}
                 >
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs font-bold text-navy">{pkg.name}</span>
+                      <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-navy'}`}>{pkg.name}</span>
                       {selectedPkgId === pkg.id && <span className="w-2.5 h-2.5 bg-red rounded-full"></span>}
                     </div>
-                    <p className="text-lg font-brand-header text-navy">R{pkg.price}<span className="text-[10px] text-slate-400 font-normal"> / month</span></p>
-                    <ul className="text-[9px] text-slate-500 space-y-1 mt-3">
+                    <p className={`text-lg font-brand-header ${isDark ? 'text-white' : 'text-navy'}`}>
+                      R{pkg.price}
+                      <span className={`text-[10px] font-normal ${isDark ? 'text-slate-400' : 'text-slate-500'}`}> / month</span>
+                    </p>
+                    <ul className={`text-[9px] space-y-1 mt-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                       {pkg.benefits.slice(0, 3).map((b, i) => (
                         <li key={i} className="flex items-center gap-1">
-                          <span className="text-red">✓</span> {b}
+                          <span className="text-red font-bold">✓</span> {b}
                         </li>
                       ))}
                     </ul>
@@ -263,14 +272,22 @@ export default function CustomerHome({
             </div>
           </div>
 
-          <form onSubmit={handleEnquirySubmit} className="bg-slate-900 text-slate-100 p-6 rounded-3xl border-2 border-red-500/50 shadow-xl flex flex-col gap-4">
-            <div className="border-b border-slate-800 pb-3 flex justify-between items-center">
+          <form onSubmit={handleEnquirySubmit} className={`p-6 rounded-3xl border-2 shadow-xl flex flex-col gap-4 ${
+            isDark 
+              ? 'bg-slate-900 border-red-500/50 text-slate-100' 
+              : 'bg-white border-red/30 text-slate-900'
+          }`}>
+            <div className={`border-b pb-3 flex justify-between items-center ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Request Onboarding Survey</h3>
+                  <h3 className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-navy'}`}>
+                    Request Onboarding Survey
+                  </h3>
                   <span className="bg-red-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Required</span>
                 </div>
-                <p className="text-xs text-slate-300 mt-0.5">Fill in details to set up a mandatory compliance & safety survey of your property</p>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Fill in details to set up a mandatory compliance & safety survey of your property
+                </p>
               </div>
             </div>
 
@@ -281,7 +298,11 @@ export default function CustomerHome({
                 required
                 value={enquiryName}
                 onChange={e => setEnquiryName(e.target.value)}
-                className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
+                className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red border font-medium ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+                    : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                }`}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input 
@@ -290,7 +311,11 @@ export default function CustomerHome({
                   required
                   value={enquiryEmail}
                   onChange={e => setEnquiryEmail(e.target.value)}
-                  className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
+                  className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red border font-medium ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                  }`}
                 />
                 <input 
                   type="tel" 
@@ -298,7 +323,11 @@ export default function CustomerHome({
                   required
                   value={enquiryPhone}
                   onChange={e => setEnquiryPhone(e.target.value)}
-                  className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
+                  className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red border font-medium ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+                      : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                  }`}
                 />
               </div>
               <input 
@@ -307,15 +336,25 @@ export default function CustomerHome({
                 required
                 value={enquiryAddress}
                 onChange={e => setEnquiryAddress(e.target.value)}
-                className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
+                className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red border font-medium ${
+                  isDark 
+                    ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+                    : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                }`}
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase">Primary Assistance Needed</label>
+                  <label className={`text-[10px] font-bold uppercase ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Primary Assistance Needed
+                  </label>
                   <select
                     value={enquiryCategory}
                     onChange={e => setEnquiryCategory(e.target.value as ServiceCategory)}
-                    className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white font-bold"
+                    className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red font-bold border ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 focus:bg-white'
+                    }`}
                   >
                     <option value="Security Systems Assistance">🛡️ Security Systems Assistance</option>
                     <option value="Intercom Systems">📞 Intercom Systems & Audio/Video</option>
@@ -325,13 +364,19 @@ export default function CustomerHome({
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-slate-300 uppercase">Onboarding Notes (Optional)</label>
+                  <label className={`text-[10px] font-bold uppercase ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Onboarding Notes (Optional)
+                  </label>
                   <input
                     type="text"
                     placeholder="Electric fence details, gate code, dogs on property, etc."
                     value={enquiryNotes}
                     onChange={e => setEnquiryNotes(e.target.value)}
-                    className="text-xs p-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-red-500 text-white placeholder-slate-400"
+                    className={`text-xs p-3 rounded-xl focus:outline-none focus:border-red border font-medium ${
+                      isDark 
+                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-400' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                    }`}
                   />
                 </div>
               </div>
@@ -455,9 +500,13 @@ export default function CustomerHome({
             onChangePlan={() => setIsChangePlanOpen(true)}
           />
 
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs text-center flex flex-col items-center justify-center gap-3">
-            <h3 className="text-xs font-bold text-navy uppercase tracking-wider">EMERGENCY CRITICAL ASSISTANCE</h3>
-            <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+          <div className={`p-6 rounded-3xl border shadow-xs text-center flex flex-col items-center justify-center gap-3 transition-colors ${
+            isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-white border-slate-200 text-navy shadow-sm'
+          }`}>
+            <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-navy'}`}>
+              EMERGENCY CRITICAL ASSISTANCE
+            </h3>
+            <p className={`text-xs leading-relaxed max-w-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               Press and hold the assistance button below for 2 seconds to instantly summon armed security or responder cruisers to your address.
             </p>
 
@@ -486,7 +535,7 @@ export default function CustomerHome({
               )}
             </div>
 
-            <div className="text-[9px] text-slate-400 font-mono uppercase tracking-tight">
+            <div className={`text-[9px] font-mono uppercase tracking-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {isEmergencyArmed ? (
                 <span className="text-red font-bold animate-pulse">ARMED! RELEASE TO CONFIRM</span>
               ) : (
@@ -496,23 +545,29 @@ export default function CustomerHome({
           </div>
 
           {/* NORMAL ASSISTANCE REQUEST FORM */}
-          <form onSubmit={handleAssistanceSubmit} className="bg-white p-6 rounded-3xl border-2 border-slate-200 shadow-md flex flex-col gap-4">
-            <div className="border-b border-slate-200 pb-3 flex justify-between items-center">
+          <form onSubmit={handleAssistanceSubmit} className={`p-6 rounded-3xl border-2 shadow-md flex flex-col gap-4 transition-colors ${
+            isDark ? 'bg-[#091C3E] border-[#142D59] text-white' : 'bg-white border-slate-200 text-navy'
+          }`}>
+            <div className={`border-b pb-3 flex justify-between items-center ${isDark ? 'border-[#142D59]' : 'border-slate-200'}`}>
               <div>
-                <h4 className="text-sm font-bold text-navy uppercase tracking-wider flex items-center gap-2">
+                <h4 className={`text-sm font-bold uppercase tracking-wider flex items-center gap-2 ${isDark ? 'text-white' : 'text-navy'}`}>
                   <Edit3 className="w-4 h-4 text-red" />
                   <span>Log Non-Emergency Repair</span>
                 </h4>
-                <p className="text-xs text-slate-500 mt-0.5">Request regular contractor maintenance assistance</p>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                  Request regular contractor maintenance assistance
+                </p>
               </div>
-              <span className="text-[10px] font-bold font-mono bg-slate-100 text-navy px-2.5 py-1 rounded-full border border-slate-200">
+              <span className={`text-[10px] font-bold font-mono px-2.5 py-1 rounded-full border ${
+                isDark ? 'bg-[#050E20] text-slate-300 border-[#142D59]' : 'bg-slate-100 text-navy border-slate-200'
+              }`}>
                 CATEGORY: {assistCategory.toUpperCase()}
               </span>
             </div>
 
             <div className="flex flex-col gap-3.5">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                <label className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Select Trade Specialty:
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -523,8 +578,10 @@ export default function CustomerHome({
                       onClick={() => setAssistCategory(cat)}
                       className={`flex-1 min-w-[110px] py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer text-center ${
                         assistCategory === cat 
-                          ? 'bg-navy border-navy text-white shadow-xs' 
-                          : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
+                          ? 'bg-red border-red text-white shadow-xs' 
+                          : isDark 
+                            ? 'bg-[#050E20] border-[#142D59] text-slate-300 hover:bg-[#142D59]' 
+                            : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       {cat}
@@ -536,11 +593,11 @@ export default function CustomerHome({
               {/* PROBLEM DESCRIPTION INPUT BOX */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-navy" />
+                  <label className={`text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <FileText className={`w-4 h-4 ${isDark ? 'text-red' : 'text-navy'}`} />
                     <span>Describe Your Problem / Repair Request <span className="text-red font-bold">*</span></span>
                   </label>
-                  <span className="text-[11px] font-mono text-slate-600 font-semibold">
+                  <span className={`text-[11px] font-mono font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     {assistDesc.length > 0 ? `${assistDesc.length} characters typed` : 'Required'}
                   </span>
                 </div>
@@ -552,15 +609,18 @@ export default function CustomerHome({
                     value={assistDesc}
                     onChange={e => setAssistDesc(e.target.value)}
                     rows={4}
-                    style={{ color: '#000000', backgroundColor: '#FFFFFF', WebkitTextFillColor: '#000000', caretColor: '#000000' }}
-                    className="w-full text-sm p-4 !bg-white bg-white border-2 border-slate-400 rounded-xl resize-none !text-black text-black font-bold placeholder:text-slate-500 placeholder:font-normal placeholder:opacity-100 focus:!bg-white focus:border-navy focus:ring-3 focus:ring-navy/20 focus:outline-none transition-all shadow-inner leading-relaxed"
+                    className={`w-full text-sm p-4 rounded-xl resize-none font-medium transition-all shadow-inner leading-relaxed border-2 focus:outline-none ${
+                      isDark 
+                        ? 'bg-[#050E20] border-[#142D59] text-white placeholder-slate-500 focus:border-red focus:ring-2 focus:ring-red/20' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-navy focus:ring-2 focus:ring-navy/20'
+                    }`}
                   />
                 </div>
                 
-                <div className="flex items-center justify-between text-[11px] text-slate-600 font-medium px-1">
+                <div className={`flex items-center justify-between text-[11px] font-medium px-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                   <span>✍️ Type clear problem details above before clicking Submit.</span>
                   {assistDesc.trim() && (
-                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <span className="text-emerald-500 font-bold flex items-center gap-1">
                       <CheckCircle className="w-3.5 h-3.5" /> Ready to dispatch
                     </span>
                   )}
